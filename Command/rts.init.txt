@@ -1,0 +1,36 @@
+﻿global GameObject = typeForName("GameObject");
+global Transform = typeForName("Transform");
+global SceneManager = typeForName("SceneManager");
+global IsChineseSupported = getProperty(runtime, "IsChineseSupported");
+
+void ImHere (a, b)
+{
+	如果 a 大于 b 就 logi(a," 是大于 ",b," 的");
+	否则 logi(a," 不大于 ",b);
+};
+
+void loadScene(sceneName)
+{
+	if (typeof(sceneName) == int) then
+	{
+		strongInvoke(global SceneManager, "LoadScene", sceneName);
+	}
+	else
+	{
+		strongInvoke(global SceneManager, "LoadScene", toString(sceneName));
+	};
+};
+
+if global IsChineseSupported then
+{
+	aliasFunction("logi", -1, "打印");
+	aliasFunction("logw", -1, "警告");
+	aliasFunction("loge", -1, "错误");
+	aliasFunction("yield", 0, "暂停");
+	aliasFunction("sleep", 1, "等待");
+	aliasFunction("compile", 1, "编译");
+	aliasFunction("split", 2, "分割");
+	aliasFunction("readKeyboard", 0, "输入");
+	aliasFunction("readKeyboard", 1, "输入");
+	aliasFunction("doc_all", -1, "帮助");
+};
