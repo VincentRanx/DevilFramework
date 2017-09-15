@@ -8,11 +8,6 @@ namespace DevilTeam.Effects
     {
         public Material m_Material;
 
-        private void OnPreCull()
-        {
-            Debug.Log("Precull");
-        }
-
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             if (m_Material)
