@@ -28,12 +28,16 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TableGenerater));
             this.selectExcelFile = new System.Windows.Forms.OpenFileDialog();
             this.excelFileList = new System.Windows.Forms.ComboBox();
             this.excelFileGroup = new System.Windows.Forms.GroupBox();
             this.btnEditExcelFile = new System.Windows.Forms.Button();
             this.dataPreviewGroup = new System.Windows.Forms.GroupBox();
             this.dataPreview = new System.Windows.Forms.DataGridView();
+            this.fieldDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.typeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.commentDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.tableSchema = new System.Data.DataSet();
             this.tableFields = new System.Data.DataTable();
             this.dataColumn1 = new System.Data.DataColumn();
@@ -48,9 +52,6 @@
             this.btnGenerateJson = new System.Windows.Forms.Button();
             this.jsonOutputList = new System.Windows.Forms.ComboBox();
             this.selectOutputFolder = new System.Windows.Forms.FolderBrowserDialog();
-            this.fieldDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.typeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.commentDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.excelFileGroup.SuspendLayout();
             this.dataPreviewGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataPreview)).BeginInit();
@@ -137,6 +138,24 @@
             this.dataPreview.RowTemplate.Height = 23;
             this.dataPreview.Size = new System.Drawing.Size(915, 321);
             this.dataPreview.TabIndex = 0;
+            // 
+            // fieldDataGridViewTextBoxColumn
+            // 
+            this.fieldDataGridViewTextBoxColumn.DataPropertyName = "field";
+            this.fieldDataGridViewTextBoxColumn.HeaderText = "属性";
+            this.fieldDataGridViewTextBoxColumn.Name = "fieldDataGridViewTextBoxColumn";
+            // 
+            // typeDataGridViewTextBoxColumn
+            // 
+            this.typeDataGridViewTextBoxColumn.DataPropertyName = "type";
+            this.typeDataGridViewTextBoxColumn.HeaderText = "数据类型";
+            this.typeDataGridViewTextBoxColumn.Name = "typeDataGridViewTextBoxColumn";
+            // 
+            // commentDataGridViewTextBoxColumn
+            // 
+            this.commentDataGridViewTextBoxColumn.DataPropertyName = "comment";
+            this.commentDataGridViewTextBoxColumn.HeaderText = "备注";
+            this.commentDataGridViewTextBoxColumn.Name = "commentDataGridViewTextBoxColumn";
             // 
             // tableSchema
             // 
@@ -267,24 +286,6 @@
             this.jsonOutputList.TabIndex = 3;
             this.jsonOutputList.SelectedIndexChanged += new System.EventHandler(this.jsonOutputList_SelectedIndexChanged);
             // 
-            // fieldDataGridViewTextBoxColumn
-            // 
-            this.fieldDataGridViewTextBoxColumn.DataPropertyName = "field";
-            this.fieldDataGridViewTextBoxColumn.HeaderText = "属性";
-            this.fieldDataGridViewTextBoxColumn.Name = "fieldDataGridViewTextBoxColumn";
-            // 
-            // typeDataGridViewTextBoxColumn
-            // 
-            this.typeDataGridViewTextBoxColumn.DataPropertyName = "type";
-            this.typeDataGridViewTextBoxColumn.HeaderText = "数据类型";
-            this.typeDataGridViewTextBoxColumn.Name = "typeDataGridViewTextBoxColumn";
-            // 
-            // commentDataGridViewTextBoxColumn
-            // 
-            this.commentDataGridViewTextBoxColumn.DataPropertyName = "comment";
-            this.commentDataGridViewTextBoxColumn.HeaderText = "备注";
-            this.commentDataGridViewTextBoxColumn.Name = "commentDataGridViewTextBoxColumn";
-            // 
             // TableGenerater
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -295,6 +296,7 @@
             this.Controls.Add(this.csharpOutputGroup);
             this.Controls.Add(this.dataPreviewGroup);
             this.Controls.Add(this.excelFileGroup);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(600, 480);
             this.Name = "TableGenerater";
             this.Text = "游戏数据生成器";

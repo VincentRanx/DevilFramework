@@ -3,10 +3,6 @@ using System.Data;
 using System.IO;
 using System.Windows.Forms;
 
-using ExcelApp = Microsoft.Office.Interop.Excel.Application;
-using ExcelBook = Microsoft.Office.Interop.Excel.Workbook;
-using ExcelSheet = Microsoft.Office.Interop.Excel.Worksheet;
-using ExcelRange = Microsoft.Office.Interop.Excel.Range;
 using System.Configuration;
 using System.Collections.Generic;
 
@@ -15,18 +11,16 @@ namespace TableGenerater
 
     public partial class TableGenerater : Form
     {
-        private ExcelApp app;
-        private ExcelBook book;
-        private ExcelSheet sheet;
-        private string openedExcel;
         private string csharpOutput;
         private string jsonOutput;
         private string nameSpace;
         private ClassModel classModel;
+        private ExcelReader excel;
 
         public TableGenerater()
         {
             InitializeComponent();
+            excel = new ExcelReader();
             InitSavedData();  
         }
 
@@ -64,17 +58,7 @@ namespace TableGenerater
 
         private void btnEditExcelFile_Click(object sender, EventArgs e)
         {
-            if (app != null && !string.IsNullOrEmpty(openedExcel) && File.Exists(openedExcel))
-            {
-                if(app.Workbooks.Count == 0)
-                {
-                    book = app.Workbooks.Open(excelFileList.Text);
-                    sheet = book.Worksheets.Item[1];
-                }
-                app.Visible = true;
-                excelFileList.SelectedIndex = -1;
-                openedExcel = null;
-            }
+            excel.Visible = true;
         }
 
         private void SelectExcele()
@@ -86,7 +70,7 @@ namespace TableGenerater
             }
             else
             {
-                excelFileList.SelectedIndex = string.IsNullOrEmpty(openedExcel) ? -1 : excelFileList.Items.IndexOf(openedExcel);
+                excelFileList.SelectedIndex = string.IsNullOrEmpty(excel.CurrentExcel) ? -1 : excelFileList.Items.IndexOf(excel.CurrentExcel);
             }
         }
 
@@ -123,28 +107,14 @@ namespace TableGenerater
 
         private void OpenExcel(string filePath)
         {
-            if (openedExcel == filePath)
+            Errors error = excel.OpenExcel(filePath);
+            if(error != 0)
             {
+                DisplayError(error);
                 return;
             }
-            if (!File.Exists(filePath))
-            {
-                MessageBox.Show("文件不存在！");
-                excelFileList.Items.Remove(filePath);
-                DurableCfg.Cfg.excelFiles.Remove(filePath);
-                return;
-            }
-            if (app == null)
-            {
-                app = new ExcelApp();
-            }
-            openedExcel = filePath;
-            string fileName = Path.GetFileNameWithoutExtension(filePath);
-            dataPreviewGroup.Text = fileName + (ClassModel.IsValidName(fileName)?"":" (不合法)");
-            app.Workbooks.Close();
-            book = app.Workbooks.Open(excelFileList.Text);
-            sheet = book.Worksheets.Item[1];
-            classModel = new ClassModel(nameSpace, fileName, sheet);
+            dataPreviewGroup.Text = excel.FileName + (ClassModel.IsValidName(excel.FileName) ? "" : " (不合法)");
+            classModel = new ClassModel(nameSpace, excel.FileName, excel);
             if (classModel.IsVaild)
             {
                 tableFields.Rows.Clear();
@@ -160,19 +130,10 @@ namespace TableGenerater
             }
         }
 
-        void InitClassModel()
-        {
-
-        }
-
         private void TableGenerater_FormClosing(object sender, FormClosingEventArgs e)
         {
             DurableCfg.Save();
-            if (app != null)
-            {
-                app.Workbooks.Close();
-                app.Quit();
-            }
+            excel.Close();
         }
 
         private void excelFileList_SelectedValueChanged(object sender, EventArgs e)
@@ -185,32 +146,6 @@ namespace TableGenerater
             {
                 OpenExcel(excelFileList.Text);
                 UpdateFileList(excelFileList.Text, excelFileList,10, DurableCfg.Cfg.excelFiles);
-            }
-        }
-
-        private void btnGenerateCsharp_Click(object sender, EventArgs e)
-        {
-            if(classModel != null)
-            {
-                csharpOutput = csharpOutputList.Text ?? "";
-                ClassModel.Errors error = classModel.GenerateCSharp(csharpOutput);
-                if (error != 0)
-                {
-                    if ((error & ClassModel.Errors.no_folder) != 0)
-                    {
-                        DurableCfg.Cfg.csharpOutput.Remove(csharpOutput);
-                        csharpOutputList.Items.Remove(csharpOutput);
-                    }
-                    MessageBox.Show("出错: " + ((int)error).ToString("0000x"), "错误");
-                }
-                else
-                {
-                    MessageBox.Show("生成C#代码已完成");
-                }
-            }
-            else
-            {
-                MessageBox.Show("没有任何Excel文件打开.", "错误");
             }
         }
 
@@ -256,27 +191,59 @@ namespace TableGenerater
             }
         }
 
+        private void btnGenerateCsharp_Click(object sender, EventArgs e)
+        {
+            if (classModel != null)
+            {
+                csharpOutput = csharpOutputList.Text ?? "";
+                Errors error = classModel.GenerateCSharp(csharpOutput);
+                if (error != 0)
+                {
+                    DisplayError(error);
+                }
+                else
+                {
+                    MessageBox.Show("生成C#代码已完成");
+                }
+            }
+            else
+            {
+                MessageBox.Show("没有任何Excel文件打开.", "错误");
+            }
+        }
+
         private void btnGenerateJson_Click(object sender, EventArgs e)
         {
             if(classModel == null || !classModel.IsVaild)
             {
-                MessageBox.Show("配表格式不正确", "错误");
-            }
-            else if (app != null && File.Exists(openedExcel ?? "") && File.Exists(jsonOutputList.Text ?? ""))
-            {
-                if (app.Workbooks.Count == 0)
-                {
-                    book = app.Workbooks.Open(excelFileList.Text);
-                    sheet = book.Worksheets.Item[1];
-                }
-                jsonOutput = jsonOutputList.Text;
-                GenerateProgress genWin = new GenerateProgress(classModel, sheet, jsonOutput);
-                genWin.ShowDialog(this);
+                DisplayError(Errors.no_file | (classModel == null ? 0 : classModel.Error));
             }
             else
             {
-                MessageBox.Show("无法打开文件", "错误");
+                Errors error = excel.Validate();
+                jsonOutput = jsonOutputList.Text;
+                if (!Directory.Exists(jsonOutput))
+                {
+                    error |= Errors.no_folder;
+                }
+                if (error != 0)
+                {
+                    DisplayError(error);
+                    return;
+                }
+                GenerateProgress genWin = new GenerateProgress(classModel, excel, jsonOutput);
+                DialogResult result = genWin.ShowDialog(this);
+                if(result == DialogResult.OK)
+                {
+                    MessageBox.Show("生成数据已完成");
+                }
             }
+           
+        }
+
+        public void DisplayError(Errors error)
+        {
+            MessageBox.Show("Error: " + error.ToString("0000X"));
         }
     }
 }

@@ -15,20 +15,22 @@ using System.Windows.Forms;
 
 namespace TableGenerater
 {
+    public enum Errors
+    {
+        none = 0,
+        invalid_namespace = 0x1,
+        invalid_name = 0x2,
+        invalid_fieldName = 0x4,
+        invalid_type = 0x8,
+        no_id = 0x10,
+        no_folder = 0x20,
+        no_file = 0x40,
+        repeat_property = 0x80,
+    }
+
     public class ClassModel
     {
-        public enum Errors
-        {
-            none = 0,
-            invalid_namespace = 1,
-            invalid_name = 2,
-            invalid_fieldName = 4,
-            invalid_type = 8,
-            no_id = 16,
-            no_folder = 32,
-            repeat_property = 64,
-        }
-
+      
         public class Field
         {
             public string name;
@@ -82,7 +84,7 @@ namespace TableGenerater
 
         HashSet<string> baseType;
 
-        public ClassModel(string nameSpace, string className, ExcelSheet sheet)
+        public ClassModel(string nameSpace, string className, ExcelReader excel)
         {
             baseType = new HashSet<string>();
             baseType.Add("bool");
@@ -93,19 +95,17 @@ namespace TableGenerater
             NameSpace = nameSpace;
             ClassName = className;
             Fields = new List<Field>();
-            ExcelRange range;
             int i = 2;
             while (true)
             {
-                range = sheet.Cells[1, i];
-                if (string.IsNullOrEmpty(range.Text))
+                string range = excel.GetCell(1, i);
+                
+                if (string.IsNullOrEmpty(range))
                     break;
                 Field f = new Field();
-                f.name = range.Text;
-                range = sheet.Cells[2, i];
-                f.primType = range.Text;
-                range = sheet.Cells[3, i];
-                f.comment = range.Text;
+                f.name = range;
+                f.primType = excel.GetCell(2, i);
+                f.comment = excel.GetCell(3, i);
                 f.isArray = Regex.IsMatch(f.primType, "^[a-zA-Z]+\\[[0-9]*\\]$");
                 if (f.isArray)
                 {
@@ -312,6 +312,7 @@ namespace TableGenerater
             File.WriteAllText(Path.Combine(outputFolder, ClassName + ".cs"),fstr.ToString());
             return 0;
         }
+
     }
 
 }

@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using ExcelSheet = Microsoft.Office.Interop.Excel.Worksheet;
@@ -18,7 +13,7 @@ namespace TableGenerater
     partial class GenerateProgress : Form
     {
         ClassModel model;
-        ExcelSheet sheet;
+        ExcelReader excel;
         int totalNum;
         Thread t;
         string output;
@@ -26,21 +21,22 @@ namespace TableGenerater
 
         string currentId;
 
-        public GenerateProgress(ClassModel model, ExcelSheet sheet, string output)
+        public GenerateProgress(ClassModel model, ExcelReader excel, string output)
         {
             InitializeComponent();
             ids = new HashSet<string>();
             this.output = output;
             genProgress.Value = 0;
             this.model = model;
-            this.sheet = sheet;
-            totalNum = Math.Max(1, sheet.UsedRange.Rows.Count);
+            this.excel = excel;
+            totalNum = Math.Max(1, excel.Rows);
             t = new Thread(OnGenJson);
             t.Start();
         }
 
         private void cancel_Click(object sender, EventArgs e)
         {
+            DialogResult = DialogResult.Cancel;
             t.Abort();
             Close();
             Dispose();
@@ -49,13 +45,13 @@ namespace TableGenerater
         void OnGenJson()
         {
             int col = model.Fields.Count;
-            ExcelRange range;
+            string range;
             StringBuilder fstr = new StringBuilder();
             int row = 4;
             while (true)
             {
-                range = sheet.Cells[row, 2];
-                if (string.IsNullOrEmpty(range.Text))
+                range = excel.GetCell(row, 2);
+                if (string.IsNullOrEmpty(range))
                     break;
                 Action refresh = () =>
                 {
@@ -66,11 +62,11 @@ namespace TableGenerater
                 fstr.Append("{");
                 ClassModel.Field f = model.Fields[0];
                 fstr.Append("\"").Append(f.name).Append("\":");
-                fstr.Append(f.GetJsonValue(range.Text));
-                if(f.name == "id" && !ids.Add(range.Text))
+                fstr.Append(f.GetJsonValue(range));
+                if(f.name == "id" && !ids.Add(range))
                 {
                    
-                    currentId = range.Text;
+                    currentId = range;
                     Action box = () => 
                     {
                         MessageBox.Show("重复的id " + currentId, "错误");
@@ -85,9 +81,9 @@ namespace TableGenerater
                 {
                     fstr.Append(",");
                     f = model.Fields[i];
-                    range = sheet.Cells[row, i + 2];
+                    range = excel.GetCell(row, i + 2);
                     fstr.Append("\"").Append(f.name).Append("\":");
-                    fstr.Append(f.GetJsonValue(range.Text));
+                    fstr.Append(f.GetJsonValue(range));
                 }
                 fstr.Append("}\n");
                 row++;
@@ -97,7 +93,7 @@ namespace TableGenerater
             {
                 Close();
                 Dispose();
-                MessageBox.Show("生成数据已完成");
+                DialogResult = DialogResult.OK;
             };
             Invoke(act);
         }
