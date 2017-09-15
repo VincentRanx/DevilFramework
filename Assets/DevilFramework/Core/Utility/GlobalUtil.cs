@@ -13,7 +13,7 @@ namespace DevilTeam.Utility
         /// <param name="start"></param>
         /// <param name="end"></param>
         /// <returns></returns>
-        public static int BinsearchIndex<T>(T[] array, SerializerDelegate<T> serializer, int start, int end)
+        public static int BinsearchIndex<T>(this T[] array, SerializerDelegate<T> serializer, int start, int end)
         {
             int l = start;
             int r = end - 1;
@@ -49,7 +49,7 @@ namespace DevilTeam.Utility
         /// <param name="start"></param>
         /// <param name="end"></param>
         /// <returns></returns>
-        public static T Binsearch<T>(T[] array, SerializerDelegate<T> serializer, int start, int end)
+        public static T Binsearch<T>(this T[] array, SerializerDelegate<T> serializer, int start, int end)
         {
             int index = BinsearchIndex(array, serializer, start, end);
             return index == -1 ? default(T) : array[index];
@@ -64,7 +64,7 @@ namespace DevilTeam.Utility
         /// <param name="start"></param>
         /// <param name="end"></param>
         /// <returns></returns>
-        public static int BinsearchLessEqualIndex<T>(T[] array, SerializerDelegate<T> serializer, int start, int end)
+        public static int BinsearchLessEqualIndex<T>(this T[] array, SerializerDelegate<T> serializer, int start, int end)
         {
             int l = start;
             int r = end - 1;
@@ -102,7 +102,7 @@ namespace DevilTeam.Utility
         /// <param name="start"></param>
         /// <param name="end"></param>
         /// <returns></returns>
-        public static int BinsearchGreaterEqualIndex<T>(T[] array, SerializerDelegate<T> serializer, int start, int end)
+        public static int BinsearchGreaterEqualIndex<T>(this T[] array, SerializerDelegate<T> serializer, int start, int end)
         {
             int l = start;
             int r = end - 1;
@@ -144,15 +144,11 @@ namespace DevilTeam.Utility
             Vector3 projTo = Vector3.ProjectOnPlane(to, normal);
             Vector3 cross = Vector3.Cross(projFrom, projTo);
             float dir = Vector3.Dot(cross, normal);
-            if (dir < 0)
-                dir = -1;
-            else if (dir > 0)
-                dir = 1;
-            return dir;
+            return Mathf.Sign(dir);
         }
 
         /// <summary>
-        /// 计算以normal为发现确定的平面上，从from旋转到to的旋转角度
+        /// 计算以normal为法线确定的平面上，从from旋转到to的旋转角度
         /// </summary>
         /// <param name="from"></param>
         /// <param name="to"></param>
@@ -171,7 +167,7 @@ namespace DevilTeam.Utility
             return dir * Vector3.Angle(projFrom, projTo);
         }
 
-        public static Vector3 AddMagnitude(Vector3 v, float magnitude)
+        public static Vector3 AddMagnitude(this Vector3 v, float magnitude)
         {
             float m = v.magnitude;
             float ma = m + magnitude;
@@ -181,20 +177,7 @@ namespace DevilTeam.Utility
                 return v * ma / m;
         }
 
-        public static Vector3 CloseTo(Vector3 from, Vector3 to, float strength, float devition)
-        {
-            Vector3 v = Vector3.Lerp(from, to, strength);
-            if (Vector3.Distance(v, to) <= devition)
-            {
-                return to;
-            }
-            else
-            {
-                return v;
-            }
-        }
-
-        public static Bounds ScreenBoundsInParent(Camera c, Transform parent)
+        public static Bounds ScreenBoundsRelativeTo(this Camera c, Transform parent)
         {
             if (!c)
                 return default(Bounds);
@@ -210,22 +193,45 @@ namespace DevilTeam.Utility
             return b;
         }
 
-        public static bool IsCurveUseful(AnimationCurve curve)
+        public static Vector3 CloseTo(Vector3 from, Vector3 to, float strength, float devition = 0.001f)
+        {
+            Vector3 v = Vector3.Lerp(from, to, strength);
+            if (Vector3.Distance(v, to) <= devition)
+            {
+                return to;
+            }
+            else
+            {
+                return v;
+            }
+        }
+
+        public static bool IsValid(this AnimationCurve curve)
         {
             return curve != null && curve.length > 1;
         }
 
-        public static float MaxTimeOfCurve(AnimationCurve curve)
+        public static float GetMinTime(this AnimationCurve curve)
+        {
+            return curve.keys[0].time;
+        }
+
+        public static float GetMaxTime(this AnimationCurve curve)
         {
             return curve.keys[curve.length - 1].time;
         }
 
-        public static float EndValueOfCurve(AnimationCurve curve)
+        public static float ClampTime(this AnimationCurve curve, float time)
+        {
+            return Mathf.Clamp(time, curve.GetMinTime(), curve.GetMaxTime());
+        }
+
+        public static float GetEndValue(this AnimationCurve curve)
         {
             return curve.keys[curve.length - 1].value;
         }
 
-        public static float StartValueOfCurve(AnimationCurve curve)
+        public static float GetStartValue(this AnimationCurve curve)
         {
             return curve.keys[0].value;
         }
