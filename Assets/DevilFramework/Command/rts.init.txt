@@ -21,6 +21,37 @@ void loadScene(sceneName)
 	};
 };
 
+global loopTimes = 50000;
+
+void test1()
+{
+	t0 = ticks;
+	global counter = 0;
+	for(;global counter<global loopTimes;global counter++)
+	{
+		a = a * 2;
+	};
+	t1 = ticks;
+	logi("t1 of loops is ", a, " and time is ", toFloat(t1 - t0)/10000000f, "s");
+};
+
+void test2()
+{
+	t0 = ticks;
+	global counter = 0;
+	for(i=0;i<15;i++)
+	{async
+	(
+		for(;global counter<global loopTimes;global counter++)
+		{
+			a = a * 2;
+		}
+	)
+	};
+	t1 = ticks;
+	logi("t1 of loops is ", a, " and time is ", toFloat(t1 - t0)/10000000f, "s");
+};
+
 if global IsChineseSupported then
 {
 	aliasFunction("logi", -1, "打印");

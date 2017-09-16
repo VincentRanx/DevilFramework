@@ -685,9 +685,7 @@ namespace DevilTeam.Command
                             continue;
                         RTSPluginDelegate func = (RTSPluginDelegate)System.Delegate.CreateDelegate(typeof(RTSPluginDelegate), target, methods[i].Name);
                         RTSPluginFunc f = new RTSPluginFunc(null, func, cmd.ArgCount);
-                        mEngine.addFunction(cmd.Name, f);
-                        if (cmd.ArgCount <= 0)
-                            mEngine.addLinker(cmd.Name, new RTSFuncShortcutL());
+                        AddFunction(cmd.Name, f);
                         if (!string.IsNullOrEmpty(cmd.Doc))
                             sets.Add(cmd);
                         //PutLog(Level.debug,

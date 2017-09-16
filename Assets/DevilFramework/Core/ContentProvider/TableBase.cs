@@ -40,42 +40,7 @@ namespace DevilTeam.ContentProvider
         }
 #endif
     }
-
-    public class JsonTable : TableBase
-    {
-        JObject _content;
-        public JObject Content { get { return _content; } }
-
-        public override void Init(JObject jobj)
-        {
-            base.Init(jobj);
-            _content = jobj;
-        }
-
-        public bool HasValue(string key)
-        {
-            return _content != null && _content.Property(key) != null;
-        }
-
-        public T Value<T>(string key)
-        {
-            JToken tok;
-            if (_content != null && _content.TryGetValue(key, out tok))
-            {
-                return tok.ToObject<T>();
-            }
-            else
-            {
-                return default(T);
-            }
-        }
-
-        public override string ToString()
-        {
-            return _content == null ? "" : _content.ToString();
-        }
-    }
-
+    
     // 数据集合
     public class TableSet<T> where T : TableBase, new()
     {
@@ -151,6 +116,29 @@ namespace DevilTeam.ContentProvider
                 reader.Close();
                 reader.Dispose();
             }
+            inst.m_IsLoading = false;
+            return inst;
+        }
+
+        public static TableSet<T> Load(string text)
+        {
+            TableSet<T> inst = Instance;
+            inst.m_IsLoading = true;
+            if (!string.IsNullOrEmpty(text))
+            {
+                string[] txt = text.Split('\n');
+                for(int i = 0; i < txt.Length; i++)
+                {
+                    string s = txt[i].Trim();
+                    if (string.IsNullOrEmpty(s))
+                        continue;
+                    JObject obj = JsonConvert.DeserializeObject<JObject>(s);
+                    T table = new T();
+                    table.Init(obj);
+                    inst.m_Datas[table.Id] = table;
+                }
+            }
+            inst.m_IsLoading = false;
             return inst;
         }
     }

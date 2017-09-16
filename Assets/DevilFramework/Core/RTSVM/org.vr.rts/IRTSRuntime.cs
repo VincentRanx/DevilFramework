@@ -5,7 +5,7 @@ namespace org.vr.rts
     {
         void Yield();
 
-        void AddFunction(string funcName, IRTSFunction func);
+        void AddFunction(string funcName, IRTSFunction func, bool link);
 
         bool LoadRunner(IRTSRunner runner, int threadId);
 

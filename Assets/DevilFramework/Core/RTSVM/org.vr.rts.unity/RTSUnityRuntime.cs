@@ -53,7 +53,6 @@ namespace org.vr.rts.unity
         
 
         [Tooltip("max executable lines per frame.")]
-        [Range(10, 1000)]
         [SerializeField]
         int ticks = 100;
 
@@ -87,26 +86,28 @@ namespace org.vr.rts.unity
 
             mEngine.addLinker("async", new AsyncL(this));
 
-            mEngine.addFunction("type", new RTSPluginFunc(null, _typeof, 1));
-            mEngine.addFunction("size", new RTSPluginFunc(null, sizeOf, 1));
-            mEngine.addFunction("yield", new RTSPluginFunc(null, rtsYield, 0));
-            mEngine.addFunction("sleep", new RTSPluginFunc(null, sleep, 1));
-            mEngine.addFunction("mk_list", new RTSPluginFunc(null, mk_list, 1));
-            mEngine.addFunction("toInt", new RTSPluginFunc(null, toInt, 1));
-            mEngine.addFunction("toFloat", new RTSPluginFunc(null, toFloat, 1));
-            mEngine.addFunction("toLong", new RTSPluginFunc(null, toLong, 1));
-            mEngine.addFunction("toDouble", new RTSPluginFunc(null, toDouble, 1));
-            mEngine.addFunction("toUint", new RTSPluginFunc(null, toUint, 1));
-            mEngine.addFunction("toBool", new RTSPluginFunc(null, toBool, 1));
-            mEngine.addFunction("toString", new RTSPluginFunc(null, toRTSString, 1));
-            mEngine.addFunction("split", new RTSPluginFunc(null, split, 2));
-            mEngine.addFunction("exist", new RTSPluginFunc(null, rtsExist, 1));
-            mEngine.addFunction("logi", new RTSPluginFunc(null, rtsLogI, -1));
-            mEngine.addFunction("logw", new RTSPluginFunc(null, rtsLogW, -1));
-            mEngine.addFunction("loge", new RTSPluginFunc(null, rtsLogE, -1));
-            mEngine.addFunction("compile", new RTSPluginFunc(null, inlineCompile, 1));
-            mEngine.addFunction("aliasOperator", new RTSPluginFunc(null, aliasOperator, 2));
-            mEngine.addFunction("aliasFunction", new RTSPluginFunc(null, aliasFunction, 3));
+            AddFunction("type", new RTSPluginFunc(null, _typeof, 1));
+            AddFunction("size", new RTSPluginFunc(null, sizeOf, 1));
+            AddFunction("yield", new RTSPluginFunc(null, rtsYield, 0));
+            AddFunction("sleep", new RTSPluginFunc(null, sleep, 1));
+            AddFunction("mk_list", new RTSPluginFunc(null, mk_list, 1));
+            AddFunction("toInt", new RTSPluginFunc(null, toInt, 1));
+            AddFunction("toFloat", new RTSPluginFunc(null, toFloat, 1));
+            AddFunction("toLong", new RTSPluginFunc(null, toLong, 1));
+            AddFunction("toDouble", new RTSPluginFunc(null, toDouble, 1));
+            AddFunction("toUint", new RTSPluginFunc(null, toUint, 1));
+            AddFunction("toBool", new RTSPluginFunc(null, toBool, 1));
+            AddFunction("toString", new RTSPluginFunc(null, toRTSString, 1));
+            AddFunction("split", new RTSPluginFunc(null, split, 2));
+            AddFunction("exist", new RTSPluginFunc(null, rtsExist, 1));
+            AddFunction("logi", new RTSPluginFunc(null, rtsLogI, -1));
+            AddFunction("logw", new RTSPluginFunc(null, rtsLogW, -1));
+            AddFunction("loge", new RTSPluginFunc(null, rtsLogE, -1));
+            AddFunction("compile", new RTSPluginFunc(null, inlineCompile, 1));
+            AddFunction("aliasOperator", new RTSPluginFunc(null, aliasOperator, 2));
+            AddFunction("aliasFunction", new RTSPluginFunc(null, aliasFunction, 3));
+            AddFunction("ticks", new RTSPluginFunc(null, dateTimeTick, 0));
+            AddFunction("time", new RTSPluginFunc(null, dateTime, -1));
 
             if (m_SupportChinese)
             {
@@ -174,7 +175,7 @@ namespace org.vr.rts.unity
                         mYield = false;
                         if (!OnRuntimeTick(mThreads[pid]))
                             break;
-                        if (mYield || counter > ticks)
+                        if (mYield || (counter > ticks && ticks > 0))
                         {
                             break;
                         }
@@ -393,6 +394,19 @@ namespace org.vr.rts.unity
             return mEngine.containsVar(RTSString.stringOf(args[0]));
         }
 
+        protected object dateTimeTick(object[] args)
+        {
+            return System.DateTime.Now.Ticks;
+        }
+
+        protected object dateTime(object[] args)
+        {
+            if (args != null && args.Length == 1)
+                return System.DateTime.Now.ToString(RTSString.stringOf(args[0]));
+            else
+                return System.DateTime.Now.ToString();
+        }
+
         #endregion
 
         public virtual IRTSLog logInfo(object msg)
@@ -415,9 +429,13 @@ namespace org.vr.rts.unity
 
         #region opened method
 
-        public void AddFunction(string funcName, IRTSFunction func)
+        public void AddFunction(string funcName, IRTSFunction func, bool autoLink = true)
         {
             mEngine.addFunction(funcName, func);
+            if(autoLink && func.argSize() <= 0)
+            {
+                mEngine.addLinker(funcName, new RTSFuncShortcutL());
+            }
         }
 
         public void Yield()
