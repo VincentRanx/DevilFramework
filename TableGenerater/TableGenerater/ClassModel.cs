@@ -206,6 +206,7 @@ namespace TableGenerater
                     }
                     else
                     {
+                        fstr.Append(f.name).Append("[index] == 0 ? null : ");
                         fstr.Append("TableSet<").Append(f.type).Append(">.Instance[ ");
                         fstr.Append(f.name).Append("[index] ");
                         fstr.Append("]; }\n");
@@ -221,6 +222,7 @@ namespace TableGenerater
                     }
                     else
                     {
+                        fstr.Append(f.name).Append(" == 0 ? null : ");
                         fstr.Append("TableSet<").Append(f.type).Append(">.Instance[").Append(f.name).Append("]");
                     }
                     fstr.Append("; } }\n");

@@ -1,5 +1,4 @@
-﻿using Boo.Lang;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DevilTeam.Utility
 {

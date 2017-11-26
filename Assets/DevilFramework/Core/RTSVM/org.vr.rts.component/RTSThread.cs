@@ -35,6 +35,16 @@ namespace org.vr.rts.component
             return mRunners.length() == 0;
         }
 
+        public void Interrupt()
+        {
+            mRunners.clear();
+            while (mStack.getId() >= 0)
+            {
+                mStack.onRemoved();
+                mStack = (RTSStack)mStack.getSuper();
+            }
+        }
+
         public void resetOutput()
         {
             mOutput = RTSVoid.VOID;
@@ -144,7 +154,6 @@ namespace org.vr.rts.component
                 if (log != null)
                     log.logError(RTSUtil.getEnumDescript(typeof(IRTSDefine.Error), (int)error) + ":" + msg);
                 mRunners.clear();
-
             }
             while (mStack.getId() >= 0)
             {

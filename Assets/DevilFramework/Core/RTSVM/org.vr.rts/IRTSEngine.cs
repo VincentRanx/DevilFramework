@@ -1,9 +1,7 @@
 namespace org.vr.rts
 {
-
-    public interface IRTSEngine
+    public interface IRTSVarPool
     {
-
         object getVar(string varName);
 
         bool containsVar(string varName);
@@ -13,7 +11,10 @@ namespace org.vr.rts
         void addVar(string varName, object var);
 
         void clearVars();
+    }
 
+    public interface IRTSEngine : IRTSVarPool
+    {
         /**
          * ÅÐ¶ÏÊÇ·ñÊÇ¹Ø¼ü´Ê
          * 

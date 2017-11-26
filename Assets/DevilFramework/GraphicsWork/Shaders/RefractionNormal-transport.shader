@@ -20,6 +20,11 @@ Shader "DevilTeam/RefractionNormal-transport"
 
 		Pass
 		{
+			Stencil {
+				Ref 2
+				Comp equal
+			}
+
 			Tags {"LightMode"="ForwardBase"}
 
 			CGPROGRAM

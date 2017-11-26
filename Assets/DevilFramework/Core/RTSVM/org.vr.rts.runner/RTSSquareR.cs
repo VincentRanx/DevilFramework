@@ -1,3 +1,5 @@
+using org.vr.rts.modify;
+
 namespace org.vr.rts.runner
 {
 
@@ -106,7 +108,7 @@ namespace org.vr.rts.runner
         {
             object obj = mVarR == null ? null : mVarR.getOutput();
             object index = mIndexR == null ? null : mIndexR.getOutput();
-            int n = org.vr.rts.modify.RTSInteger.valueOf(index);
+            int n = RTSInteger.valueOf(index);
             if (obj != null && obj is System.Collections.IList)
             {
                 ((System.Collections.IList)obj)[n] = value;

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using System.IO;
 
 namespace TableGenerater
 {
@@ -51,6 +45,7 @@ namespace TableGenerater
 
         public Errors OpenExcel(string filePath)
         {
+            visible = false;
             if (!File.Exists(filePath))
             {
                 if(currExcel == filePath)

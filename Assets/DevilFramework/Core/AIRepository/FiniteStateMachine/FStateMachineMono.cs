@@ -1,25 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DevilTeam.AI
 {
-
     public class FStateMachineMono : MonoBehaviour
     {
-        private FStateMachine m_StateMachine;
+        protected FStateMachine m_StateMachine;
         [SerializeField]
-        private bool m_UseRealTime;
+        protected bool m_UseRealTime;
         [SerializeField]
         [Range(0,100)]
-        private int m_StackSize = 10;
+        protected int m_StackSize = 10;
         [HideInInspector]
         [SerializeField]
-        private FiniteState[] m_States;
+        protected FiniteState[] m_States;
         [HideInInspector]
         [SerializeField]
-        private FiniteStateTransition[] m_Transitions;
+        protected FiniteStateTransition[] m_Transitions;
         [SerializeField]
-        private MonoBehaviour m_OtherImplement;
+        protected MonoBehaviour m_OtherImplement;
 
         protected virtual void Awake()
         {
@@ -79,7 +79,17 @@ namespace DevilTeam.AI
 
         public bool IsDirty { get; set; }
 
-        private void GenerateStates(System.Type type)
+        public bool HasState(string stateName)
+        {
+            for (int i = 0; i < StateLength; i++)
+            {
+                if (m_States[i].m_StateName == stateName)
+                    return true;
+            }
+            return false;
+        }
+
+        private void GenerateStates(Type type)
         {
             object[] methods = Utility.Ref.GetMethodsWithAttribute<FStateAttribute>(type, true);
             if (methods == null)
@@ -147,17 +157,7 @@ namespace DevilTeam.AI
             allstates.Values.CopyTo(m_States, 0);
         }
 
-        public bool HasState(string stateName)
-        {
-            for(int i = 0; i < StateLength; i++)
-            {
-                if (m_States[i].m_StateName == stateName)
-                    return true;
-            }
-            return false;
-        }
-
-        private void GenerateTransitions(System.Type type)
+        private void GenerateTransitions(Type type)
         {
 
             object[] methods = Utility.Ref.GetMethodsWithAttribute<FStateTransitionAttribute>(type, true);
@@ -190,23 +190,17 @@ namespace DevilTeam.AI
                     transitions.Add(ft);
                 }
             }
-            transitions.Sort((x, y) => string.IsNullOrEmpty(x.m_FromState) ? 1 : -1);
+            transitions.Sort((x, y) => string.IsNullOrEmpty(x.m_FromState) || string.IsNullOrEmpty(x.m_ToState) ? 1 : -1);
             m_Transitions = transitions.ToArray();
         }
 
-        [ContextMenu("初始化状态机", true)]
-        public bool CanGenerateStateMachine()
-        {
-            return !Application.isPlaying;
-        }
-
-        [ContextMenu("初始化状态机")]
-        public void GenerateStateMachine()
+        public virtual void GenerateStateMachine()
         {
             MonoBehaviour impl = m_OtherImplement ?? this;
-            System.Type type = impl.GetType();
+            Type type = impl.GetType();
             GenerateStates(type);
             GenerateTransitions(type);
+            UnityEditor.EditorUtility.SetDirty(this);
             IsDirty = true;
         }
 

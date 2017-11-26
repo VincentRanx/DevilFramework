@@ -1,4 +1,6 @@
-﻿namespace DevilTeam
+﻿using System.Xml;
+
+namespace DevilTeam
 {
     public delegate bool FilterDelegate<T>(T target);
 
@@ -18,27 +20,44 @@
 
     public delegate void SetterDelegate<T, V>(T target, V value);
 
-    public enum ExecuteMode
+    public enum EExecuteMode
     {
         asynchronous,
         synchronized,
     }
 
-    public enum CoordType2D
+    public enum ECoordType2D
     {
         local,
         uv,
     }
 
-    public enum CurveType
+    public enum ECurveType
     {
         Spline,
         Bezier,
+    }
+
+    public enum ETimeType
+    {
+        real_time,
+        scaled_time,
     }
 
     public interface ITick
     {
         void OnTick(float deltaTime);
     }
+
+    public interface INamed
+    {
+        string Name { get; }
+    }
     
+    public interface IXmlSerializable
+    {
+        XmlElement Serialize(XmlDocument doc);
+
+        void Deserialize(XmlElement element);
+    }
 }

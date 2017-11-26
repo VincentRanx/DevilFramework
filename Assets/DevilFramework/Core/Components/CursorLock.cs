@@ -6,7 +6,8 @@ namespace DevilTeam
     public class CursorLock : MonoBehaviour
     {
 
-        public bool m_LockCursor;
+        [SerializeField]
+        bool m_LockCursor;
 
         private CursorLockMode mDefautlMode;
 
@@ -43,6 +44,26 @@ namespace DevilTeam
             if (m_LockCursor)
             {
                 Cursor.lockState = mDefautlMode;
+            }
+        }
+
+        public bool LockCursor
+        {
+            get { return m_LockCursor; }
+            set
+            {
+                if (m_LockCursor ^ value)
+                {
+                    m_LockCursor = value;
+                    if (m_LockCursor)
+                    {
+                        Cursor.lockState = CursorLockMode.Locked;
+                    }
+                    else
+                    {
+                        Cursor.lockState = mDefautlMode;
+                    }
+                }
             }
         }
 

@@ -1,0 +1,11 @@
+<BTNode name="" type="9" comment="预设行为库&#xD;&#xA;这是一个特殊节点，您可以在它下面创建一些常用的行为树作为预设，以后可以快速选择其中的内容，它的所有子节点平行，表示一个个的预设体。" editable="False" size="(90,90)" collapse="False" priority="0" intInput="0" floatInput="0" module="" text="">
+  <BTNode name="" type="1" comment="类似算啦 士大夫吉林省方式立刻分手分手类似发" editable="True" size="(75,50)" collapse="True" priority="0" intInput="0" floatInput="0" module="?-" text="">
+    <BTNode name="" type="1" comment="" editable="True" size="(75,50)" collapse="False" priority="0" intInput="0" floatInput="0" module="?-" text="">
+      <BTNode name="" type="5" comment="" editable="True" size="(75,50)" collapse="False" priority="0" intInput="1" floatInput="0" module="DevilTeam.AI.BehaviourGraph-AddPriority" text="" />
+    </BTNode>
+    <BTNode name="" type="1" comment="" editable="True" size="(75,50)" collapse="False" priority="0" intInput="0" floatInput="0" module="?-" text="">
+      <BTNode name="" type="5" comment="" editable="True" size="(75,50)" collapse="False" priority="0" intInput="0" floatInput="5" module="DevilTeam.AI.BehaviourGraph-WaitForSeconds" text="" />
+      <BTNode name="" type="5" comment="" editable="True" size="(75,50)" collapse="False" priority="0" intInput="0" floatInput="0" module="Test-BehaviourC" text="" />
+    </BTNode>
+  </BTNode>
+</BTNode>

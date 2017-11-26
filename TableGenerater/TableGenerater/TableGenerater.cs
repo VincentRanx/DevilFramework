@@ -243,7 +243,7 @@ namespace TableGenerater
 
         public void DisplayError(Errors error)
         {
-            MessageBox.Show("Error: " + error.ToString("0000X"));
+            MessageBox.Show("Error: " + error.ToString("X"));
         }
     }
 }

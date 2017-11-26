@@ -243,7 +243,7 @@ namespace DevilTeam.AI
         // 开始状态机
         public void OnBegin()
         {
-#if UNITY_EDITOR
+#if DEBUG_AI && UNITY_EDITOR
             Debug.Log("Begin StateMachine: " + m_Name + " @ " + m_TickCount);
 #endif
             m_Active = true;
@@ -299,7 +299,7 @@ namespace DevilTeam.AI
             {
                 m_CurrentState.OnEnd();
             }
-#if UNITY_EDITOR
+#if DEBUG_AI && UNITY_EDITOR
             Debug.Log("End StateMachine: " + m_Name + " @ " + m_TickCount);
 #endif
             m_TickCount = 0;

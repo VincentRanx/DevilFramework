@@ -5,7 +5,7 @@ namespace DevilTeam
 {
     public class CurvePath : MonoBehaviour
     {
-        public CurveType m_Type;
+        public ECurveType m_Type;
 
         public Vector3[] m_Points;
 

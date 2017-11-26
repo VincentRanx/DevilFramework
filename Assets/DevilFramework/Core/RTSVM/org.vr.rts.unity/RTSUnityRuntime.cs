@@ -4,10 +4,10 @@ using org.vr.rts.modify;
 using org.vr.rts.util;
 using org.vr.rts.component;
 using org.vr.rts.advance;
+using System.Collections.Generic;
 
 namespace org.vr.rts.unity
 {
-
     public class RTSUnityRuntime : MonoBehaviour, IRTSLog, IRTSRuntime
     {
         
@@ -65,6 +65,7 @@ namespace org.vr.rts.unity
         protected RTSCompiler mCompiler;
         protected RTSThread[] mThreads;
         protected RTSThread mImmediateT;
+        protected Dictionary<string, List<string>> mMsgHandler = new Dictionary<string, List<string>>();
 
         int mRunningThreads;
         bool mYield;
@@ -108,6 +109,9 @@ namespace org.vr.rts.unity
             AddFunction("aliasFunction", new RTSPluginFunc(null, aliasFunction, 3));
             AddFunction("ticks", new RTSPluginFunc(null, dateTimeTick, 0));
             AddFunction("time", new RTSPluginFunc(null, dateTime, -1));
+            AddFunction("registMsg", new RTSPluginFunc(null, registMessage, 2));
+            AddFunction("unregistMsg", new RTSPluginFunc(null, unregistMessage, 2));
+            AddFunction("sendMsg", new RTSPluginFunc(null, sendMessage, -1));
 
             if (m_SupportChinese)
             {
@@ -405,6 +409,64 @@ namespace org.vr.rts.unity
                 return System.DateTime.Now.ToString(RTSString.stringOf(args[0]));
             else
                 return System.DateTime.Now.ToString();
+        }
+
+        object sendMessage(object[] args)
+        {
+            if (args == null || args.Length < 1)
+            {
+                logError("Can't match parameters.");
+            }
+            List<string> funcs = mMsgHandler[RTSString.stringOf(args[0])];
+            object[] argValues = args.Length > 1 ? new object[args.Length - 1] : null;
+            if (argValues != null)
+            {
+                for (int i = 0; i < argValues.Length; i++)
+                {
+                    argValues[i] = args[i + 1];
+                }
+            }
+            return new RTSFuncListR(null, funcs.ToArray(), args.Length - 1, argValues);
+        }
+
+        object registMessage(object[] args)
+        {
+            string msg = RTSString.stringOf(args[0]);
+            string func = RTSString.stringOf(args[1]);
+            if (!string.IsNullOrEmpty(msg) && !string.IsNullOrEmpty(func))
+            {
+                List<string> funcs;
+                if (!mMsgHandler.TryGetValue(msg, out funcs))
+                {
+                    funcs = new List<string>();
+                    mMsgHandler[msg] = funcs;
+                }
+                funcs.Add(func);
+            }
+            else
+            {
+                logWarning("Both msg name and function name are required.");
+            }
+            return RTSVoid.VOID;
+        }
+
+        object unregistMessage(object[] args)
+        {
+            string msg = RTSString.stringOf(args[0]);
+            string func = RTSString.stringOf(args[1]);
+            if (!string.IsNullOrEmpty(msg) && !string.IsNullOrEmpty(func))
+            {
+                List<string> funcs;
+                if (mMsgHandler.TryGetValue(msg, out funcs))
+                {
+                    funcs.Remove(func);
+                }
+            }
+            else
+            {
+                logWarning("Both msg name and function name are required.");
+            }
+            return RTSVoid.VOID;
         }
 
         #endregion

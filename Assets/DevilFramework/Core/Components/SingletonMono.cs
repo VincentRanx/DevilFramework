@@ -29,7 +29,7 @@ namespace DevilTeam
             if (sInstance && (sInstance != this))
             {
 #if UNITY_EDITOR
-                Debug.LogError(string.Format("There are more than one SingletonMono of {0}, check it first.\nWe found {1} and {2}",
+                Debug.LogWarning(string.Format("There are more than one SingletonMono of {0}, check it first.\nWe found {1} and {2}",
                     GetType().ToString(), name, sInstance.name));
 #endif
                 Destroy(this);

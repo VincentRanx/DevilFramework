@@ -7,7 +7,7 @@ namespace org.vr.rts
      * @author Administrator
      * 
      */
-    public interface IRTSStack
+    public interface IRTSStack : IRTSVarPool
     {
 
         int getId();
@@ -17,16 +17,6 @@ namespace org.vr.rts
         IRTSStack makeChild(int id);
 
         void onRemoved();
-
-        object getVar(string varName);
-
-        bool containsVar(string varName);
-
-        void removeVar(string varName);
-
-        void addVar(string varName, object var);
-
-        void clearVars();
 
         IRTSThread getThread();
 

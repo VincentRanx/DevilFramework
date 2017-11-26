@@ -9,6 +9,7 @@ namespace DevilTeam.Utility
     public class StringUtil
     {
         private const string INVALID_CHAR_SET = ",<.>/?;:'\"[{]}\\|`~!@#$%^&*()-=+ \r\n\t";
+        // to全角
         public static string ToSBC(string text)
         {
             char[] c = text.ToCharArray();

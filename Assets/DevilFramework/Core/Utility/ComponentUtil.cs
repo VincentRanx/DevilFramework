@@ -2,8 +2,10 @@
 
 namespace DevilTeam.Utility
 {
-    public class ComponentUtil
+    public static class ComponentUtil
     {
+
+        public const string TAG_MAIN_CAMERA = "Main";
 
         public static Camera ActiveCameraForLayer(int layer)
         {
@@ -17,6 +19,44 @@ namespace DevilTeam.Utility
                 }
             }
             return null;
+        }
+
+        public static Camera MainCamera
+        {
+            get
+            {
+                Camera[] cams = Camera.allCameras;
+                int want = 0;
+                Camera cam = null;
+                for (int i = 0; i < cams.Length; i++)
+                {
+                    int w = cams[i].MostWantedValueForMain();
+                    if (w > want)
+                    {
+                        want = w;
+                        cam = cams[i];
+                    }
+                }
+                return cam;
+            }
+        }
+
+        public static int MostWantedValueForMain(this Camera cam)
+        {
+            if (!cam)
+                return 0;
+            int n = 1;
+            if (cam.isActiveAndEnabled)
+                n |= 0x40000;
+            if (cam.targetTexture == null)
+                n |= 0x20000;
+            if (cam.tag == TAG_MAIN_CAMERA)
+                n |= 0x10000;
+            if (cam.clearFlags == CameraClearFlags.Skybox)
+                n |= 0x8000;
+            if (cam.clearFlags == CameraClearFlags.SolidColor)
+                n |= 0x4000;
+            return n;
         }
 
         public static T GetComponentInParent<T>(Transform trans, bool considerSelf = false) where T : Component
@@ -54,7 +94,7 @@ namespace DevilTeam.Utility
             else
             {
                 int len = root.childCount;
-                for(int i = 0; i < len; i++)
+                for (int i = 0; i < len; i++)
                 {
                     Transform trans = root.GetChild(i);
                     trans = MatchRecursive(trans, filter);

@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using DevilTeam.Utility;
 using System.Collections.Generic;
-using org.vr.rts.advance;
 using org.vr.rts.modify;
 
 namespace DevilTeam.Command
@@ -12,7 +11,6 @@ namespace DevilTeam.Command
     {
         RTSRuntimeEditor mCmd;
         Dictionary<string, System.Type> mUnityTypes = new Dictionary<string, System.Type>();
-        Dictionary<string, List<string>> mMsgHandler = new Dictionary<string, List<string>>();
 
         void LoadUnityTypes()
         {
@@ -105,46 +103,5 @@ namespace DevilTeam.Command
         {
             return Ref.NewInstance(args[0] as System.Type);
         }
-
-        [RTSPlugin(Name = "sendMsg", ArgCount = -1, Define = "runner sendMsg(msgName, args... )", Doc = "Send Message")]
-        object sendMessage(object[] args)
-        {
-            if(args == null || args.Length < 1)
-            {
-                mCmd.logError("Can't match parameters.");
-            }
-            List<string> funcs = mMsgHandler[RTSString.stringOf(args[0])];
-            object[] argValues = args.Length > 1 ? new object[args.Length - 1] : null;
-            if (argValues != null)
-            {
-                for (int i = 0; i < argValues.Length; i++)
-                {
-                    argValues[i] = args[i + 1];
-                }
-            }
-            return new RTSFuncListR(null, funcs.ToArray(), args.Length - 1, argValues);
-        }
-
-        [RTSPlugin(Name = "handleMsg", ArgCount = 2, Define = "void handleMsg(msgName, functionName)", Doc = "Handle Message")]
-        object handleMessage(object[] args)
-        {
-            string msg = RTSString.stringOf(args[0]);
-            string func = RTSString.stringOf(args[1]);
-            if (!string.IsNullOrEmpty(msg) && !string.IsNullOrEmpty(func))
-            {
-                List<string> funcs;
-                if(!mMsgHandler.TryGetValue(msg,out funcs))
-                {
-                    funcs = new List<string>();
-                    mMsgHandler[msg] = funcs;
-                }
-                funcs.Add(func);
-            }
-            else
-            {
-                mCmd.logWarning("Both msg name and function name are required.");
-            }
-            return RTSVoid.VOID;
-        }
-    }
+    }        
 }

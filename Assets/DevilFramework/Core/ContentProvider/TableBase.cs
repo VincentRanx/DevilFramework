@@ -141,5 +141,19 @@ namespace DevilTeam.ContentProvider
             inst.m_IsLoading = false;
             return inst;
         }
+
+        public static TableSet<T> LoadFromResources(string resPath)
+        {
+            TableSet<T> inst = Instance;
+            TextAsset asset = Resources.Load<TextAsset>(resPath);
+            if (asset)
+            {
+                return Load(asset.text);
+            }
+            else
+            {
+                return inst;
+            }
+        }
     }
 }

@@ -5,7 +5,7 @@ namespace DevilTeam.Utility
     public class TCRSpline
     {
         /// <summary>
-        /// 根据采样点获取一条平滑曲线 (copy from iTween)
+        /// 根据采样点获取一条平滑曲线
         /// </summary>
         /// <param name="samplePoints">最小长度为2点</param>
         /// <returns></returns>

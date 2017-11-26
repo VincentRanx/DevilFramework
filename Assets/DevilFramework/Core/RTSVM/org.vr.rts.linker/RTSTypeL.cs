@@ -124,7 +124,7 @@ namespace org.vr.rts.linker
 
         override public string ToString()
         {
-            return org.vr.rts.util.RTSUtil.linkString(' ', mSrc, mVarName, mArg, mBody);
+            return RTSUtil.linkString(' ', mSrc, mVarName, mArg, mBody);
         }
     }
 }

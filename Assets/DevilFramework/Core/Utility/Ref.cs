@@ -13,7 +13,7 @@ using System.Collections.Generic;
 namespace DevilTeam.Utility
 {
 
-    public class Ref
+    public static class Ref
     {
         public static object NewInstance(System.Type tp)
         {
@@ -33,6 +33,18 @@ namespace DevilTeam.Utility
             Debug.LogWarning("Reflection is not supported but \"Ref.NewInstance(Type)\" require it!");
             return null;
 #endif
+        }
+
+        public static bool IsTypeInheritedFrom(System.Type type, System.Type baseType, bool considerSelf = true)
+        {
+            System.Type tp = considerSelf ? type : type.BaseType;
+            while(tp != null)
+            {
+                if (tp == baseType)
+                    return true;
+                tp = tp.BaseType;
+            }
+            return false;
         }
 
         public static object GetProperty(object target, string propertyName)
@@ -275,6 +287,24 @@ namespace DevilTeam.Utility
 
 #endif
 
+        public static T GetCustomAttribute<T>(object memberInfo) where T : System.Attribute
+        {
+#if USE_REFLECTION
+            MemberInfo field = memberInfo as MemberInfo;
+            object[] attr = field.GetCustomAttributes(true);
+            for (int i = 0; i < attr.Length; i++)
+            {
+                if (attr[i] is T)
+                    return attr[i] as T;
+            }
+            return null;
+#else
+            Debug.LogWarning("Reflection is not supported but \"Ref.GetCustomAttribute<T>(MemberInfo)\" require it!");
+            return null;
+#endif
+        }
+
+
         public static object[] GetMethodsWithAttribute<T>(System.Type type, bool inherit = true) where T : System.Attribute
         {
 #if USE_REFLECTION
@@ -292,6 +322,24 @@ namespace DevilTeam.Utility
             return methods.ToArray();
 #else
             Debug.LogWarning("Reflection is not supported but \"Ref.GetMethodsWithAttribute<T>(Type)\" require it!");
+            return null;
+#endif
+        }
+
+        public static object[] GetMethodsWithParams(System.Type type, System.Type retType, System.Type[] paramTypes)
+        {
+#if UNITY_EDITOR
+            List<MethodInfo> methods = new List<MethodInfo>();
+            MethodInfo[] mtds = type.GetMethods(BindingFlags.Instance | BindingFlags.Public);
+            for(int i = 0; i < mtds.Length; i++)
+            {
+                if(MatchMethodRetAndParams(mtds[i], retType, paramTypes))
+                {
+                    methods.Add(mtds[i]);
+                }
+            }
+            return methods.ToArray();
+#else
             return null;
 #endif
         }

@@ -181,7 +181,7 @@ namespace DevilTeam.Editor
                     Reposition(fsm);
                     fsm.IsDirty = false;
                 }
-                stateClipRect = QuickGUI.ReportView(stateViewPos, OnDrawFSMGraphCallback, Mathf.Max(350f, stateClipRect.width * 0.75f), 80);
+                QuickGUI.ReportView(ref stateClipRect, stateViewPos, OnDrawFSMGraphCallback, Mathf.Max(350f, stateClipRect.width * 0.75f), 80);
                 stateClipRectCenter = stateClipRect.size * 0.5f;
 
                 QuickGUI.EndContents();
@@ -245,7 +245,7 @@ namespace DevilTeam.Editor
             Vector2 nor = dir.normalized * 15f;
             Vector2 normal = new Vector2(-nor.y, nor.x);
             normal = normal * 0.5f;
-            Vector2 p = to - nor;
+            //Vector2 p = to - nor;
             Vector2 tmp1 = to - (nor - normal);
             Handles.DrawLine(tmp1, to);
             Vector2 tmp2 = to - (nor + normal);
@@ -343,7 +343,7 @@ namespace DevilTeam.Editor
         void DrawStates()
         {
             bool click = Event.current.type == EventType.mouseDown && Event.current.button == 0;
-            bool release = Event.current.type == EventType.mouseUp && Event.current.button == 0;
+            //bool release = Event.current.type == EventType.mouseUp && Event.current.button == 0;
             if (click)
             {
                 interceptedState = -1;

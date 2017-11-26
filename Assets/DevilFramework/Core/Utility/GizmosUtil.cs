@@ -1,64 +1,33 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace DevilTeam.Utility
 {
     public class GizmosUtil
     {
 
-        public static void DrawWireOvalSphere2D(Vector3 pos, Vector2 size, Quaternion rotate, int mount)
+        public static void DrawWireOvalSphere2D(Vector3 pos, Vector3 forward, Vector3 up, Vector2 size, bool showCross = false, int samples = 40)
         {
-            if (size.x == 0 || size.y == 0)
-                return;
-            Vector2 rad = size * 0.5f;
-            Matrix4x4 rotM = new Matrix4x4();
-            rotM.SetTRS(pos, rotate, Vector3.one);
-            Matrix4x4 defM = Gizmos.matrix;
-            Gizmos.matrix = defM * rotM;
-            Vector3 p0 = new Vector3(-rad.x, 0);
-            float f = Mathf.PI / (float)mount;
-            Vector3 p1 = new Vector3();
-            Vector3 t0, t1;
-            for (int i = 1; i <= mount; i++)
+            Matrix4x4 def = Gizmos.matrix;
+            Gizmos.matrix = def * Matrix4x4.TRS(pos, Quaternion.LookRotation(forward, up), size);
+            if (showCross)
             {
-                p1.x = -Mathf.Cos(f * i) * rad.x;
-                p1.y = Mathf.Sqrt(rad.y * rad.y * (1f - p1.x * p1.x / (rad.x * rad.x)));
-                Gizmos.DrawLine(p0, p1);
-                t0 = p0;
-                t0.y = -t0.y;
-                t1 = p1;
-                t1.y = -t1.y;
-                Gizmos.DrawLine(t0, t1);
-                p0 = p1;
+                Gizmos.DrawLine(Vector3.left, Vector3.right);
+                Gizmos.DrawLine(Vector3.down, Vector3.up);
             }
-            Gizmos.matrix = defM;
-        }
-
-        public static void DrawWireOvalSphere3D(Vector3 pos, Vector3 size, int mount)
-        {
-            Gizmos.color = Color.blue;
-            GizmosUtil.DrawWireOvalSphere2D(pos, new Vector2(size.x, size.y),
-                Quaternion.identity, 30);
-
-            Gizmos.color = Color.red;
-            GizmosUtil.DrawWireOvalSphere2D(pos, new Vector2(size.z, size.y),
-                Quaternion.LookRotation(Vector3.right), 30);
-
-            Gizmos.color = Color.green;
-            GizmosUtil.DrawWireOvalSphere2D(pos, new Vector2(size.x, size.z),
-                Quaternion.LookRotation(Vector3.up), 30);
-        }
-
-        public static void DrawWireOvalSphere3D(Color color, Vector3 pos, Vector3 size, int mount)
-        {
-            Gizmos.color = color;
-            GizmosUtil.DrawWireOvalSphere2D(pos, new Vector2(size.x, size.y),
-                Quaternion.identity, 30);
-
-            GizmosUtil.DrawWireOvalSphere2D(pos, new Vector2(size.z, size.y),
-                Quaternion.LookRotation(Vector3.right), 30);
-
-            GizmosUtil.DrawWireOvalSphere2D(pos, new Vector2(size.x, size.z),
-                Quaternion.LookRotation(Vector3.up), 30);
+            int len = Math.Max(10, samples);
+            float ang = 360f / len;
+            Vector3 p0 = Vector3.right * 0.5f;
+            Vector3 a, b;
+            a = p0;
+            for (int i = 0; i < len;)
+            {
+                Quaternion rot = Quaternion.AngleAxis(ang * ++i, Vector3.forward);
+                b = rot * p0;
+                Gizmos.DrawLine(a, b);
+                a = b;
+            }
+            Gizmos.matrix = def;
         }
 
         public static void MarkLine(Vector3 worldPos, float length, float rad)

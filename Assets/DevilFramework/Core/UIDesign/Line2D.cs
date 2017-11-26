@@ -8,7 +8,7 @@ namespace DevilTeam.UI
     public class Line2D : MaskableGraphic
     {
         [SerializeField]
-        private CoordType2D m_CoordType;
+        private ECoordType2D m_CoordType;
 
         [SerializeField]
         private Vector3[] m_Points;
@@ -51,7 +51,7 @@ namespace DevilTeam.UI
 
         public Vector2 Calculate2DPos(Vector3 p)
         {
-            if (m_CoordType == CoordType2D.uv)
+            if (m_CoordType == ECoordType2D.uv)
             {
                 return new Vector2(Mathf.Lerp(mTempRect.min.x, mTempRect.max.x, p.x), Mathf.Lerp(mTempRect.min.y, mTempRect.max.y, p.y));
             }

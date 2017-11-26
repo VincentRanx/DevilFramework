@@ -1,3 +1,4 @@
+using DevilTeam;
 using org.vr.rts.linker;
 using org.vr.rts.modify;
 using org.vr.rts.util;
@@ -6,7 +7,6 @@ namespace org.vr.rts.component
 {
     public class RTSEngine : IRTSEngine
     {
-
         private IRTSLinker mDefaultLinker;
         private System.Collections.Generic.Dictionary<string, IRTSLinker> mLinkers;
         private System.Collections.Generic.Dictionary<string, IRTSFunction> mFuncs;
@@ -73,23 +73,6 @@ namespace org.vr.rts.component
             mLinkers.Add(":", lin);
             lin = new RTSQuestionL();
             mLinkers.Add("?", lin);
-            //
-            lin = new RTSTypeL(RTSGeneral.TYPE);
-            mLinkers.Add("var", lin);
-            lin = new RTSTypeL(RTSString.TYPE);
-            mLinkers.Add("string", lin);
-            lin = new RTSTypeL(RTSInteger.TYPE);
-            mLinkers.Add("int", lin);
-            lin = new RTSTypeL(RTSLong.TYPE);
-            mLinkers.Add("long", lin);
-            lin = new RTSTypeL(RTSFloat.TYPE);
-            mLinkers.Add("float", lin);
-            lin = new RTSTypeL(RTSDouble.TYPE);
-            mLinkers.Add("double", lin);
-            lin = new RTSTypeL(RTSBool.TYPE);
-            mLinkers.Add("bool", lin);
-            lin = new RTSTypeL(RTSVoid.TYPE);
-            mLinkers.Add("void", lin);
 
             lin = new RTSNotL();
             mLinkers.Add("!", lin);
@@ -152,6 +135,7 @@ namespace org.vr.rts.component
             mLinkers.Add("or", lin);
             lin = new RTSLogicL(IRTSDefine.Linker.XOR);
             mLinkers.Add("^", lin);
+            mLinkers.Add("xor", lin);
             //
             lin = new RTSStackActL(IRTSDefine.Stack.ACTION_RETURN);
             mLinkers.Add("return", lin);
@@ -166,6 +150,25 @@ namespace org.vr.rts.component
             mLinkers.Add("true", lin);
             lin = new RTSVariableL(false);
             mLinkers.Add("false", lin);
+            //
+            lin = new RTSTypeL(RTSGeneral.TYPE);
+            mLinkers.Add("var", lin);
+            lin = new RTSTypeL(RTSString.TYPE);
+            mLinkers.Add("string", lin);
+            lin = new RTSTypeL(RTSInteger.TYPE);
+            mLinkers.Add("int", lin);
+            lin = new RTSTypeL(RTSLong.TYPE);
+            mLinkers.Add("long", lin);
+            lin = new RTSTypeL(RTSFloat.TYPE);
+            mLinkers.Add("float", lin);
+            lin = new RTSTypeL(RTSDouble.TYPE);
+            mLinkers.Add("double", lin);
+            lin = new RTSTypeL(RTSBool.TYPE);
+            mLinkers.Add("bool", lin);
+            lin = new RTSTypeL(RTSVoid.TYPE);
+            mLinkers.Add("void", lin);
+            lin = new RTSTypeL(RTSRegisterType.TYPE);
+            mLinkers.Add("register", lin);
 
             mTypes = new RTSSortedMap<System.Type, IRTSType>(8);
             mTypes.add(typeof(bool), RTSBool.TYPE);
@@ -174,6 +177,7 @@ namespace org.vr.rts.component
             mTypes.add(typeof(float), RTSFloat.TYPE);
             mTypes.add(typeof(double), RTSDouble.TYPE);
             mTypes.add(typeof(string), RTSString.TYPE);
+            mTypes.add(typeof(RTSRegister), RTSRegisterType.TYPE);
 
         }
 

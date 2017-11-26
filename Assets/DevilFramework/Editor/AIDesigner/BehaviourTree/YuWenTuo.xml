@@ -1,0 +1,21 @@
+<BehaviourGraph root="0">
+  <Node-List>
+    <Node position="(5,-4)" isRoot="true" />
+    <Node position="(5,88)">
+      <Behaviour id="1" comment="" module="?-" nodeType="1" priority="0" sort="0" int="0" float="0" string="" />
+    </Node>
+    <Node position="(0.8642578,185.3895)">
+      <Behaviour id="6" comment="" module="HeroBehaviour-LocalMoveTo" nodeType="5" priority="0" sort="0" int="0" float="0" string="" />
+    </Node>
+    <Node position="(199.8643,51.38953)">
+      <InputData priority="0" int="0" float="1" string="(0.2,0,10)" />
+    </Node>
+  </Node-List>
+  <Link-List layer="0">
+    <Link from="0" to="1" />
+    <Link from="1" to="2" />
+  </Link-List>
+  <Link-List layer="1">
+    <Link from="2" to="3" />
+  </Link-List>
+</BehaviourGraph>

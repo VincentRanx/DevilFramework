@@ -98,7 +98,7 @@ namespace DevilTeam.AI
 
         public void OnBegin()
         {
-#if UNITY_EDITOR
+#if DEBUG_AI && UNITY_EDITOR
             Debug.Log(string.Format("Begin State: {0}", m_StateName));
 #endif
             if (m_BeginDelegate != null)
@@ -110,7 +110,7 @@ namespace DevilTeam.AI
 
         public void OnEnd()
         {
-#if UNITY_EDITOR
+#if DEBUG_AI && UNITY_EDITOR
             Debug.Log(string.Format("End State: {0}", m_StateName));
 #endif
             if (m_EndDelegate != null)

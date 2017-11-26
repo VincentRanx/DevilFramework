@@ -1,9 +1,11 @@
 ﻿using UnityEditor;
+using UnityEngine;
 
 namespace DevilTeam.Editor
 {
     public class Installizer
     {
+        public static string InstallRoot { get; private set; }
 
         [InitializeOnLoadMethod]
         static void OnUnityLoaded()
@@ -19,6 +21,7 @@ namespace DevilTeam.Editor
                 {
                     path = path.Substring(0, path.Length - ends.Length);
                     EditorPrefs.SetString("Devil.Root", path);
+                    InstallRoot = path;
                 }
             }
         }

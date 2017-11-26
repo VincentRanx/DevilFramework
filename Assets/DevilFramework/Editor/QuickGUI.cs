@@ -234,16 +234,21 @@ namespace DevilTeam.Editor
 
         public static int MultiOptionBar(int selected, string[] titles, params GUILayoutOption[] options)
         {
+            return MultiOptionBar(selected, titles, 0, titles.Length, options);
+        }
+
+        public static int MultiOptionBar(int selected, string[] titles, int start, int end, params GUILayoutOption[] options)
+        {
             int ret = selected;
             EditorGUILayout.BeginHorizontal(options);
             string dest;
             float width;
-            for (int i = 0; i < titles.Length; i++)
+            for (int i = start; i < end; i++)
             {
                 int p = 0x1 << i;
                 bool v = (selected & p) != 0;
                 bool nv;
-                string sty = titles.Length == 1 ? "button" : (i == 0 ? "ButtonLeft" : (i == titles.Length - 1 ? "ButtonRight" : "ButtonMid"));
+                string sty = titles.Length == 1 ? "button" : (i == 0 ? "ButtonLeft" : (i == end - 1 ? "ButtonRight" : "ButtonMid"));
                 if (WidthOption(titles[i], out dest, out width))
                     nv = GUILayout.Toggle(v, dest, sty, GUILayout.Width(width));
                 else
@@ -427,15 +432,15 @@ namespace DevilTeam.Editor
             GUILayout.Space(3f);
         }
         
-        static public Rect ReportView(Vector2 position, System.Action drawCallback, float height = 300, float grid = 50, string title = "Viewport" )
+        static public void ReportView(ref Rect clipRect, Vector2 position, System.Action drawCallback, float height = 300, float grid = 50, string title = "Viewport" )
         {
-            Rect rect = EditorGUILayout.BeginHorizontal("AS TextArea", GUILayout.Height(height));
+            Rect rect = EditorGUILayout.BeginHorizontal("CurveEditorBackground", GUILayout.Height(height));
             if(rect.width > 1)
             {
                 cachedViewportRect = rect;
             }
 
-            Rect clipRect = cachedViewportRect;
+            clipRect = cachedViewportRect;
             clipRect.xMin += 1;
             clipRect.xMax -= 1;
             clipRect.yMin += 1;
@@ -444,10 +449,11 @@ namespace DevilTeam.Editor
             EditorGUI.BeginDisabledGroup(true);
             GUILayout.Label(title);
             EditorGUI.EndDisabledGroup();
+
             GUI.BeginClip(clipRect);
             if (grid > 0)
             {
-                Handles.color = Color.gray;
+                Handles.color = Color.gray * 0.5f;
                 float h = Mathf.Repeat(-position.x, grid);
                 while (h < rect.xMax)
                 {
@@ -468,7 +474,6 @@ namespace DevilTeam.Editor
                 drawCallback();
             GUI.EndClip();
             EditorGUILayout.EndHorizontal();
-            return clipRect;
         }
     }
 }

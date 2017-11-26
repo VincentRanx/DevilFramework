@@ -1,0 +1,33 @@
+<BehaviourGraph root="0">
+  <Node-List>
+    <Node position="(0,0)" isRoot="true" />
+    <Node position="(-262.7975,58.60248)">
+      <InputData priority="0" int="0" float="0d" string="attack" />
+    </Node>
+    <Node position="(-146.5884,238.2813)">
+      <Behaviour id="2" comment="" module="HeroBehaviour-Input" nodeType="5" priority="0" sort="0" int="0" float="0" string="attack" />
+    </Node>
+    <Node position="(-4.588409,106.2812)">
+      <Behaviour id="3" comment="" module="" nodeType="1" priority="0" sort="0" int="0" float="0" string="" />
+    </Node>
+    <Node position="(183.4116,239.2812)">
+      <Behaviour id="4" comment="" module="DevilTeam.AI.BehaviourGraph-WaitForSeconds" nodeType="5" priority="0" sort="0" int="0" float="1" string="abc" />
+    </Node>
+    <Node position="(342.4116,71.28122)">
+      <InputData priority="0" int="0" float="1" string="abc" />
+    </Node>
+    <Node position="(-7.088379,280.2813)">
+      <Behaviour id="0" comment="" module="HeroBehaviour-IsGrounded" nodeType="6" priority="0" sort="0" int="0" float="0" string="" />
+    </Node>
+  </Node-List>
+  <Link-List layer="0">
+    <Link from="0" to="3" />
+    <Link from="3" to="2" />
+    <Link from="3" to="4" />
+    <Link from="3" to="6" />
+  </Link-List>
+  <Link-List layer="1">
+    <Link from="2" to="1" />
+    <Link from="4" to="5" />
+  </Link-List>
+</BehaviourGraph>

@@ -86,7 +86,7 @@ namespace DevilTeam.Editor
             CheckTarget();
             bool dirty = false;
             GUILayout.Space(10);
-            CurveType tp = (CurveType)EditorGUILayout.EnumPopup(mPath.m_Type);
+            ECurveType tp = (ECurveType)EditorGUILayout.EnumPopup(mPath.m_Type);
             if(tp != mPath.m_Type)
             {
                 mPath.m_Type = tp;
