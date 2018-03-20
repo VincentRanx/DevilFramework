@@ -1,0 +1,8 @@
+{
+    "name": "DevilAssembly-GamePlay",
+    "references": [
+        "DevilAssembly-Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

@@ -8,12 +8,14 @@ namespace DevilEditor
 {
     public class BehaviourNodeGUI : PaintElement
     {
+        public const float FONT_SIZE = 17;
+        public const float SUB_FONT_SIZE = 12;
+
         public int BTExecutionOrder { get; set; }
-        public EBTNodeType BTNodeType { get; set; }
-        public List<string> decorators = new List<string>();
-        public List<string> services = new List<string>();
+        public List<BehaviourMeta> conditions = new List<BehaviourMeta>();
+        public List<BehaviourMeta> services = new List<BehaviourMeta>();
         public int BTNodeId { get; set; }
-        public string BTNodeName { get; set; }
+        public BehaviourMeta BTNodeName { get; set; }
         public EBTTaskState BTRuntimeState { get; set; }
 
         bool mUseEvents;
@@ -21,8 +23,9 @@ namespace DevilEditor
         BehaviourTreeDesignerWindow mWindow;
         bool mDrag;
         float mDecoratorHeight;
-        string mInteractDecorator;
-        string mInteractService;
+        BehaviourMeta mInteractDecorator;
+        BehaviourMeta mInteractService;
+        string mError;
 
         public BehaviourNodeGUI(BehaviourTreeDesignerWindow window) : base()
         {
@@ -31,28 +34,33 @@ namespace DevilEditor
 
         public Vector2 CalculateLocalSize()
         {
-            Installizer.titleStyle.fontSize = 20;
-            Vector2 size = Installizer.SizeOfTitle(BTNodeName);
-            Installizer.contentStyle.fontSize = 12;
+            Installizer.titleStyle.fontSize = (int)FONT_SIZE;
+            Vector2 size = Installizer.SizeOfTitle(BTNodeName.DisplayName);
+            Installizer.contentStyle.fontSize = (int)SUB_FONT_SIZE;
             size.x += 7;
             size.y += 7;
             Vector2 tmp;
-            for(int i = 0; i < decorators.Count; i++)
+            for(int i = 0; i < conditions.Count; i++)
             {
-                tmp = Installizer.SizeOfContent(decorators[i]);
+                tmp = Installizer.SizeOfContent(conditions[i].DisplayName);
                 mDecoratorHeight = tmp.y;
                 size.x = Mathf.Max(tmp.x + 5, size.x);
                 size.y += mDecoratorHeight;
             }
             for(int i = 0; i < services.Count; i++)
             {
-                tmp = Installizer.SizeOfContent(services[i]);
+                tmp = Installizer.SizeOfContent(services[i].DisplayName);
                 mDecoratorHeight = tmp.y;
                 size.x = Mathf.Max(tmp.x + 5, size.x);
                 size.y += mDecoratorHeight;
             }
             size.y += 30;
             return size;
+        }
+
+        public void CheckError()
+        {
+            //mError = "No Parent.";
         }
 
         public override void OnGUI(Rect clipRect)
@@ -101,7 +109,7 @@ namespace DevilEditor
         {
             mInteractDecorator = null;
             mInteractService = null;
-            Installizer.contentStyle.fontSize = (int)Mathf.Max(1, 12 * GlobalScale);
+            Installizer.contentStyle.fontSize = (int)Mathf.Max(1, SUB_FONT_SIZE * GlobalScale);
             Rect r = new Rect();
             float w = (LocalRect.width - 10) * GlobalScale;
             float h = mDecoratorHeight * GlobalScale;
@@ -109,25 +117,26 @@ namespace DevilEditor
             float x0 = GlobalRect.center.x - w * 0.5f;
             bool editmode = !mWindow.ContextMenu.Visible && mWindow.EditMode == BehaviourTreeDesignerWindow.ENodeEditMode.none && h > 13;
             // decorators
-            r.size = new Vector2(w, h * decorators.Count);
+            r.size = new Vector2(w, h * conditions.Count);
             r.position = new Vector2(x0, y0);
             GUI.Label(r, "", "ProjectBrowserIconAreaBg");
             r.size = new Vector2(w, h);
             Rect btn = new Rect();
             btn.size = new Vector2(20, 20);
             float bx = x0 + w - 10;
-            for (int i = 0; i < decorators.Count; i++)
+            for (int i = 0; i < conditions.Count; i++)
             {
                 r.position = new Vector2(x0, y0 + i * h);
                 btn.center = new Vector2(bx, r.center.y);
                 bool inter = editmode && r.Contains(mWindow.GlobalMousePosition);
                 if (inter)
-                    mInteractDecorator = decorators[i];
-                Installizer.contentContent.text = string.Format("<color={0}>{1} <b>?</b></color>", inter ? "yellow" : "white", decorators[i]);
+                    mInteractDecorator = conditions[i];
+                Installizer.contentContent.text = string.Format("<color={0}>{1}</color>", inter ? "yellow" : "white", conditions[i].DisplayName);
                 if (inter && GUI.Button(btn, "", "WinBtnCloseActiveMac"))
                 {
-                    decorators.RemoveAt(i);
+                    conditions.RemoveAt(i);
                     Resize();
+                    CheckError();
                     break;
                 }
                 GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
@@ -145,47 +154,44 @@ namespace DevilEditor
                 bool inter = editmode && r.Contains(mWindow.GlobalMousePosition);
                 if (inter)
                     mInteractService = services[i];
-                Installizer.contentContent.text = string.Format("<i><color={0}>{1}</color></i>", inter ? "yellow" : "white", services[i]);
+                Installizer.contentContent.text = string.Format("<color={0}>{1}</color>", inter ? "yellow" : "white", services[i].DisplayName);
                 GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
                 if (inter && GUI.Button(btn, "", "WinBtnCloseActiveMac"))
                 {
                     services.RemoveAt(i);
                     Resize();
+                    CheckError();
                     break;
                 }
             }
             // content
-            r.size = new Vector2(w, GlobalRect.height - 30 * GlobalScale - h * (decorators.Count + services.Count));
-            y0 = GlobalRect.yMin + 15 * GlobalScale + decorators.Count * h;
+            r.size = new Vector2(w, GlobalRect.height - 30 * GlobalScale - h * (conditions.Count + services.Count));
+            y0 = GlobalRect.yMin + 15 * GlobalScale + conditions.Count * h;
             r.position = new Vector2(x0, y0);
-            switch (BTNodeType)
+                GUI.Label(r, "", BTNodeName.FrameStyle);
+            Texture2D tex = BTNodeName.Icon;
+            if (tex != null)
             {
-                case EBTNodeType.selector:
-                    GUI.Label(r, "", "flow node 1");
-                    break;
-                case EBTNodeType.sequence:
-                    GUI.Label(r, "", "flow node 2");
-                    break;
-                case EBTNodeType.parallel:
-                    GUI.Label(r, "", "flow node 5");
-                    break;
-                case EBTNodeType.task:
-                    GUI.Label(r, "", "flow node 3");
-                    break;
-                default:
-                    GUI.Label(r, "", "flow node 0");
-                    break;
+                GUI.DrawTexture(r, tex, ScaleMode.ScaleToFit);
             }
-            //GUI.Label(r, "", "Icon.OutlineBorder");
-            Installizer.titleStyle.fontSize = (int)Mathf.Max(1, 20 * GlobalScale);
-            Installizer.titleContent.text = BTNodeName;
-            GUI.Label(r, Installizer.titleContent, Installizer.titleStyle);
-
+            else
+            {
+                //GUI.Label(r, "", "Icon.OutlineBorder");
+                Installizer.titleStyle.fontSize = (int)Mathf.Max(1, FONT_SIZE * GlobalScale);
+                Installizer.titleContent.text = BTNodeName.DisplayName;
+                GUI.Label(r, Installizer.titleContent, Installizer.titleStyle);
+            }
             r.size = new Vector2(GlobalRect.width, 20);
             r.position = new Vector2(GlobalRect.xMin, GlobalRect.yMin - 20);
             GUI.Label(r, string.Format("<size=12><color={0}>[{1}]</color></size>",
                 BTExecutionOrder == 0 ? "red" : "green",
                 BTExecutionOrder == 0 ? "-" : BTExecutionOrder.ToString()));
+            if (!string.IsNullOrEmpty(mError))
+            {
+                r.size = new Vector2(200, 50);
+                r.position = new Vector2(GlobalRect.xMin, GlobalRect.yMax);
+                GUI.Label(r, string.Format("<size=13><b><color=red>{0}</color></b></size>", mError));
+            }
         }
 
         bool CanLinkBetween(BehaviourNodeGUI from, BehaviourNodeGUI to)
@@ -222,7 +228,7 @@ namespace DevilEditor
             rect.size = new Vector2(LocalRect.width - 30, 15) * GlobalScale;
             if(rect.size.y > 3)
             {
-                bool editmode = !mWindow.ContextMenu.Visible && mWindow.EditMode == BehaviourTreeDesignerWindow.ENodeEditMode.none;
+                bool editmode = !EditorApplication.isPlayingOrWillChangePlaymode && !mWindow.ContextMenu.Visible && mWindow.EditMode == BehaviourTreeDesignerWindow.ENodeEditMode.none;
                 rect.center = new Vector2(GlobalRect.center.x, GlobalRect.yMax - rect.size.y * 0.5f);
                 bool inrect = rect.Contains(mWindow.GlobalMousePosition);
                 if(mWindow.EditTarget == this && mWindow.EditMode == BehaviourTreeDesignerWindow.ENodeEditMode.modify_child)
@@ -363,12 +369,22 @@ namespace DevilEditor
         public BehaviourTreeAsset.BTNodeInfo InstantNodeInfo()
         {
             BehaviourTreeAsset.BTNodeInfo node = new BehaviourTreeAsset.BTNodeInfo();
-            node.m_Name = BTNodeName;
+            node.m_Name = BTNodeName.Name;
             node.m_Id = BTNodeId;
             node.m_Pos = new Vector2(LocalRect.center.x, LocalRect.yMin);
-            node.m_Type = BTNodeType;
-            node.m_Services = services.ToArray();
-            node.m_Decorators = decorators.ToArray();
+            node.m_Type = BTNodeName.NodeType;
+            string[] servs = new string[services.Count];
+            for(int i = 0; i < servs.Length; i++)
+            {
+                servs[i] = services[i].Name;
+            }
+            node.m_Services = servs;
+            string[] decos = new string[conditions.Count];
+            for(int i = 0; i < decos.Length; i++)
+            {
+                decos[i] = conditions[i].Name;
+            }
+            node.m_Conditions = decos;
             return node;
         }
     }

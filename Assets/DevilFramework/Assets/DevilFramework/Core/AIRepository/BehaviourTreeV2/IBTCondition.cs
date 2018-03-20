@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Devil.AI
 {
-    public interface IBTDecorator
+    public interface IBTCondition
     {
         bool IsSuccess(BehaviourTreeRunner behaviourTree);
     }

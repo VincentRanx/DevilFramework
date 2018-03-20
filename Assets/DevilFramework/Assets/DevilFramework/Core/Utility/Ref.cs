@@ -1,5 +1,5 @@
 ﻿// reflection methods.
-#if !UNITY_IOS
+#if !UNITY_IOS || UNITY_EDITOR
 #define USE_REFLECTION
 #endif
 

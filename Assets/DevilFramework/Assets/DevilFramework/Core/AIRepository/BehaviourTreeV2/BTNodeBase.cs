@@ -28,9 +28,9 @@ namespace Devil.AI
         public int ChildLength { get { return mChildLen; } }
         BTNodeBase[] mChildren;
 
-        int mDecoratorLen;
-        public int DecoratorLength { get { return mDecoratorLen; } }
-        IBTDecorator[] mDecorators;
+        int mConditionLen;
+        public int DecoratorLength { get { return mConditionLen; } }
+        IBTCondition[] mDecorators;
 
         int mServiceLen;
         public int ServiceLength { get { return mServiceLen; } }
@@ -38,23 +38,33 @@ namespace Devil.AI
 
         public EBTTaskState State { get; protected set; }
 
-        public BTNodeBase(int id, int decoratorLen, int childLength, int serviceLen)
+        //public BTNodeBase(int id, int conditionLen, int childLength, int serviceLen)
+        //{
+        //    mNodeId = id;
+        //    InitDecoratorSize(conditionLen, childLength, serviceLen);
+        //}
+
+        public BTNodeBase(int id)
         {
             mNodeId = id;
-            mDecoratorLen = decoratorLen;
-            mChildLen = childLength;
+        }
+
+        public void InitDecoratorSize(int conditionLen, int childLen, int serviceLen)
+        {
+            mConditionLen = conditionLen;
+            mChildLen = childLen;
             mServiceLen = serviceLen;
-            if (childLength > 0)
+            if (childLen > 0)
             {
-                mChildren = new BTNodeBase[childLength];
+                mChildren = new BTNodeBase[childLen];
             }
             if (serviceLen > 0)
             {
                 mServices = new IBTService[serviceLen];
             }
-            if (decoratorLen > 0)
+            if (conditionLen > 0)
             {
-                mDecorators = new IBTDecorator[decoratorLen];
+                mDecorators = new IBTCondition[conditionLen];
             }
         }
 
@@ -74,12 +84,12 @@ namespace Devil.AI
             }
         }
 
-        public IBTDecorator GetDecorator(int index)
+        public IBTCondition GetCondition(int index)
         {
             return mDecorators[index];
         }
 
-        public void SetDecorator(int index, IBTDecorator decorator)
+        public void SetCondition(int index, IBTCondition decorator)
         {
             mDecorators[index] = decorator;
         }
@@ -98,7 +108,7 @@ namespace Devil.AI
         {
             for (int i = 0; i < DecoratorLength; i++)
             {
-                IBTDecorator decor = GetDecorator(i);
+                IBTCondition decor = GetCondition(i);
                 if (decor != null && !decor.IsSuccess(runner))
                 {
                     return false;

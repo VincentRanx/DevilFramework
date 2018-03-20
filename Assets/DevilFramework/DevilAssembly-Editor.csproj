@@ -5,9 +5,9 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{861B6A4B-6A6F-8534-CE74-9CAECCD22DD6}</ProjectGuid>
+    <ProjectGuid>{F8450E2C-D3BE-938D-A013-C8BB96A026B0}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>Assembly-CSharp-Editor</AssemblyName>
+    <AssemblyName>DevilAssembly-Editor</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{E097FAD1-6243-4DAD-9C02-E9B9EFC3FFC1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
@@ -285,25 +285,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Logic.csproj">
-      <Project>{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}</Project>
-      <Name>Logic</Name>
-    </ProjectReference>
     <ProjectReference Include="DevilAssembly-Core.csproj">
       <Project>{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}</Project>
       <Name>DevilAssembly-Core</Name>
     </ProjectReference>
-    <ProjectReference Include="DevilAssembly-GamePlay.csproj">
-      <Project>{508531BD-5776-F174-3A07-15151A020BEC}</Project>
-      <Name>DevilAssembly-GamePlay</Name>
-    </ProjectReference>
-    <ProjectReference Include="AIModules.csproj">
-      <Project>{D9EEDA40-651F-0F70-3066-9561C115EE18}</Project>
-      <Name>AIModules</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourMeta.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourNodeGUI.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourRootGUI.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourTreeContextMenuGUI.cs" />
@@ -334,7 +321,6 @@
     <None Include="Assets\DevilFramework\Core\GraphicsWork\Shaders\ImageBlendEffect.shader" />
     <None Include="Assets\DevilFramework\Core\GraphicsWork\Shaders\RefractionNormal-transport.shader" />
     <None Include="Assets\DevilFramework\Core\GraphicsWork\Shaders\UI-Advance.shader" />
-    <None Include="Assets\GitIgnored\Shaders\MultiPassShade.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />

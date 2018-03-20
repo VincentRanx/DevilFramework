@@ -26,7 +26,7 @@ namespace DevilEditor
             if (EditorApplication.isPlaying)
                 width *= 1.7f;
             width = Mathf.Clamp(width, 1, 20);
-            float height = 30 * GlobalScale;
+            float height = 15 * GlobalScale;
             int from, to;
             Vector2 start;
             Vector2 end;

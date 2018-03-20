@@ -1,7 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevilFramework", "DevilFramework.csproj", "{D552D1EE-9DFD-6307-EFF6-72B9B0EEF175}"
+# Visual Studio 2017
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevilAssembly-Core", "DevilAssembly-Core.csproj", "{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIModules", "AIModules.csproj", "{D9EEDA40-651F-0F70-3066-9561C115EE18}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevilAssembly-GamePlay", "DevilAssembly-GamePlay.csproj", "{508531BD-5776-F174-3A07-15151A020BEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logic", "Logic.csproj", "{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevilFramework.Editor", "DevilFramework.Editor.csproj", "{861B6A4B-6A6F-8534-CE74-9CAECCD22DD6}"
 EndProject
@@ -11,10 +17,22 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D552D1EE-9DFD-6307-EFF6-72B9B0EEF175}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D552D1EE-9DFD-6307-EFF6-72B9B0EEF175}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D552D1EE-9DFD-6307-EFF6-72B9B0EEF175}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D552D1EE-9DFD-6307-EFF6-72B9B0EEF175}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9EEDA40-651F-0F70-3066-9561C115EE18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9EEDA40-651F-0F70-3066-9561C115EE18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9EEDA40-651F-0F70-3066-9561C115EE18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9EEDA40-651F-0F70-3066-9561C115EE18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{508531BD-5776-F174-3A07-15151A020BEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{508531BD-5776-F174-3A07-15151A020BEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{508531BD-5776-F174-3A07-15151A020BEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{508531BD-5776-F174-3A07-15151A020BEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{861B6A4B-6A6F-8534-CE74-9CAECCD22DD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{861B6A4B-6A6F-8534-CE74-9CAECCD22DD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{861B6A4B-6A6F-8534-CE74-9CAECCD22DD6}.Release|Any CPU.ActiveCfg = Release|Any CPU

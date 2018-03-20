@@ -4,13 +4,13 @@ using UnityEngine;
 
 namespace Devil.AI
 {
+    [BehaviourTree(FrameStyle = "flow node 1", DisplayName = "SELECTOR")]
     public class BTSelector : BTNodeBase
     {
         int mVisitIndex;
 
-        public BTSelector(int id, int decoratorLen, int childLength, int serviceLen) : base(id, decoratorLen, childLength, serviceLen)
+        public BTSelector(int id) : base(id)
         {
-
         }
 
         public override BTNodeBase ChildForVisit

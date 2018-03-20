@@ -22,10 +22,8 @@ namespace DevilEditor
         public EMode Mode { get; private set; }
         float mScrollOffset;
         bool mDragEnd;
-        string mContextDecorator;
-        string mContextService;
-        int mScrollStartIndex = 0;
-        int mScrollEndIndex = 100;
+        BehaviourMeta mContextDecorator;
+        BehaviourMeta mContextService;
         string mSearchContext = "";
 
         Rect mScrollRect;
@@ -51,7 +49,7 @@ namespace DevilEditor
             }
         }
 
-        public void ShowContext(PaintElement context, string contextDecorator = null, string contextService = null)
+        public void ShowContext(PaintElement context, BehaviourMeta contextDecorator = null, BehaviourMeta contextService = null)
         {
             if (EditorApplication.isPlaying)
                 return;
@@ -122,7 +120,7 @@ namespace DevilEditor
 
         void OnContextDecoratorGUI()
         {
-            string title = mContextDecorator ?? mContextService;
+            BehaviourMeta title = mContextDecorator ?? mContextService;
             if (title == null)
                 return;
             Vector2 tsize = new Vector2(200 * GlobalScale, 25 * GlobalScale);
@@ -134,7 +132,7 @@ namespace DevilEditor
             r.position = GlobalRect.position;
             GUI.Label(r, "", "flow overlay box");
             Installizer.contentContent.text = string.Format(
-                mContextDecorator != null ? "<color=yellow><b>{0}</b> ?</color>" : "<color=yellow><b><i>{0}</i></b></color>", title);
+                mContextDecorator != null ? "<color=yellow><b>{0}</b> ?</color>" : "<color=yellow><b>{0}</b></color>", title.DisplayName);
             GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
             r.position += Vector2.up * tsize.y;
             Handles.color = Color.gray;
@@ -220,9 +218,9 @@ namespace DevilEditor
 
             // decorators
             r.size = dsize;
-            for (int i = 0; i < mWindow.Decorators.Count; i++)
+            for (int i = 0; i < Installizer.BTConditions.Count; i++)
             {
-                if(search && !mWindow.Decorators[i].ToLower().Contains(mSearchContext))
+                if(search && !Installizer.BTConditions[i].SearchName.Contains(mSearchContext))
                 {
                     continue;
                 }
@@ -231,19 +229,19 @@ namespace DevilEditor
                     r.position += Vector2.up * dsize.y;
                     continue;
                 }
-                bool owns = node.decorators.Contains(mWindow.Decorators[i]);
+                bool owns = node.conditions.Contains(Installizer.BTConditions[i]);
                 bool inter = r.Contains(Event.current.mousePosition);
                 Installizer.contentContent.text = string.Format("<color={0}>{1} <b>?</b></color>",
-                   inter ? "yellow" : "white", mWindow.Decorators[i]);
+                   inter ? "yellow" : "white", Installizer.BTConditions[i].DisplayName);
                 GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
                 btn.center = new Vector2(r.xMax - 12, r.center.y);
                 if (inter && editmode && GUI.Button(btn, "", owns ? "WinBtnCloseActiveMac" : "WinBtnMaxActiveMac"))
                 {
                     Visible = false;
                     if (owns)
-                        node.decorators.Remove(mWindow.Decorators[i]);
+                        node.conditions.Remove(Installizer.BTConditions[i]);
                     else
-                        node.decorators.Add(mWindow.Decorators[i]);
+                        node.conditions.Add(Installizer.BTConditions[i]);
                     node.Resize();
                 }
                 r.position += Vector2.up * dsize.y;
@@ -257,9 +255,9 @@ namespace DevilEditor
 
             // services
             r.size = dsize;
-            for (int i = 0; i < mWindow.Services.Count; i++)
+            for (int i = 0; i < Installizer.BTServices.Count; i++)
             {
-                if (search && !mWindow.Services[i].ToLower().Contains(mSearchContext))
+                if (search && !Installizer.BTServices[i].SearchName.Contains(mSearchContext))
                 {
                     continue;
                 }
@@ -268,19 +266,19 @@ namespace DevilEditor
                     r.position += Vector2.up * dsize.y;
                     continue;
                 }
-                bool owns = node.services.Contains(mWindow.Services[i]);
+                bool owns = node.services.Contains(Installizer.BTServices[i]);
                 bool inter = r.Contains(Event.current.mousePosition);
-                Installizer.contentContent.text = string.Format("<color={0}><i>{1}</i></color>",
-                   inter ? "yellow" : "white", mWindow.Services[i]);
+                Installizer.contentContent.text = string.Format("<color={0}>{1}</color>",
+                   inter ? "yellow" : "white", Installizer.BTServices[i].DisplayName);
                 GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
                 btn.center = new Vector2(r.xMax - 12, r.center.y);
                 if (inter && editmode && GUI.Button(btn, "", owns ? "WinBtnCloseActiveMac" : "WinBtnMaxActiveMac"))
                 {
                     Visible = false;
                     if (owns)
-                        node.services.Remove(mWindow.Services[i]);
+                        node.services.Remove(Installizer.BTServices[i]);
                     else
-                        node.services.Add(mWindow.Services[i]);
+                        node.services.Add(Installizer.BTServices[i]);
                     node.Resize();
                 }
                 r.position += Vector2.up * dsize.y;
@@ -294,56 +292,57 @@ namespace DevilEditor
             rect.size = new Vector2(160, 70) * GlobalScale;
             float h = rect.size.y;
             rect.position = new Vector2(GlobalRect.xMin + 5 * GlobalScale, GlobalRect.yMin + 5 * GlobalScale);
-            DrawNode(EBTNodeType.selector, rect);
+            //DrawNode(EBTNodeType.selector, rect);
             rect.position += Vector2.up * h;
-            DrawNode(EBTNodeType.sequence, rect);
+            //DrawNode(EBTNodeType.sequence, rect);
             rect.position += Vector2.up * h;
-            DrawNode(EBTNodeType.parallel, rect);
+            //DrawNode(EBTNodeType.parallel, rect);
             float x = GlobalRect.xMin + 170 * GlobalScale;
             Handles.color = Color.gray;
             Handles.DrawLine(new Vector3(x, GlobalRect.yMin), new Vector3(x, GlobalRect.yMax));
             OnTaskList();
         }
 
-        void DrawNode(EBTNodeType type, Rect rect)
-        {
-            GUI.Label(rect, "", "flow node 0");
-            Rect r = new Rect();
-            r.size = new Vector2(rect.width - 30 * GlobalScale, 15 * GlobalScale);
-            r.center = new Vector2(rect.center.x, rect.yMin + r.size.y * 0.5f);
-            GUI.Label(r, "", "textarea");
-            r.center = new Vector2(rect.center.x, rect.yMax - r.size.y * 0.5f);
-            GUI.Label(r, "", "textarea");
-            r.size = new Vector2(rect.width - 10 * GlobalScale, rect.height - 30 * GlobalScale);
-            r.center = rect.center;
-            Installizer.titleStyle.fontSize = (int)Mathf.Max(1, 20 * GlobalScale);
-            switch (type)
-            {
-                case EBTNodeType.selector:
-                    GUI.Label(r, "", "flow node 1");
-                    break;
-                case EBTNodeType.sequence:
-                    GUI.Label(r, "", "flow node 2");
-                    break;
-                case EBTNodeType.parallel:
-                    GUI.Label(r, "", "flow node 5");
-                    break;
-                default:
-                    break;
-            }
-            Installizer.titleContent.text = type.ToString().ToUpper();
-            if (GUI.Button(rect, Installizer.titleContent, Installizer.titleStyle))
-            {
-                Visible = false;
-                mWindow.AddChild(Context, type, null, new Vector2(LocalRect.xMin + 85, LocalRect.yMin));
-            }
-        }
+        //void DrawNode(EBTNodeType type, Rect rect)
+        //{
+        //    GUI.Label(rect, "", "flow node 0");
+        //    Rect r = new Rect();
+        //    r.size = new Vector2(rect.width - 30 * GlobalScale, 15 * GlobalScale);
+        //    r.center = new Vector2(rect.center.x, rect.yMin + r.size.y * 0.5f);
+        //    GUI.Label(r, "", "textarea");
+        //    r.center = new Vector2(rect.center.x, rect.yMax - r.size.y * 0.5f);
+        //    GUI.Label(r, "", "textarea");
+        //    r.size = new Vector2(rect.width - 10 * GlobalScale, rect.height - 30 * GlobalScale);
+        //    r.center = rect.center;
+        //    Installizer.titleStyle.fontSize = (int)Mathf.Max(1, 20 * GlobalScale);
+
+        //    switch (type)
+        //    {
+        //        case EBTNodeType.selector:
+        //            GUI.Label(r, "", "flow node 1");
+        //            break;
+        //        case EBTNodeType.sequence:
+        //            GUI.Label(r, "", "flow node 2");
+        //            break;
+        //        case EBTNodeType.parallel:
+        //            GUI.Label(r, "", "flow node 5");
+        //            break;
+        //        default:
+        //            break;
+        //    }
+        //    Installizer.titleContent.text = type.ToString().ToUpper();
+        //    if (GUI.Button(rect, Installizer.titleContent, Installizer.titleStyle))
+        //    {
+        //        Visible = false;
+        //        mWindow.AddChild(Context, type, null, new Vector2(LocalRect.xMin + 85, LocalRect.yMin));
+        //    }
+        //}
 
         void OnTaskList()
         {
             Vector2 tsize = new Vector2(200 * GlobalScale, 25 * GlobalScale);
             Vector2 dsize = new Vector2(200 * GlobalScale, 20 * GlobalScale);
-            BehaviourNodeGUI node = Context as BehaviourNodeGUI;
+            PaintElement node = Context;
             Rect r = new Rect();
             float delta = 0;
             r.size = new Vector2(tsize.x, 22);
@@ -372,9 +371,9 @@ namespace DevilEditor
 
             // plugins
             r.size = dsize;
-            for (int i = 0; i < mWindow.Plugins.Count; i++)
+            for (int i = 0; i < Installizer.BTControllers.Count; i++)
             {
-                if (search && !mWindow.Plugins[i].ToLower().Contains(mSearchContext))
+                if (search && !Installizer.BTControllers[i].SearchName.Contains(mSearchContext))
                 {
                     continue;
                 }
@@ -385,13 +384,13 @@ namespace DevilEditor
                 }
                 bool inter = r.Contains(Event.current.mousePosition);
                 Installizer.contentContent.text = string.Format("<color={0}>{1}</color>",
-                   inter ? "yellow" : "white", mWindow.Plugins[i]);
+                   inter ? "yellow" : "white", Installizer.BTControllers[i].DisplayName);
                 GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
                 btn.center = new Vector2(r.xMax - 12, r.center.y);
                 if (inter && editmode && GUI.Button(btn, "", "WinBtnMaxActiveMac"))
                 {
                     Visible = false;
-                    mWindow.AddChild(Context, EBTNodeType.plugin, mWindow.Plugins[i], new Vector2(LocalRect.xMin + 85, LocalRect.yMin));
+                    mWindow.AddChild(Context, Installizer.BTControllers[i], new Vector2(LocalRect.xMin + 85, LocalRect.yMin));
                 }
                 r.position += Vector2.up * dsize.y;
             }
@@ -404,9 +403,9 @@ namespace DevilEditor
 
             // tasks
             r.size = dsize;
-            for (int i = 0; i < mWindow.Tasks.Count; i++)
+            for (int i = 0; i < Installizer.BTTasks.Count; i++)
             {
-                if (search && !mWindow.Tasks[i].ToLower().Contains(mSearchContext))
+                if (search && !Installizer.BTTasks[i].SearchName.Contains(mSearchContext))
                 {
                     continue;
                 }
@@ -417,13 +416,13 @@ namespace DevilEditor
                 }
                 bool inter = r.Contains(Event.current.mousePosition);
                 Installizer.contentContent.text = string.Format("<color={0}>{1}</color>",
-                   inter ? "yellow" : "white", mWindow.Tasks[i]);
+                   inter ? "yellow" : "white", Installizer.BTTasks[i].DisplayName);
                 GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
                 btn.center = new Vector2(r.xMax - 12, r.center.y);
                 if (inter && editmode && GUI.Button(btn, "", "WinBtnMaxActiveMac"))
                 {
                     Visible = false;
-                    mWindow.AddChild(Context, EBTNodeType.task, mWindow.Tasks[i], new Vector2(LocalRect.xMin + 85, LocalRect.yMin));
+                    mWindow.AddChild(Context, Installizer.BTTasks[i], new Vector2(LocalRect.xMin + 85, LocalRect.yMin));
                 }
                 r.position += Vector2.up * dsize.y;
             }

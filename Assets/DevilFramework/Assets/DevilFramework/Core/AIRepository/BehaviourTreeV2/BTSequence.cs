@@ -4,11 +4,12 @@ using UnityEngine;
 
 namespace Devil.AI
 {
+    [BehaviourTree(FrameStyle = "flow node 1", DisplayName = "SEQUENCE")]
     public class BTSequence : BTNodeBase
     {
         int mVisitIndex;
 
-        public BTSequence(int id, int decoratorLen, int childLength, int serviceLen) : base(id, decoratorLen, childLength, serviceLen)
+        public BTSequence(int id) : base(id)
         {
 
         }

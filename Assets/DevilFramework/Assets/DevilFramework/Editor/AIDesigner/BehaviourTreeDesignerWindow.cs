@@ -31,12 +31,6 @@ namespace DevilEditor
         public ENodeEditMode EditMode { get; private set; }
         public PaintElement EditTarget { get; private set; }
 
-
-        public List<string> Decorators { get; private set; }
-        public List<string> Services { get; private set; }
-        public List<string> Tasks { get; private set; }
-        public List<string> Plugins { get; private set; }
-
         bool mBuildIndex;
         int mIdCounter;
 
@@ -57,11 +51,6 @@ namespace DevilEditor
 
         public BehaviourTreeDesignerWindow() : base()
         {
-            Decorators = new List<string>();
-            Services = new List<string>();
-            Tasks = new List<string>();
-            Plugins = new List<string>();
-
             GraphCanvas.GridSize = 200;
             mSelectionRect = new SelectionGUI();
             RootCanvas.AddElement(mSelectionRect);
@@ -103,12 +92,32 @@ namespace DevilEditor
 
         BehaviourNodeGUI InitNode(BTNode node)
         {
+            BehaviourMeta meta = Installizer.FindBTMeta(node.m_Type, node.m_Name);
+            if (meta == null)
+                return null;
             BehaviourNodeGUI bnode = new BehaviourNodeGUI(this);
             bnode.BTNodeId = node.m_Id;
-            bnode.BTNodeType = node.m_Type;
-            bnode.BTNodeName = string.IsNullOrEmpty(node.m_Name) ? node.m_Type.ToString().ToUpper() : node.m_Name;
-            bnode.services.AddRange(node.m_Services);
-            bnode.decorators.AddRange(node.m_Decorators);
+            bnode.BTNodeName = meta;// string.IsNullOrEmpty(node.m_Name) ? node.m_Type.ToString().ToUpper() : node.m_Name;
+            if (node.m_Services != null)
+            {
+                for (int i = 0; i < node.m_Services.Length; i++)
+                {
+                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.service, node.m_Services[i]);
+                    if (bm != null)
+                        bnode.services.Add(bm);
+                }
+            }
+            //bnode.services.AddRange(node.m_Services);
+            if (node.m_Conditions != null)
+            {
+                for (int i = 0; i < node.m_Conditions.Length; i++)
+                {
+                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.condition, node.m_Conditions[i]);
+                    if (bm != null)
+                        bnode.conditions.Add(bm);
+                }
+            }
+            //bnode.decorators.AddRange(node.m_Decorators);
             Rect r = new Rect();
             r.size = bnode.CalculateLocalSize();
             r.position = node.m_Pos - Vector2.right * r.size.x * 0.5f;
@@ -140,18 +149,6 @@ namespace DevilEditor
             TreeCanvas.AddElement(root);
             TreeGraph.AddNode(root);
 
-            Plugins.Clear();
-            BehaviourTreePlugin.GetOrNewInstance().GetPluginNames(Plugins);
-            Decorators.Clear();
-            Services.Clear();
-            Tasks.Clear();
-            if (BehaviourAsset != null)
-            {
-                BehaviourAsset.GetDecoratorNames(Decorators);
-                BehaviourAsset.GetServiceNames(Services);
-                BehaviourAsset.GetTaskNames(Tasks);
-            }
-
             if (BehaviourAsset != null)
             {
                 BTNode broot = BehaviourAsset.GetNodeById(BehaviourAsset.m_RootNodeId);
@@ -179,6 +176,7 @@ namespace DevilEditor
             for (int i = 0; i < nodes.Count; i++)
             {
                 nodes[i].BTExecutionOrder = i + 1;
+                nodes[i].CheckError();
             }
         }
 
@@ -240,6 +238,7 @@ namespace DevilEditor
             Selection.selectionChanged += OnSelectedObjectChanged;
             EditorApplication.playModeStateChanged += OnPlayStateChanged;
             OnSelectedObjectChanged();
+            
         }
 
         private void OnDisable()
@@ -491,23 +490,13 @@ namespace DevilEditor
             EditTarget = target;
         }
 
-        public BehaviourNodeGUI AddChild(PaintElement parent, EBTNodeType type, string name, Vector2 position)
+        public BehaviourNodeGUI AddChild(PaintElement parent, BehaviourMeta meta, Vector2 position)
         {
             if (parent == null || parent.Parent != TreeCanvas)
                 return null;
             BehaviourNodeGUI node = new BehaviourNodeGUI(this);
             node.BTNodeId = ++mIdCounter;
-            node.BTNodeType = type;
-            switch (type)
-            {
-                case EBTNodeType.task:
-                case EBTNodeType.plugin:
-                    node.BTNodeName = name;
-                    break;
-                default:
-                    node.BTNodeName = type.ToString().ToUpper();
-                    break;
-            }
+            node.BTNodeName = meta;
             Rect r = new Rect();
             r.size = node.CalculateLocalSize();
             r.position = position - Vector2.right * r.size.x * 0.5f;

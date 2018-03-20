@@ -5,16 +5,16 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{861B6A4B-6A6F-8534-CE74-9CAECCD22DD6}</ProjectGuid>
+    <ProjectGuid>{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>Assembly-CSharp-Editor</AssemblyName>
+    <AssemblyName>DevilAssembly-Core</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{E097FAD1-6243-4DAD-9C02-E9B9EFC3FFC1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Unity Full v3.5</TargetFrameworkProfile>
+    <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
     <CompilerResponseFile></CompilerResponseFile>
-    <UnityProjectType>Editor:5</UnityProjectType>
+    <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows64:19</UnityBuildTarget>
     <UnityVersion>2017.3.1f1</UnityVersion>
     <RootNamespace></RootNamespace>
@@ -285,45 +285,152 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Logic.csproj">
-      <Project>{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}</Project>
-      <Name>Logic</Name>
-    </ProjectReference>
-    <ProjectReference Include="DevilAssembly-Core.csproj">
-      <Project>{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}</Project>
-      <Name>DevilAssembly-Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="DevilAssembly-GamePlay.csproj">
-      <Project>{508531BD-5776-F174-3A07-15151A020BEC}</Project>
-      <Name>DevilAssembly-GamePlay</Name>
-    </ProjectReference>
-    <ProjectReference Include="AIModules.csproj">
-      <Project>{D9EEDA40-651F-0F70-3066-9561C115EE18}</Project>
-      <Name>AIModules</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourMeta.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourNodeGUI.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourRootGUI.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourTreeContextMenuGUI.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourTreeDesignerWindow.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourTreeWireGUI.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\FStateMachineEditor.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\CheckWindow.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\CubemapCaptureWindow.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\CustomInspectors\CurvePathInspector.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\CustomInspectors\FStateMachineInspector.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\DevilEditorUtility.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\DoSceneSearch.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\EditorCanvasWindow.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\EditorGUICanvas.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\GameSimulation.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\GraphViewEditorWindow.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\GUISkinPreview.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\Installizer.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\MaskFieldDrawer.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\QuickGUI.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BehaviourLibrary.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BehaviourLooper.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BehaviourTreeAsset.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BehaviourTreeAttribute.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BehaviourTreeRunner.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BTNodeBase.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BTSelector.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BTSequence.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BTTask.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\IBTBlackboard.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\IBTCondition.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\IBTService.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\IBTTask.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\FiniteStateMachine\FStateMachine.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\FiniteStateMachine\FStateMachineMono.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\FiniteStateMachine\FStateMachineRunner.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AIRepository\FiniteStateMachine\StateImpliment.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AsyncTask\AsyncLoader.cs" />
+    <Compile Include="Assets\DevilFramework\Core\AsyncTask\IAsyncTask.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Command\RTSAssistant.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Command\RTSInterface.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Command\RTSRuntimeEditor.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Components\ComponentGroup.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Components\CubeAreaCollider.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Components\CursorLock.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Components\CurvePath.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Components\MainThread.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Components\SingletonMono.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Components\UIEventMask.cs" />
+    <Compile Include="Assets\DevilFramework\Core\ContentProvider\AssetStreamBase.cs" />
+    <Compile Include="Assets\DevilFramework\Core\ContentProvider\TableBase.cs" />
+    <Compile Include="Assets\DevilFramework\Core\GraphicsWork\EffectsDefination.cs" />
+    <Compile Include="Assets\DevilFramework\Core\GraphicsWork\Scripts\PostEffect.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.advance\AsyncL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.advance\AsyncR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.advance\RTSCmdL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.advance\RTSFuncListR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.advance\RTSFuncShortcutL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.advance\RTSInlineCompileR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.advance\RTSWaitForValue.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSCompiler.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSEngine.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSInnerFunction.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSPluginFunc.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSRegister.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSStack.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSTextReader.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.component\RTSThread.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSArithmeticL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSBinaryL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSBracketL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSCommaL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSCompareL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSDeleteL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSElseL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSEndingL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSEvaluateL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSExecL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSForL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSIfL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSLinker.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSLogicL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSNotL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSPropertyL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSQuestionL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSSelfRaiseL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSSquareL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSStackActL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSTypeL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.linker\RTSVariableL.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSBool.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSDouble.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSFloat.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSGeneral.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSInteger.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSLong.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSRegisterType.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSString.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.modify\RTSVoid.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSAndR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSArithmeticR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSBinaryR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSCastR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSCompareR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSDeleteR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSEvaluateR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSExecR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSForR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSFuncDefineR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSFuncR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSIfElseR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSInnerFuncR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSNotR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSOrR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSPluginFuncR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSSelfRaiseR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSSquareR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSStackActR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSVariableR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.runner\RTSXorR.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.unity\RTSUnityRuntime.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.util\RTSConverter.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.util\RTSList.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.util\RTSSortedMap.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts.util\RTSUtil.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSDefine.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSEngine.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSFunction.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSLinker.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSLog.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSPlugin.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSRunner.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSRuntime.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSStack.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSThread.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\IRTSType.cs" />
+    <Compile Include="Assets\DevilFramework\Core\RTSVM\org.vr.rts\RTSCfg.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Singleton.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Templates.cs" />
+    <Compile Include="Assets\DevilFramework\Core\UIDesign\AdvanceImage.cs" />
+    <Compile Include="Assets\DevilFramework\Core\UIDesign\Button2D.cs" />
+    <Compile Include="Assets\DevilFramework\Core\UIDesign\DragableObject2D.cs" />
+    <Compile Include="Assets\DevilFramework\Core\UIDesign\Line2D.cs" />
+    <Compile Include="Assets\DevilFramework\Core\UIDesign\UIRoot.cs" />
+    <Compile Include="Assets\DevilFramework\Core\UIDesign\UIScaler3D.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\_2D\_2DUtil.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\_2D\DragAmount.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\_2D\FpsCounter.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\_2D\SplitChildren2D.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\BezierCurve.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\BindableMono.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\CharSequence.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\ComponentUtil.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\GizmosUtil.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\GlobalUtil.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\Graph.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\InputReader.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\MaskFieldAttribute.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\ObjectBinder.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\ObjectBuffer.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\Ref.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\RichTextStyle.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\StringFilter.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\StringUtil.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\TCRSpline.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Utility\TimeUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\DevilFramework\Core\Command\notepadstyle.xml" />

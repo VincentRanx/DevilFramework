@@ -1,0 +1,8 @@
+{
+    "name": "AIModules",
+    "references": [
+        "DevilAssembly-Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

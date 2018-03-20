@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using Devil.GamePlay;
 using System.Text;
 
 namespace DevilEditor
@@ -31,7 +30,6 @@ namespace DevilEditor
                 if (maskattr.IsMask)
                 {
                    // int v = EditorGUI.MaskField(property.en)
-                   
                 }
                 else
                 {

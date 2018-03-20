@@ -1,21 +1,18 @@
 ﻿using Devil.Utility;
-using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 namespace Devil.AI
 {
     public enum EBTNodeType
     {
-        selector = 1,
-        sequence = 2,
-        parallel = 3,
         task = 4,
-        plugin = 5,
+        controller = 5,
+        condition = 6,
+        service = 7,
     }
 
-    public abstract class BehaviourTreeAsset : ScriptableObject
+    [CreateAssetMenu(fileName ="New Behaviour Asset", menuName = "AI/Behaviour Asset")]
+    public class BehaviourTreeAsset : ScriptableObject
     {
 
         [System.Serializable]
@@ -26,42 +23,33 @@ namespace Devil.AI
             public string m_Name;
             public EBTNodeType m_Type;
             public int[] m_Children;
-            public string[] m_Decorators;
+            public string[] m_Conditions;
             public string[] m_Services;
 
             public BTNodeBase CreateNodeInstance(BehaviourTreeAsset asset)
             {
                 BTNodeBase node = null;
-                //TODO
                 switch (m_Type)
                 {
-                    case EBTNodeType.selector:
-                        node = new BTSelector(m_Id, m_Decorators == null ? 0 : m_Decorators.Length, m_Children == null ? 0 : m_Children.Length, m_Services == null ? 0 : m_Services.Length);
-                        break;
-                    case EBTNodeType.sequence:
-                        node = new BTSequence(m_Id, m_Decorators == null ? 0 : m_Decorators.Length, m_Children == null ? 0 : m_Children.Length, m_Services == null ? 0 : m_Services.Length);
-                        break;
-                    case EBTNodeType.parallel:
-                        //node = new BTSelector(m_Decorators == null ? 0 : m_Decorators.Length, m_Children == null ? 0 : m_Children.Length, m_Services == null ? 0 : m_Services.Length);
-                        break;
                     case EBTNodeType.task:
-                        node = new BTTask(m_Id, asset.GetTaskByName(m_Name), m_Decorators == null ? 0 : m_Decorators.Length, m_Children == null ? 0 : m_Children.Length, m_Services == null ? 0 : m_Services.Length);
+                        node = new BTTask(m_Id, BehaviourLibrary.NewTask(m_Name));
                         break;
-                    case EBTNodeType.plugin:
-                        //node = new BTSelector(m_Decorators == null ? 0 : m_Decorators.Length, m_Children == null ? 0 : m_Children.Length, m_Services == null ? 0 : m_Services.Length);
+                    case EBTNodeType.controller:
+                        node = BehaviourLibrary.NewPlugin(m_Name, m_Id);
                         break;
                     default:
                         break;
                 }
                 if(node != null)
                 {
+                    node.InitDecoratorSize(m_Conditions == null ? 0 : m_Conditions.Length, m_Children == null ? 0 : m_Children.Length, m_Services == null ? 0 : m_Services.Length);
                     for (int i = 0; i < node.DecoratorLength; i++)
                     {
-                        node.SetDecorator(i, asset.GetDecoratorByName(m_Decorators[i]));
+                        node.SetCondition(i, BehaviourLibrary.NewCondition(m_Conditions[i]));
                     }
                     for(int i = 0; i < node.ServiceLength; i++)
                     {
-                        node.SetService(i, asset.GetServiceByName(m_Services[i]));
+                        node.SetService(i, BehaviourLibrary.NewService(m_Services[i]));
                     }
                 }
                 return node;
@@ -71,9 +59,9 @@ namespace Devil.AI
         // 使用该行为树的对象共享实例
         public bool m_SharedInstance;
 
-        [HideInInspector]
+        //[HideInInspector]
         public BTNodeInfo[] m_Nodes = new BTNodeInfo[0];
-        [HideInInspector]
+        //[HideInInspector]
         public int m_RootNodeId;
         [HideInInspector]
         public bool m_Sorted;
@@ -115,29 +103,20 @@ namespace Devil.AI
         BTNodeBase InstBTNode(BTNodeInfo info)
         {
             BTNodeBase node = info.CreateNodeInstance(this);
-            for(int i = 0; i < info.m_Children.Length; i++)
+            if (node != null)
             {
-                BTNodeInfo child = GetNodeById(info.m_Children[i]);
-                if(child != null)
+                for (int i = 0; i < info.m_Children.Length; i++)
                 {
-                    BTNodeBase cnode = InstBTNode(child);
-                    node.SetChild(i, cnode);
+                    BTNodeInfo child = GetNodeById(info.m_Children[i]);
+                    if (child != null)
+                    {
+                        BTNodeBase cnode = InstBTNode(child);
+                        node.SetChild(i, cnode);
+                    }
                 }
             }
             return node;
         }
 
-        public abstract void GetDecoratorNames(ICollection<string> decorators);
-
-        public abstract IBTDecorator GetDecoratorByName(string decorator);
-
-        public abstract void GetServiceNames(ICollection<string> services);
-
-        public abstract IBTService GetServiceByName(string service);
-
-        public abstract void GetTaskNames(ICollection<string> tasks);
-
-        public abstract IBTTask GetTaskByName(string taskName);
-        
     }
 }

@@ -8,7 +8,7 @@ namespace Devil.AI
     {
         IBTTask mTask;
 
-        public BTTask(int id, IBTTask task, int decoratorLen, int childLength, int serviceLen) : base(id, decoratorLen, childLength, serviceLen)
+        public BTTask(int id, IBTTask task) : base(id)
         {
             mTask = task;
         }
@@ -45,7 +45,7 @@ namespace Devil.AI
     {
         EBTTaskState mState;
 
-        public BTConstTask(EBTTaskState state) : base(0, 0, 0, 0) { mState = state; }
+        public BTConstTask(EBTTaskState state) : base(0) { mState = state; }
 
         public override BTNodeBase ChildForVisit
         {
