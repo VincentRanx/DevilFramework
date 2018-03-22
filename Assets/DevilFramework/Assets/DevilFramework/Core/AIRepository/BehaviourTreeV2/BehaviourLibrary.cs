@@ -66,7 +66,7 @@ namespace Devil.AI
                 return null;
         }
 
-        public static BTNodeBase NewPlugin(string pluginName, int id)
+        public static BTNodeBase NewController(string pluginName, int id)
         {
             if (sInstance == null)
                 sInstance = new BehaviourLibrary();

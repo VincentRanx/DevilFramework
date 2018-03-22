@@ -8,6 +8,8 @@ namespace Devil.AI
     {
         int LiveCounter { get; set; }
 
+        void OnInitData(string jsonData);
+
         void OnStartService(BehaviourTreeRunner blackboard);
 
         void OnServiceTick(BehaviourTreeRunner blackboard, float deltaTime);

@@ -6,6 +6,10 @@ namespace Devil.AI
 {
     public interface IBTCondition
     {
-        bool IsSuccess(BehaviourTreeRunner behaviourTree);
+        void OnInitData(string jsonData);
+
+        bool IsTaskRunnable(BehaviourTreeRunner behaviourTree);
+
+        bool IsTaskOnCondition(BehaviourTreeRunner behaviourTree);
     }
 }

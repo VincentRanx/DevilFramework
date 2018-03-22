@@ -10,6 +10,25 @@ namespace DevilEditor
     {
         static Dictionary<string, Texture2D> m2DCache = new Dictionary<string, Texture2D>();
 
+        public static T CreateAsset<T>(string fullPath, bool selectFile = false) where T:ScriptableObject
+        {
+            if (selectFile)
+            {
+                fullPath = EditorUtility.SaveFilePanel("Create " + typeof(T).Name, Installizer.InstallRoot, typeof(T).Name, "asset");
+            }
+            if (string.IsNullOrEmpty(fullPath))
+                return null;
+            fullPath = FileUtil.GetProjectRelativePath(fullPath);
+            if (string.IsNullOrEmpty(fullPath))
+            {
+                EditorUtility.DisplayDialog("ERROR", "无效的文件夹名，请选择一个项目内的文件夹！", "OK");
+                return null;
+            }
+            T t = ScriptableObject.CreateInstance<T>();
+            AssetDatabase.CreateAsset(t, fullPath);
+            return t;
+        }
+
         public static T CreateAsset<T>(string path, string fileName, bool confirmDirectory = true) where T : ScriptableObject
         {
             if(!Directory.Exists(path))
@@ -21,7 +40,6 @@ namespace DevilEditor
             T t = ScriptableObject.CreateInstance<T>();
             string p = Path.Combine(path, fileName);
             AssetDatabase.CreateAsset(t, p);
-            AssetDatabase.Refresh();
             return t;
         }
 

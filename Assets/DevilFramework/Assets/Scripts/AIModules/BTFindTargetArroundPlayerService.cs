@@ -8,6 +8,10 @@ public class BTFindTargetArroundPlayerService : IBTService
 {
     public int LiveCounter { get; set; }
 
+    public void OnInitData(string jsonData)
+    {
+    }
+
     public void OnServiceTick(BehaviourTreeRunner blackboard, float deltaTime)
     {
         

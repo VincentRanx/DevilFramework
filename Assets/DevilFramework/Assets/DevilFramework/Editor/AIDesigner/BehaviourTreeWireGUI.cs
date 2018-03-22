@@ -26,7 +26,7 @@ namespace DevilEditor
             if (EditorApplication.isPlaying)
                 width *= 1.7f;
             width = Mathf.Clamp(width, 1, 20);
-            float height = 15 * GlobalScale;
+            float height = 20 * GlobalScale;
             int from, to;
             Vector2 start;
             Vector2 end;
@@ -71,7 +71,7 @@ namespace DevilEditor
                     ConnectNode(mWindow.GlobalMousePosition, start, Color.yellow, width, height);
                 }
             }
-            else if(mWindow.ContextMenu.Mode == BehaviourTreeContextMenuGUI.EMode.new_node)
+            else if(mWindow.ContextMenu.Mode == BehaviourTreeContextMenuGUI.EMode.new_node && mWindow.ContextMenu.Context != null)
             {
                 a = mWindow.ContextMenu.Context;
                 start.x = a.GlobalRect.center.x;

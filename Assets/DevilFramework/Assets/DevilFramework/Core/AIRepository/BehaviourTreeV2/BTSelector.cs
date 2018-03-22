@@ -4,7 +4,9 @@ using UnityEngine;
 
 namespace Devil.AI
 {
-    [BehaviourTree(FrameStyle = "flow node 1", DisplayName = "SELECTOR")]
+    [BehaviourTree(FrameStyle = "flow node 1", DisplayName = "SELECTOR", SubTitle = 
+@"选择执行子节点，直到第一个成功的
+任务结束，类似于 OR 运算。", SortOrder = -2)]
     public class BTSelector : BTNodeBase
     {
         int mVisitIndex;

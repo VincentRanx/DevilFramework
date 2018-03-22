@@ -37,19 +37,14 @@ namespace Devil.AI
         IBTService[] mServices;
 
         public EBTTaskState State { get; protected set; }
-
-        //public BTNodeBase(int id, int conditionLen, int childLength, int serviceLen)
-        //{
-        //    mNodeId = id;
-        //    InitDecoratorSize(conditionLen, childLength, serviceLen);
-        //}
+        public bool AbortIsSuccess { get; protected set; }
 
         public BTNodeBase(int id)
         {
             mNodeId = id;
         }
 
-        public void InitDecoratorSize(int conditionLen, int childLen, int serviceLen)
+        public virtual void InitDecoratorSize(int conditionLen, int childLen, int serviceLen)
         {
             mConditionLen = conditionLen;
             mChildLen = childLen;
@@ -68,6 +63,11 @@ namespace Devil.AI
             }
         }
 
+        public virtual void InitData(string jsonData)
+        {
+
+        }
+
         public BTNodeBase ParentNode { get; private set; }
 
         public BTNodeBase ChildAt(int index)
@@ -75,7 +75,7 @@ namespace Devil.AI
             return mChildren[index];
         }
 
-        public void SetChild(int index, BTNodeBase node)
+        public virtual void SetChild(int index, BTNodeBase node)
         {
             if (node != null)
             {
@@ -89,7 +89,7 @@ namespace Devil.AI
             return mDecorators[index];
         }
 
-        public void SetCondition(int index, IBTCondition decorator)
+        public virtual void SetCondition(int index, IBTCondition decorator)
         {
             mDecorators[index] = decorator;
         }
@@ -99,9 +99,22 @@ namespace Devil.AI
             return mServices[index];
         }
 
-        public void SetService(int index, IBTService service)
+        public virtual void SetService(int index, IBTService service)
         {
             mServices[index] = service;
+        }
+
+        public bool IsRunnable(BehaviourTreeRunner runner)
+        {
+            for (int i = 0; i < DecoratorLength; i++)
+            {
+                IBTCondition decor = GetCondition(i);
+                if (decor != null && !decor.IsTaskRunnable(runner))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public bool IsOnCondition(BehaviourTreeRunner runner)
@@ -109,7 +122,7 @@ namespace Devil.AI
             for (int i = 0; i < DecoratorLength; i++)
             {
                 IBTCondition decor = GetCondition(i);
-                if (decor != null && !decor.IsSuccess(runner))
+                if (decor != null && !decor.IsTaskOnCondition(runner))
                 {
                     return false;
                 }
@@ -130,13 +143,13 @@ namespace Devil.AI
             }
             else
             {
-                State = EBTTaskState.faild;
+                State = AbortWithSucces() ? EBTTaskState.success : EBTTaskState.faild;
             }
         }
 
         public void Visit(BehaviourTreeRunner runner)
         {
-            if (IsOnCondition(runner))
+            if (IsRunnable(runner))
                 OnVisit(runner);
             else
                 State = EBTTaskState.faild;
@@ -147,6 +160,11 @@ namespace Devil.AI
         protected abstract void OnVisit(BehaviourTreeRunner behaviourTree);
 
         public abstract BTNodeBase ChildForVisit { get; }
+
+        public virtual bool AbortWithSucces()
+        {
+            return AbortIsSuccess;
+        }
 
         public abstract void ReturnWithState(EBTTaskState state);
 

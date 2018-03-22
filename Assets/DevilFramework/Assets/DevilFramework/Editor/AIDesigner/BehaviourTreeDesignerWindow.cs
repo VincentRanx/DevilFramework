@@ -1,6 +1,8 @@
 ﻿using Devil;
 using Devil.AI;
 using Devil.Utility;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
@@ -8,8 +10,7 @@ using UnityEngine;
 
 namespace DevilEditor
 {
-    using System;
-    using BTNode = BehaviourTreeAsset.BTNodeInfo;
+    using BTNode = BehaviourTreeAsset.BTData;
 
     public class BehaviourTreeDesignerWindow : EditorCanvasWindow
     {
@@ -23,13 +24,18 @@ namespace DevilEditor
         public BehaviourTreeRunner Runner { get; private set; }
         public BehaviourTreeAsset BehaviourAsset { get; private set; }
 
-        SelectionGUI mSelectionRect;
+        public SelectionGUI SelectionRect { get; private set; }
         public Graph<PaintElement> TreeGraph { get; private set; }
         List<PaintElement> mCache = new List<PaintElement>();
         public BehaviourTreeContextMenuGUI ContextMenu { get; private set; }
         public EditorGUICanvas TreeCanvas { get; private set; }
+        public EditorGUICanvas CommentCanvas { get; private set; }
         public ENodeEditMode EditMode { get; private set; }
         public PaintElement EditTarget { get; private set; }
+        BehaviourRootGUI mRootGUI;
+
+        public int GenerateId { get { return ++mIdCounter; } }
+
 
         bool mBuildIndex;
         int mIdCounter;
@@ -52,8 +58,8 @@ namespace DevilEditor
         public BehaviourTreeDesignerWindow() : base()
         {
             GraphCanvas.GridSize = 200;
-            mSelectionRect = new SelectionGUI();
-            RootCanvas.AddElement(mSelectionRect);
+            SelectionRect = new SelectionGUI();
+            RootCanvas.AddElement(SelectionRect);
             mScaledCanvas.Pivot = new Vector2(0.5f, 0.25f);
 
             TreeGraph = new Graph<PaintElement>(1);
@@ -67,10 +73,15 @@ namespace DevilEditor
             TreeCanvas.LocalRect = grect;
             GraphCanvas.AddElement(TreeCanvas);
 
+            CommentCanvas = new EditorGUICanvas();
+            CommentCanvas.SortOrder = -2;
+            CommentCanvas.LocalRect = grect;
+            GraphCanvas.AddElement(CommentCanvas);
+
             ContextMenu = new BehaviourTreeContextMenuGUI(this);
             GraphCanvas.AddElement(ContextMenu);
 
-            mClipCanvas.Resort();
+            mClipCanvas.Resort(true);
 
             GraphCanvas.OnDragBegin = OnGraphDragBegin;
             GraphCanvas.OnDrag = OnGraphDrag;
@@ -85,8 +96,22 @@ namespace DevilEditor
             for (int i = 0; i < TreeGraph.NodeLength; i++)
             {
                 BehaviourNodeGUI node = TreeGraph[i] as BehaviourNodeGUI;
-                if (node != null && node.BTNodeId > mIdCounter)
-                    mIdCounter = node.BTNodeId;
+                if (node == null || node.Self == null)
+                    continue;
+                if (node.Self.BTId > mIdCounter)
+                    mIdCounter = node.Self.BTId;
+                for(int j = 0; j < node.conditions.Count; j++)
+                {
+                    BehaviourNodeGUI.Decorator deco = node.conditions[j];
+                    if (deco != null && deco.BTId > mIdCounter)
+                        mIdCounter = deco.BTId;
+                }
+                for (int j = 0; j < node.services.Count; j++)
+                {
+                    BehaviourNodeGUI.Decorator deco = node.services[j];
+                    if (deco != null && deco.BTId > mIdCounter)
+                        mIdCounter = deco.BTId;
+                }
             }
         }
 
@@ -96,15 +121,22 @@ namespace DevilEditor
             if (meta == null)
                 return null;
             BehaviourNodeGUI bnode = new BehaviourNodeGUI(this);
-            bnode.BTNodeId = node.m_Id;
-            bnode.BTNodeName = meta;// string.IsNullOrEmpty(node.m_Name) ? node.m_Type.ToString().ToUpper() : node.m_Name;
+            bnode.Self = new BehaviourNodeGUI.Decorator(node.m_Id, meta);
+            bnode.Self.ParseData(node.m_JsonData);
             if (node.m_Services != null)
             {
                 for (int i = 0; i < node.m_Services.Length; i++)
                 {
-                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.service, node.m_Services[i]);
+                    BTNode serv = BehaviourAsset.GetDataById(node.m_Services[i]);
+                    if (serv == null)
+                        continue;
+                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.service, serv.m_Name);
                     if (bm != null)
-                        bnode.services.Add(bm);
+                    {
+                        BehaviourNodeGUI.Decorator decor = new BehaviourNodeGUI.Decorator(serv.m_Id, bm);
+                        decor.ParseData(serv.m_JsonData);
+                        bnode.services.Add(decor);
+                    }
                 }
             }
             //bnode.services.AddRange(node.m_Services);
@@ -112,9 +144,16 @@ namespace DevilEditor
             {
                 for (int i = 0; i < node.m_Conditions.Length; i++)
                 {
-                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.condition, node.m_Conditions[i]);
+                    BTNode cond = BehaviourAsset.GetDataById(node.m_Conditions[i]);
+                    if (cond == null)
+                        continue;
+                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.condition, cond.m_Name);
                     if (bm != null)
-                        bnode.conditions.Add(bm);
+                    {
+                        BehaviourNodeGUI.Decorator decor = new BehaviourNodeGUI.Decorator(cond.m_Id, bm);
+                        decor.ParseData(cond.m_JsonData);
+                        bnode.conditions.Add(decor);
+                    }
                 }
             }
             //bnode.decorators.AddRange(node.m_Decorators);
@@ -127,11 +166,12 @@ namespace DevilEditor
             int children = node.m_Children == null ? 0 : node.m_Children.Length;
             for (int i = 0; i < children; i++)
             {
-                BTNode child = BehaviourAsset.GetNodeById(node.m_Children[i]);
+                BTNode child = BehaviourAsset.GetDataById(node.m_Children[i]);
                 if (child == null)
                     continue;
                 BehaviourNodeGUI bchild = InitNode(child);
-                TreeGraph.AddPath(0, bnode, bchild);
+                if(bchild != null)
+                   TreeGraph.AddPath(0, bnode, bchild);
             }
             return bnode;
         }
@@ -142,20 +182,28 @@ namespace DevilEditor
             Runner = runner;
             BehaviourAsset = Runner == null ? (Selection.activeObject as BehaviourTreeAsset) : Runner.SourceAsset;
             TreeCanvas.ClearElements();
+            CommentCanvas.ClearElements();
             TreeGraph.Clear();
 
-            BehaviourRootGUI root = new BehaviourRootGUI(this);
-            root.UpdateLocalData();
-            TreeCanvas.AddElement(root);
-            TreeGraph.AddNode(root);
+            mRootGUI = new BehaviourRootGUI(this);
+            mRootGUI.UpdateLocalData();
+            TreeCanvas.AddElement(mRootGUI);
+            TreeGraph.AddNode(mRootGUI);
 
             if (BehaviourAsset != null)
             {
-                BTNode broot = BehaviourAsset.GetNodeById(BehaviourAsset.m_RootNodeId);
+                BTNode broot = BehaviourAsset.GetDataById(BehaviourAsset.m_RootNodeId);
                 if (broot != null)
                 {
                     BehaviourNodeGUI bnode = InitNode(broot);
-                    TreeGraph.AddPath(0, root, bnode);
+                    TreeGraph.AddPath(0, mRootGUI, bnode);
+                }
+                for(int i = 0; i < BehaviourAsset.m_Comments.Length; i++)
+                {
+                    BehaviourCommentGUI comment = new BehaviourCommentGUI(this);
+                    comment.Comment = BehaviourAsset.m_Comments[i].m_Comment;
+                    comment.LocalRect = BehaviourAsset.m_Comments[i].m_Rect;
+                    CommentCanvas.AddElement(comment);
                 }
             }
             ResetIdCounter();
@@ -196,6 +244,17 @@ namespace DevilEditor
 
         void SaveAsset()
         {
+            bool refresh = false;
+            if (BehaviourAsset == null)
+            {
+                BehaviourAsset = DevilEditorUtility.CreateAsset<BehaviourTreeAsset>(null, true);
+                mRootGUI.UpdateLocalData();
+                refresh = true;
+            }
+            if (BehaviourAsset == null)
+            {
+                return;
+            }
             List<PaintElement> children = new List<PaintElement>();
             TreeGraph.GetAllChildren(0, TreeGraph.Root, children);
             List<BTNode> nodes = new List<BTNode>();
@@ -206,12 +265,26 @@ namespace DevilEditor
                 {
                     BehaviourAsset.m_RootNodeId = node.m_Id;
                     GlobalUtil.Sort(nodes, (x, y) => x.m_Id - y.m_Id);
-                    BehaviourAsset.m_Nodes = nodes.ToArray();
+                    BehaviourAsset.m_Datas = nodes.ToArray();
                     BehaviourAsset.m_Sorted = true;
-                    EditorUtility.SetDirty(BehaviourAsset);
                     break;
                 }
             }
+            BehaviourTreeAsset.Comment[] comments = new BehaviourTreeAsset.Comment[CommentCanvas.ElementCount];
+            for(int i = 0; i < comments.Length; i++)
+            {
+                comments[i] = new BehaviourTreeAsset.Comment();
+                BehaviourCommentGUI com = CommentCanvas.GetElement<BehaviourCommentGUI>(i);
+                if(com!= null)
+                {
+                    comments[i].m_Rect = com.LocalRect;
+                    comments[i].m_Comment = com.Comment ?? "";
+                }
+            }
+            BehaviourAsset.m_Comments = comments;
+            EditorUtility.SetDirty(BehaviourAsset);
+            if(refresh)
+                AssetDatabase.Refresh();
         }
 
         BTNode SaveAssetAtRoot(PaintElement root, ICollection<BTNode> collection)
@@ -219,8 +292,7 @@ namespace DevilEditor
             BehaviourNodeGUI node = root as BehaviourNodeGUI;
             if (node == null)
                 return null;
-            BTNode bnode = node.InstantNodeInfo();
-            collection.Add(bnode);
+            BTNode bnode = node.ExportNodeData(collection);
             List<PaintElement> children = new List<PaintElement>();
             TreeGraph.GetAllChildren(0, root, children);
             GlobalUtil.Sort(children, (x, y) => x.LocalRect.center.x <= y.LocalRect.center.x ? -1 : 1);
@@ -302,7 +374,7 @@ namespace DevilEditor
             for (int i = 0; i < TreeGraph.NodeLength; i++)
             {
                 BehaviourNodeGUI node = TreeGraph[i] as BehaviourNodeGUI;
-                if (node != null && node.BTNodeId == nodeId)
+                if (node != null && node.Self.BTId == nodeId)
                 {
                     node.BTRuntimeState = state;
                     return;
@@ -362,11 +434,12 @@ namespace DevilEditor
         {
             if (button == EMouseButton.left)
             {
-                Rect rect = mSelectionRect.LocalRect;
+                Rect rect = SelectionRect.LocalRect;
                 rect.size = Vector2.zero;
                 rect.position = RootCanvas.CalculateLocalPosition(mousePosition);
-                mSelectionRect.LocalRect = rect;
-                mSelectionRect.Visible = true;
+                SelectionRect.LocalRect = rect;
+                SelectionRect.Visible = true;
+                SelectComment(null);
                 return true;
             }
             return false;
@@ -376,9 +449,9 @@ namespace DevilEditor
         {
             if (button == EMouseButton.left)
             {
-                Rect rect = mSelectionRect.LocalRect;
+                Rect rect = SelectionRect.LocalRect;
                 rect.size = RootCanvas.CalculateLocalPosition(mousePosition) - rect.position;
-                mSelectionRect.LocalRect = rect;
+                SelectionRect.LocalRect = rect;
                 return true;
             }
             return false;
@@ -388,14 +461,14 @@ namespace DevilEditor
         {
             if (button == EMouseButton.left)
             {
-                mSelectionRect.Visible = false;
+                SelectionRect.Visible = false;
                 if (Event.current.control)
                 {
-                    SelectNodes((x) => x.Selected || mSelectionRect.GlobalRect.Overlaps(x.GlobalRect, true));
+                    SelectNodes((x) => x.Selected || SelectionRect.GlobalRect.Overlaps(x.GlobalRect, true));
                 }
                 else
                 {
-                    SelectNodes((x) => mSelectionRect.GlobalRect.Overlaps(x.GlobalRect, true));
+                    SelectNodes((x) => SelectionRect.GlobalRect.Overlaps(x.GlobalRect, true));
                 }
                 ContextMenu.Hide();
                 return true;
@@ -406,10 +479,14 @@ namespace DevilEditor
         bool OnGraphClick(EMouseButton button, Vector2 mousePositoin)
         {
             SelectNodes((x) => false);
+            SelectComment(null);
             ContextMenu.Hide();
             if (button == EMouseButton.right)
             {
-                BeginEditNode(null, ENodeEditMode.none);
+                if (EditMode == ENodeEditMode.none)
+                    ContextMenu.NewNode(null);
+                else
+                    BeginEditNode(null, ENodeEditMode.none);
             }
             else if (button == EMouseButton.left && EditMode == ENodeEditMode.modify_child)
             {
@@ -445,6 +522,21 @@ namespace DevilEditor
                     TreeGraph.RemoveNode(nodes[i]);
                 }
                 return true;
+            }
+            if (key == KeyCode.C)
+            {
+                float w = Mathf.Abs(SelectionRect.GlobalRect.width);
+                float dx = SelectionRect.GlobalRect.width < 0 ? -w : 0;
+                float h = Mathf.Abs(SelectionRect.GlobalRect.height);
+                float dy = SelectionRect.GlobalRect.height < 0 ? -h : 0;
+                if (w > 40 && h > 30)
+                {
+                    Rect rect = new Rect(SelectionRect.GlobalRect.xMin + dx, SelectionRect.GlobalRect.yMin + dy, w, h);
+                    BehaviourCommentGUI comment = new BehaviourCommentGUI(this);
+                    comment.LocalRect = CommentCanvas.CalculateLocalRect(rect);
+                    CommentCanvas.AddElement(comment);
+                    SelectNodes((x) => false);
+                }
             }
             return false;
         }
@@ -490,22 +582,34 @@ namespace DevilEditor
             EditTarget = target;
         }
 
-        public BehaviourNodeGUI AddChild(PaintElement parent, BehaviourMeta meta, Vector2 position)
+        public BehaviourNodeGUI AddChild(PaintElement parent, BehaviourMeta meta, Vector2 localPos)
         {
-            if (parent == null || parent.Parent != TreeCanvas)
+            if (parent != null && parent.Parent != TreeCanvas)
                 return null;
             BehaviourNodeGUI node = new BehaviourNodeGUI(this);
-            node.BTNodeId = ++mIdCounter;
-            node.BTNodeName = meta;
+            node.Self = new BehaviourNodeGUI.Decorator(GenerateId, meta);
+            node.Self.UpdatePropertiesInfo();
             Rect r = new Rect();
             r.size = node.CalculateLocalSize();
-            r.position = position - Vector2.right * r.size.x * 0.5f;
+            r.position = localPos - Vector2.right * r.size.x * 0.5f;
             node.LocalRect = r;
             TreeCanvas.AddElement(node);
             TreeGraph.AddNode(node);
-            TreeGraph.AddPath(0, parent, node);
+            if (parent != null)
+                TreeGraph.AddPath(0, parent, node);
             RebuildExecutionOrder();
             return node;
+        }
+
+        public void SelectComment(BehaviourCommentGUI target)
+        {
+            for (int i = 0; i < CommentCanvas.ElementCount; i++)
+            {
+                BehaviourCommentGUI com = CommentCanvas.GetElement<BehaviourCommentGUI>(i);
+                if (com == null)
+                    continue;
+                com.IsSelected = com == target;
+            }
         }
     }
 }

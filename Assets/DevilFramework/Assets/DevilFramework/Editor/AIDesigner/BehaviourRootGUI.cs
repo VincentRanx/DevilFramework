@@ -32,7 +32,7 @@ namespace DevilEditor
             }
             Rect rect = new Rect();
             Installizer.titleStyle.fontSize = 30;
-            rect.size = Installizer.SizeOfTitle(mTitle) + new Vector2(20, 40);
+            rect.size = Installizer.SizeOfTitle(mTitle) + new Vector2(20, 60);
             rect.position = -0.5f * rect.size;
             LocalRect = rect;
         }
@@ -59,6 +59,7 @@ namespace DevilEditor
             {
                 GUI.Label(rect, "", "flow node 6");
                 GUI.Label(rect, "", "Icon.OutlineBorder");
+                Installizer.titleStyle.normal.textColor = Color.white;
                 Installizer.titleStyle.fontSize = Mathf.Max(1, (int)(30 * GlobalScale));
                 Installizer.titleContent.text = mTitle;
                 GUI.Label(rect, Installizer.titleContent, Installizer.titleStyle);

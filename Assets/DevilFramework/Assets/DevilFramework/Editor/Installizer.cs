@@ -129,7 +129,7 @@ public class BehaviourLib : BehaviourLibrary
                 OnReloaded();
         }
 
-        static void ParseAILibs(string scriptPath, List<string> genPatterns, HashSet<string> namespaces)
+        static void ParseAILibs(string scriptPath)
         {
             MonoScript mono = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptPath);
             if (mono == null)
@@ -142,36 +142,71 @@ public class BehaviourLib : BehaviourLibrary
             switch (meta.NodeType)
             {
                 case EBTNodeType.task:
-                    if (!string.IsNullOrEmpty(meta.Namespace))
-                        namespaces.Add(meta.Namespace);
                     BTTasks.Add(meta);
-                    genPatterns.Add(string.Format("mTasks[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
                     break;
                 case EBTNodeType.service:
-                    if (!string.IsNullOrEmpty(meta.Namespace))
-                        namespaces.Add(meta.Namespace);
                     BTServices.Add(meta);
-                    genPatterns.Add(string.Format("mServices[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
                     break;
                 case EBTNodeType.condition:
-                    if (!string.IsNullOrEmpty(meta.Namespace))
-                        namespaces.Add(meta.Namespace);
                     BTConditions.Add(meta);
-                    genPatterns.Add(string.Format("mConditions[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
                     break;
                 case EBTNodeType.controller:
-                    if (!string.IsNullOrEmpty(meta.Namespace))
-                        namespaces.Add(meta.Namespace);
                     BTControllers.Add(meta);
-                    genPatterns.Add(string.Format("mControllers[\"{0}\"] = (id) => new {1}(id);", meta.Name, meta.Name));
                     break;
                 default:
                     break;
             }
+            GlobalUtil.Sort(BTTasks, (x, y) => x.SortOrder - y.SortOrder);
+            GlobalUtil.Sort(BTServices, (x, y) => x.SortOrder - y.SortOrder);
+            GlobalUtil.Sort(BTConditions, (x, y) => x.SortOrder - y.SortOrder);
+            GlobalUtil.Sort(BTControllers, (x, y) => x.SortOrder - y.SortOrder);
         }
 
-        static string GenCSharpe(List<string> genPatterns, HashSet<string> namespaces)
+        static void GenerateAILibrary()
         {
+            BTTasks = new List<BehaviourMeta>();
+            BTServices = new List<BehaviourMeta>();
+            BTConditions = new List<BehaviourMeta>();
+            BTControllers = new List<BehaviourMeta>();
+
+            string[] scripts = AssetDatabase.FindAssets("t:script", new string[] { AI_IMPORT_FOLDER, Path.Combine(InstallRoot, "DevilFramework/Core/AIRepository/BehaviourTreeV2") });
+            foreach (string guid in scripts)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                ParseAILibs(path);
+            }
+        }
+
+        [MenuItem("Devil Framework/Update AI Library Script")]
+        static void GenerateAICSharpe()
+        {
+            HashSet<string> namespaces = new HashSet<string>();
+            List<string> genPatterns = new List<string>();
+            namespaces.Add("Devil.AI");
+            foreach(BehaviourMeta meta in BTTasks)
+            {
+                if(!string.IsNullOrEmpty(meta.Namespace))
+                    namespaces.Add(meta.Namespace);
+                genPatterns.Add(string.Format("mTasks[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
+            }
+            foreach (BehaviourMeta meta in BTConditions)
+            {
+                if (!string.IsNullOrEmpty(meta.Namespace))
+                    namespaces.Add(meta.Namespace);
+                genPatterns.Add(string.Format("mConditions[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
+            }
+            foreach (BehaviourMeta meta in BTServices)
+            {
+                if (!string.IsNullOrEmpty(meta.Namespace))
+                    namespaces.Add(meta.Namespace);
+                genPatterns.Add(string.Format("mServices[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
+            }
+            foreach (BehaviourMeta meta in BTControllers)
+            {
+                if (!string.IsNullOrEmpty(meta.Namespace))
+                    namespaces.Add(meta.Namespace);
+                genPatterns.Add(string.Format("mControllers[\"{0}\"] = (id) => new {1}(id);", meta.Name, meta.Name));
+            }
             StringBuilder builder = new StringBuilder();
             int n0 = libTemplate.IndexOf("%namespace%");
             int len0 = 11;
@@ -188,33 +223,9 @@ public class BehaviourLib : BehaviourLibrary
                 builder.Append("        ").Append(str).Append('\n');
             }
             builder.Append(libTemplate.Substring(n1 + len2));
-            return builder.ToString();
-        }
 
-        static void GenerateAILibrary()
-        {
-            BTTasks = new List<BehaviourMeta>();
-            BTServices = new List<BehaviourMeta>();
-            BTConditions = new List<BehaviourMeta>();
-            BTControllers = new List<BehaviourMeta>();
-
-            string[] scripts = AssetDatabase.FindAssets("t:script", new string[] { AI_IMPORT_FOLDER, Path.Combine(InstallRoot, "DevilFramework/Core/AIRepository/BehaviourTreeV2") });
-            List<string> genPatterns = new List<string>();
-            HashSet<string> namespaces = new HashSet<string>();
-            namespaces.Add("Devil.AI");
-            foreach (string guid in scripts)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                ParseAILibs(path, genPatterns, namespaces);
-            }
-
-            if (!(EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling))
-            {
-                string script = GenCSharpe(genPatterns, namespaces);
-                File.WriteAllText(Path.Combine(AI_IMPORT_FOLDER, "BehaviourLib.cs"), script, Encoding.UTF8);
-
-                AssetDatabase.Refresh();
-            }
+            File.WriteAllText(Path.Combine(AI_IMPORT_FOLDER, "BehaviourLib.cs"), builder.ToString(), Encoding.UTF8);
+            AssetDatabase.Refresh();
         }
     }
 }

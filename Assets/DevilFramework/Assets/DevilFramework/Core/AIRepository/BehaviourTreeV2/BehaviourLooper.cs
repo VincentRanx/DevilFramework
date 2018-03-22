@@ -18,9 +18,16 @@ namespace Devil.AI
             mRoot = rootNode;
         }
 
+        public void Reset()
+        {
+            IsComplate = false;
+            mRuntimeNode = null;
+        }
+
         public void ResetTreeState()
         {
             ResetTreeStateRecursive(mRoot);
+            IsComplate = false;
         }
 
         void ResetTreeStateRecursive(BTNodeBase root)

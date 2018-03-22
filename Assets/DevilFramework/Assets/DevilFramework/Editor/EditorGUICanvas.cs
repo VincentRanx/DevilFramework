@@ -118,6 +118,7 @@ namespace DevilEditor
         public InteractKeyEvent OnKeyDown;
         public InteractKeyEvent OnKeyUp;
         bool mOnSelfDrag;
+        PaintElement mDragTarget;
 
         public EditorGUICanvas() : base()
         {
@@ -162,14 +163,17 @@ namespace DevilEditor
             Elements.Clear();
         }
 
-        public void Resort()
+        public void Resort(bool recursive)
         {
             GlobalUtil.Sort(Elements, (x, y) => x.SortOrder > y.SortOrder ? 1 : -1);
-            for(int i = 0; i < Elements.Count; i++)
+            if (recursive)
             {
-                PaintElement can = Elements[i];
-                if (can is EditorGUICanvas)
-                    ((EditorGUICanvas)can).Resort();
+                for (int i = 0; i < Elements.Count; i++)
+                {
+                    PaintElement can = Elements[i];
+                    if (can is EditorGUICanvas)
+                        ((EditorGUICanvas)can).Resort(recursive);
+                }
             }
         }
 
@@ -266,7 +270,10 @@ namespace DevilEditor
             {
                 PaintElement ele = Elements[i];
                 if (ele.GlobalRect.Contains(mousePosition) && ele.InteractDragBegin(button, mousePosition))
+                {
+                    mDragTarget = ele;
                     return true;
+                }
             }
             mOnSelfDrag = OnDragBegin == null ? false : OnDragBegin(button, mousePosition);
             return mOnSelfDrag;
@@ -278,13 +285,10 @@ namespace DevilEditor
             {
                 return OnDrag == null ? false : OnDrag(button, mousePosition, mouseDelta);
             }
-            for (int i = Elements.Count - 1; i >= 0; i--)
+            if (mDragTarget != null)
             {
-                PaintElement ele = Elements[i];
-                if (ele.GlobalRect.Contains(mousePosition) && ele.InteractDrag(button, mousePosition, mouseDelta))
-                    return true;
+                return mDragTarget.InteractDrag(button, mousePosition, mouseDelta);
             }
-            mOnSelfDrag = OnDrag == null ? false : OnDrag(button, mousePosition, mouseDelta);
             return mOnSelfDrag;
         }
 
@@ -295,13 +299,13 @@ namespace DevilEditor
                 mOnSelfDrag = false;
                 return OnDragEnd == null ? false : OnDragEnd(button, mousePosition);
             }
-            for (int i = Elements.Count - 1; i >= 0; i--)
+            if (mDragTarget != null)
             {
-                PaintElement ele = Elements[i];
-                if (ele.GlobalRect.Contains(mousePosition) && ele.InteractDragEnd(button, mousePosition))
-                    return true;
+                bool ret = mDragTarget.InteractDragEnd(button, mousePosition);
+                mDragTarget = null;
+                return ret;
             }
-            return OnDragEnd == null ? false : OnDragEnd(button, mousePosition);
+            return false;
         }
 
         public override bool InteractMouseClick(EMouseButton button, Vector2 mousePosition)

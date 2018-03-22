@@ -34,10 +34,24 @@ namespace Devil.AI
             }
         }
 
+        public override void InitData(string jsonData)
+        {
+            if (mTask != null)
+                mTask.OnInitData(jsonData);
+        }
+
         protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
         {
             if (mTask != null)
                 State = mTask.OnTaskTick(behaviourTree, deltaTime);
+        }
+
+        public override bool AbortWithSucces()
+        {
+            if (mTask != null)
+                return mTask.AbortWithSuccess();
+            else
+                return false;
         }
     }
 

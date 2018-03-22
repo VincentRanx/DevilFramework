@@ -1,18 +1,37 @@
 ﻿using Devil.AI;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace GameExt
 {
-    [BehaviourTree(DisplayName = "冷却")]
+    [BehaviourTree(DisplayName = "等待一段时间",SubTitle = "等待 {time} 秒后继续其他任务\n中断返回 {abort}", InputDatas = "time:row,abort:text")]
     public class BTCoolDownTask : IBTTask
     {
         float time;
+        float mWaitTime;
+        bool mAbortSucees;
+
+        public bool AbortWithSuccess()
+        {
+            return mAbortSucees;
+        }
+
+        public void OnInitData(string jsonData)
+        {
+            JObject obj = JsonConvert.DeserializeObject<JObject>(jsonData);
+            if (obj != null)
+            {
+                mWaitTime = obj.Value<float>("time");
+                mAbortSucees = obj.Value<string>("abort") == "success";
+            }
+        }
 
         public EBTTaskState OnStartTask(BehaviourTreeRunner behaviourTree)
         {
-            time = 3;
+            time = mWaitTime;
             return EBTTaskState.running;
         }
 

@@ -62,7 +62,7 @@ namespace Devil.AI
             mServiceDeltaTime = m_ServiceInterval;
             mServiceTimer = m_ServiceInterval;
 
-            mAsset = m_BehaviourAsset == null ? null : m_BehaviourAsset.GetNewOrSharedInstance();
+            mAsset = m_BehaviourAsset;
             if(mAsset != null)
                 mRoot = mAsset.CreateBehaviourTree(this);
             mLooper = new BehaviourLooper(mRoot);
