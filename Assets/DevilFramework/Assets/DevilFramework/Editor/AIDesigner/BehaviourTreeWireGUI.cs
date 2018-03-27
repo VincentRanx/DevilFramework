@@ -46,9 +46,9 @@ namespace DevilEditor
                 if (EditorApplication.isPlaying)
                 {
                     BehaviourNodeGUI bb = b as BehaviourNodeGUI;
-                    if(bb != null && bb.BTRuntimeState != Devil.AI.EBTTaskState.inactive)
+                    if(bb != null && bb.Self.BTRuntimeState != Devil.AI.EBTTaskState.inactive)
                     {
-                        c = bb.BTRuntimeState == Devil.AI.EBTTaskState.success ? Color.green : (bb.BTRuntimeState == Devil.AI.EBTTaskState.running ? Color.blue : Color.red);
+                        c = bb.Self.BTRuntimeState == Devil.AI.EBTTaskState.success ? Color.green : (bb.Self.BTRuntimeState == Devil.AI.EBTTaskState.running ? Color.blue : Color.red);
                     }
                     else
                     {

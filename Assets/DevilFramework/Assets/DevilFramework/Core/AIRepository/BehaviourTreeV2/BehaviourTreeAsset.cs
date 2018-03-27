@@ -5,13 +5,14 @@ namespace Devil.AI
 {
     public enum EBTNodeType
     {
+        invalid = 0,
         task = 4,
         controller = 5,
         condition = 6,
         service = 7,
     }
 
-    [CreateAssetMenu(fileName = "New Behaviour Asset", menuName = "AI/Behaviour Asset")]
+    [CreateAssetMenu(fileName = "New Behaviour Asset", menuName = "AI/Behaviour Tree")]
     public class BehaviourTreeAsset : ScriptableObject
     {
 
@@ -27,6 +28,7 @@ namespace Devil.AI
         {
             public int m_Id;
             public Vector2 m_Pos;
+            public bool m_NotFlag;
             public string m_Name;
             public string m_JsonData;
             public EBTNodeType m_Type;
@@ -34,33 +36,27 @@ namespace Devil.AI
             public int[] m_Conditions;
             public int[] m_Services;
 
-            public BTNodeBase Instantiate(BehaviourTreeAsset asset)
+            public BTNodeBase Instantiate(BehaviourTreeRunner btree, BehaviourTreeAsset asset)
             {
                 BTNodeBase node = null;
-                switch (m_Type)
-                {
-                    case EBTNodeType.task:
-                        node = new BTTask(m_Id, BehaviourLibrary.NewTask(m_Name));
-                        break;
-                    case EBTNodeType.controller:
-                        node = BehaviourLibrary.NewController(m_Name, m_Id);
-                        break;
-                    default:
-                        break;
-                }
+                if (m_Type == EBTNodeType.task)
+                    node = new BTTask(m_Id, BehaviourLibrary.NewTask(m_Name, m_Id));
+                else if (m_Type == EBTNodeType.controller)
+                    node = BehaviourLibrary.NewController(m_Name, m_Id);
                 if (node != null)
                 {
-                    node.InitData(m_JsonData);
+                    node.InitData(btree, m_JsonData);
                     node.InitDecoratorSize(m_Conditions == null ? 0 : m_Conditions.Length, m_Children == null ? 0 : m_Children.Length, m_Services == null ? 0 : m_Services.Length);
-                    for (int i = 0; i < node.DecoratorLength; i++)
+                    for (int i = 0; i < node.ConditionLength; i++)
                     {
                         BTData data = asset.GetDataById(m_Conditions[i]);
                         if (data == null)
                             continue;
-                        IBTCondition cond = BehaviourLibrary.NewCondition(data.m_Name);
+                        node.SetNotFlag(i, data.m_NotFlag);
+                        BTConditionBase cond = BehaviourLibrary.NewCondition(data.m_Name, data.m_Id);
                         if (cond != null)
                         {
-                            cond.OnInitData(data.m_JsonData);
+                            cond.OnInitData(btree, data.m_JsonData);
                             node.SetCondition(i, cond);
                         }
                     }
@@ -69,10 +65,10 @@ namespace Devil.AI
                         BTData data = asset.GetDataById(m_Services[i]);
                         if (data == null)
                             continue;
-                        IBTService serv = BehaviourLibrary.NewService(data.m_Name);
+                        BTServiceBase serv = BehaviourLibrary.NewService(data.m_Name, data.m_Id);
                         if (serv != null)
                         {
-                            serv.OnInitData(data.m_JsonData);
+                            serv.OnInitData(btree, data.m_JsonData);
                             node.SetService(i, serv);
                         }
                     }
@@ -112,13 +108,21 @@ namespace Devil.AI
             BTData root = GetDataById(m_RootNodeId);
             if (root == null)
                 return null;
-            BTNodeBase rootNode = InstBTNode(root);
-            return rootNode;
+            try
+            {
+                BTNodeBase rootNode = InstBTNode(runner, root);
+                return rootNode;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError(e, this);
+                return null;
+            }
         }
 
-        BTNodeBase InstBTNode(BTData info)
+        BTNodeBase InstBTNode(BehaviourTreeRunner btree, BTData info)
         {
-            BTNodeBase node = info.Instantiate(this);
+            BTNodeBase node = info.Instantiate(btree, this);
             if (node != null)
             {
                 for (int i = 0; i < info.m_Children.Length; i++)
@@ -126,7 +130,7 @@ namespace Devil.AI
                     BTData child = GetDataById(info.m_Children[i]);
                     if (child != null)
                     {
-                        BTNodeBase cnode = InstBTNode(child);
+                        BTNodeBase cnode = InstBTNode(btree, child);
                         node.SetChild(i, cnode);
                     }
                 }

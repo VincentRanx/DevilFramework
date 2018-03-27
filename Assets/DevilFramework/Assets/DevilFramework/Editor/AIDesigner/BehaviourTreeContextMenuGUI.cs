@@ -16,6 +16,76 @@ namespace DevilEditor
             new_node,
         }
 
+        public class MetaUI
+        {
+            public BehaviourMeta BTMeta { get; private set; }
+            public Vector2 TitleSize { get; private set; }
+            public Vector2 DetailSize { get; private set; }
+            public float Width { get { return Mathf.Max(TitleSize.x, DetailSize.x); } }
+            public float Height { get { return TitleSize.y + DetailSize.y; } }
+            public string Category { get; private set; }
+            public bool IsTitle { get { return BTMeta == null; } }
+
+            public MetaUI(BehaviourMeta meta)
+            {
+                BTMeta = meta;
+                Installizer.contentStyle.fontSize = (int)BehaviourNodeGUI.SUB_FONT_SIZE;
+                TitleSize = Installizer.SizeOfContent(meta.DisplayName) + new Vector2(10, 10);
+                if (string.IsNullOrEmpty(meta.SubTitle))
+                {
+                    DetailSize = new Vector2(TitleSize.x, 0);
+                }
+                else
+                {
+                    Installizer.contentStyle.fontSize = (int)(BehaviourNodeGUI.SUB_FONT_SIZE * 0.9f);
+                    DetailSize = Installizer.SizeOfContent(meta.SubTitle) + new Vector2(6, 6);
+                }
+            }
+
+            public MetaUI(string category)
+            {
+                Category = category;
+                Installizer.titleStyle.fontSize = (int)BehaviourNodeGUI.SUB_FONT_SIZE;
+                TitleSize = Installizer.SizeOfTitle(category) + new Vector2(10, 10);
+                DetailSize = Vector2.zero;
+            }
+
+            public void OnGUI(Rect rect, float scale, bool dropDown)
+            {
+                if (BTMeta != null)
+                {
+                    QuickGUI.DrawBox(rect, new Color(0.3f, 0.3f, 0.3f), Color.yellow, rect.Contains(Event.current.mousePosition) ? 2 : 0);
+                    Rect r = rect;
+                    r.height = TitleSize.y * scale;
+                    Installizer.contentStyle.fontStyle = FontStyle.Bold;
+                    Installizer.contentStyle.normal.textColor = Color.white;
+                    Installizer.contentStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.SUB_FONT_SIZE * scale);
+                    Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
+                    Installizer.contentContent.text = BTMeta.DisplayName;
+                    GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
+                    r.y += TitleSize.y * scale;
+                    r.height = DetailSize.y * scale;
+                    r.width -= 6 * scale;
+                    r.x += 5 * scale;
+                    Installizer.contentStyle.fontStyle = FontStyle.Normal;
+                    Installizer.contentStyle.normal.textColor = new Color(0.7f, 0.7f, 0.7f);
+                    Installizer.contentStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.SUB_FONT_SIZE * 0.9f * scale);
+                    Installizer.contentStyle.alignment = TextAnchor.MiddleLeft;
+                    Installizer.contentContent.text = BTMeta.SubTitle;
+                    GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
+                }
+                else
+                {
+                    Color c = BehaviourModuleManager.GetOrNewInstance().GetCategoryColor(Category);
+                    QuickGUI.DrawBox(rect, dropDown ? c : new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f), Color.yellow, 0);
+                    Installizer.titleStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.SUB_FONT_SIZE * scale);
+                    Installizer.titleStyle.alignment = TextAnchor.MiddleCenter;
+                    Installizer.titleContent.text = Category;
+                    GUI.Label(rect, Installizer.titleContent, Installizer.titleStyle);
+                }
+            }
+        }
+
         BehaviourTreeDesignerWindow mWindow;
         public bool Visible { get; private set; }
         public PaintElement Context { get; private set; }
@@ -23,9 +93,8 @@ namespace DevilEditor
         string mSearchContext = "";
         float mMinTaskWidth = 200;
         float mMinDecoratorWidth = 200;
-        BehaviourMeta mRaycastMeta;
-        bool mInited = false;
-        
+        MetaUI mRaycastMeta;
+        MetaUI mDropDownMeta;
         float mScrollOffset;
         Rect mScrollRect;
 
@@ -34,11 +103,16 @@ namespace DevilEditor
 
         bool mDragEnd;
 
-        BehaviourInputProperty mFocusProperty;
-        BehaviourInputProperty mRaycastProperty;
+        BTInputProperty mFocusProperty;
+        BTInputProperty mRaycastProperty;
 
         BehaviourNodeGUI.Decorator mFocusDecorator;
         BehaviourNodeGUI.Decorator mRaycastDecorator;
+        List<MetaUI> mTaskList = new List<MetaUI>();
+        List<MetaUI> mDecoratorList = new List<MetaUI>();
+
+        bool mRaycastSearch;
+        bool mFocusSearch;
 
         bool mResizeNode;
 
@@ -48,35 +122,7 @@ namespace DevilEditor
             SortOrder = 10;
            
         }
-
-        void InitSize()
-        {
-            if (mInited)
-                return;
-            mInited = true;
-            Installizer.contentStyle.fontSize = (int)BehaviourNodeGUI.FONT_SIZE;
-            for (int i = 0; i < Installizer.BTTasks.Count; i++)
-            {
-                Vector2 size = Installizer.SizeOfContent(Installizer.BTTasks[i].DisplayName);
-                mMinTaskWidth = Mathf.Max(mMinTaskWidth, size.x);
-            }
-            for (int i = 0; i < Installizer.BTControllers.Count; i++)
-            {
-                Vector2 size = Installizer.SizeOfContent(Installizer.BTControllers[i].DisplayName);
-                mMinTaskWidth = Mathf.Max(mMinTaskWidth, size.x);
-            }
-            for (int i = 0; i < Installizer.BTConditions.Count; i++)
-            {
-                Vector2 size = Installizer.SizeOfContent(Installizer.BTConditions[i].DisplayName);
-                mMinDecoratorWidth = Mathf.Max(mMinDecoratorWidth, size.x);
-            }
-            for (int i = 0; i < Installizer.BTServices.Count; i++)
-            {
-                Vector2 size = Installizer.SizeOfContent(Installizer.BTServices[i].DisplayName);
-                mMinDecoratorWidth = Mathf.Max(mMinDecoratorWidth, size.x);
-            }
-        }
-
+        
         public Vector2 AttachPoint
         {
             get
@@ -96,6 +142,26 @@ namespace DevilEditor
         {
             if (EditorApplication.isPlaying || context == null)
                 return;
+            mMinTaskWidth = 200;
+            mMinDecoratorWidth = 200;
+            mTaskList.Clear();
+            mDecoratorList.Clear();
+            List<BehaviourMeta> lst;
+            lst = BehaviourModuleManager.GetOrNewInstance().Decorators;
+            string category = null;
+            for (int i = 0; i < lst.Count; i++)
+            {
+                MetaUI m = new MetaUI(lst[i]);
+                if (m.BTMeta.Category != category)
+                {
+                    category = m.BTMeta.Category;
+                    mDropDownMeta = new MetaUI(category);
+                    mDecoratorList.Add(mDropDownMeta);
+                }
+                mDecoratorList.Add(m);
+                mMinDecoratorWidth = Mathf.Max(mMinDecoratorWidth, m.Width);
+            }
+
             Mode = EMode.alter_node;
             Visible = true;
             Context = context;
@@ -117,6 +183,26 @@ namespace DevilEditor
         {
             if (EditorApplication.isPlaying)
                 return;
+            mMinTaskWidth = 200;
+            mMinDecoratorWidth = 200;
+            mTaskList.Clear();
+            mDecoratorList.Clear();
+            List<BehaviourMeta> lst;
+            lst = BehaviourModuleManager.GetOrNewInstance().Composites;
+            string category = null;
+            for (int i = 0; i < lst.Count; i++)
+            {
+                MetaUI m = new MetaUI(lst[i]);
+                if (m.BTMeta.Category != category)
+                {
+                    category = m.BTMeta.Category;
+                    mDropDownMeta = new MetaUI(category);
+                    mTaskList.Add(mDropDownMeta);
+                }
+                mTaskList.Add(m);
+                mMinTaskWidth = Mathf.Max(mMinTaskWidth, m.Width);
+            }
+
             Mode = EMode.new_node;
             Visible = true;
             Context = context;
@@ -129,6 +215,10 @@ namespace DevilEditor
 
         public void Hide()
         {
+            if (mFocusProperty != null && mFocusProperty.ReguexData() && mFocusDecorator != null)
+            {
+                mFocusDecorator.UpdatePropertiesInfo();
+            }
             Visible = false;
             Context = null;
             Mode = EMode.none;
@@ -136,6 +226,8 @@ namespace DevilEditor
             mFocusProperty = null;
             mFocusDecorator = null;
             mRaycastDecorator = null;
+            mDropDownMeta = null;
+            mSearchContext = "";
         }
 
         void BeginScroll(Rect rect, ref Rect scrollRect)
@@ -166,9 +258,8 @@ namespace DevilEditor
             if (!Visible)
                 return;
             mResizeNode = false;
-            InitSize();
-            GUI.Label(GlobalRect, "", "sv_iconselector_back");
-            //GUI.Label(GlobalRect, "", "flow node 0 on");
+            QuickGUI.DrawBox(GlobalRect, new Color(0.3f,0.3f,0.3f), Color.black, 2, true);
+            //GUI.Label(GlobalRect, "", "sv_iconselector_back");
             if (Mode == EMode.alter_node)
             {
                 OnContextDecoratorGUI();
@@ -178,7 +269,7 @@ namespace DevilEditor
             {
                 OnNewNodeGUI();
             }
-            GUI.Label(GlobalRect, "", "Icon.OutlineBorder");
+            //GUI.Label(GlobalRect, "", "Icon.OutlineBorder");
             if(mResizeNode)
             {
                 BehaviourNodeGUI node = Context as BehaviourNodeGUI;
@@ -197,69 +288,74 @@ namespace DevilEditor
         {
             Rect btn = new Rect();
             btn.size = Vector2.one * Mathf.Clamp(20 * GlobalScale, 15, 30);
+            Rect tmp = new Rect();
             for (int i = 0; i < decorators.Count; i++)
             {
-                Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
-                GUI.Label(r, "", "flow overlay box");
+                BehaviourNodeGUI.Decorator decor = decorators[i];
+                float h = (tsize.y + dsize.y) * decor.Properties.Length + tsize.y + tsize.y - dsize.y;
+                r.height = h;
                 bool inter = r.Contains(Event.current.mousePosition);
-                if (inter || mFocusDecorator == decorators[i])
-                    GUI.Label(r, "", "Icon.ClipSelected");
-                if(inter)
-                    mRaycastDecorator = decorators[i];
+                //GUI.Label(r, "", inter ? "flow node 0" : "sv_iconselector_back");
+                QuickGUI.DrawBox(r, new Color(0.3f, 0.3f, 0.3f), inter ? Color.yellow : Color.black, inter ? 2 : 0);
+                if (inter)//|| mFocusDecorator == decorators[i])
+                {
+                    mRaycastDecorator = decor;
+                }
+                tmp.size = tsize;
+                tmp.position = new Vector2(r.xMin, r.yMin);
+                Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
                 Installizer.contentStyle.fontSize = (int)Mathf.Max(1, 12f * GlobalScale);
-                Installizer.contentContent.text = string.Format("<b>{0}</b>", decorators[i].BTMeta.DisplayName);
-                GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-                btn.center = new Vector2(r.xMax - btn.size.x * 0.5f, r.center.y);
-                r.position += Vector2.up * tsize.y;
+                Installizer.contentContent.text = decor.NotFlag?decor.BTMeta.NotDisplayName: decor.BTMeta.DisplayName;
+                GUI.Label(tmp, Installizer.contentContent, Installizer.contentStyle);
+                btn.center = new Vector2(tmp.xMax - btn.size.x * 0.5f, tmp.center.y);
                 if (tsize.y > 8 && inter && GUI.Button(btn, "", "WinBtnCloseActiveMac"))
                 {
-                    node.RemoveDecorator(decorators[i].BTMeta);
+                    node.RemoveDecorator(decor.BTMeta);
                     mResizeNode = true;
                     break;
                 }
-                if (mFocusDecorator == decorators[i])
-                {
-                    OnPropertiesList(ref r, mFocusDecorator, tsize, dsize);
-                }
+                tmp.size = dsize;
+                tmp.position = new Vector2(r.xMin, r.yMin + tsize.y);
+                OnPropertiesList(tmp, decor, tsize, dsize);
+                r.position += Vector2.up * h;
             }
         }
 
-        void OnPropertiesList(ref Rect r, BehaviourNodeGUI.Decorator decorator, Vector2 tsize, Vector2 dsize)
+        void OnPropertiesList(Rect r, BehaviourNodeGUI.Decorator decorator, Vector2 tsize, Vector2 dsize)
         {
-            BehaviourInputProperty[] properties = decorator.Properties;
+            BTInputProperty[] properties = decorator.Properties;
             if (properties.Length == 0)
                 return;
-            float delta = 5 * GlobalScale;
-            r.position += Vector2.up * delta;
             Rect h = new Rect();
-            float x0 = 80 * GlobalScale + 1;
+            h.size = new Vector2(dsize.x - 6 * GlobalScale, dsize.y);
+            h.position = r.position + Vector2.one * 3 * GlobalScale;
             Installizer.contentStyle.alignment = TextAnchor.MiddleLeft;
+            Installizer.contentStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.SUB_FONT_SIZE * GlobalScale);
             bool dirty = false;
             for (int i = 0; i < properties.Length; i++)
             {
-                if (i > 0)
-                    r.position += Vector2.up * (dsize.y + delta);
-                h.size = new Vector2(x0, dsize.y);
-                h.position = new Vector2(r.xMin + delta, r.yMin);
-                Installizer.contentContent.text = properties[i].PropertyName;
+                BTInputProperty prop = properties[i];
+                Installizer.contentContent.text = prop.PropertyName;
                 GUI.Label(h, Installizer.contentContent, Installizer.contentStyle);
-                h.size = new Vector2(r.width - x0 - delta, dsize.y);
-                h.position = new Vector2(x0, r.yMin);
-                GUI.Label(h, "", "textfield");// "TL LoopSection");
+                h.y += dsize.y;//  = new Vector2(r.xMin + x0, r.yMin + i * dsize.y);
+                //GUI.Label(h, "", "textfield");// "TL LoopSection");
+                QuickGUI.DrawBox(h, Color.clear, Color.gray, 1);
                 if (h.Contains(Event.current.mousePosition))
-                    mRaycastProperty = properties[i];
-                if (mFocusProperty == properties[i])
+                    mRaycastProperty = prop;
+                if (mFocusProperty == prop)
                 {
-                    string str = GUI.TextField(h, properties[i].InputData, Installizer.contentStyle);
-                    dirty |= str != properties[i].InputData;
-                    properties[i].InputData = str;
+                    string str = GUI.TextField(h, prop.InputData, Installizer.contentStyle);
+                    dirty |= str != prop.InputData;
+                    prop.InputData = str;
                 }
                 else
                 {
-                    GUI.Label(h, properties[i].InputData, Installizer.contentStyle);
+                    prop.ReguexData();
+                    GUI.Label(h, prop.IsDefaultValue ?
+                        string.Format("<i><color=#a0a0a0>({0})</color></i> {1} ", prop.TypeName, prop.InputData) : prop.InputData, Installizer.contentStyle);
                 }
+                h.y += tsize.y;
             }
-            r.position += Vector2.up * tsize.y;
             if (dirty)
             {
                 decorator.UpdatePropertiesInfo();
@@ -280,8 +376,9 @@ namespace DevilEditor
                 rect.position = new Vector2(LocalRect.center.x - w * 0.5f, LocalRect.yMin);
                 LocalRect = rect;
             }
-            Vector2 tsize = new Vector2(l * GlobalScale, 30 * GlobalScale);
-            Vector2 dsize = new Vector2(l * GlobalScale - 2, 20 * GlobalScale);
+            Vector2 dsize = new Vector2(l * GlobalScale - 2, BehaviourNodeGUI.SUB_FONT_SIZE * GlobalScale);
+            dsize.y += 5 * GlobalScale;
+            Vector2 tsize = new Vector2(dsize.x, dsize.y * 1.3f);
 
             BehaviourNodeGUI node = Context as BehaviourNodeGUI;
             TextAnchor align = Installizer.contentStyle.alignment;
@@ -294,21 +391,25 @@ namespace DevilEditor
             //
             r.size = tsize;
             r.position = new Vector2(0, mScrollOffsetL);
-            BehaviourInputProperty[] properties;
+            BTInputProperty[] properties;
             // conditions
             OnAttachedDecoratorListGUI(ref r, tsize, dsize, node, node.conditions);
             // self
             properties = node.Self.Properties;
-            r.size = new Vector2(tsize.x, tsize.y + properties.Length * tsize.y + 5 * GlobalScale);
-            GUI.Label(r, "", node.Self.BTMeta.FrameStyle);
-            r.size = tsize;
-            Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
-            Installizer.contentStyle.fontSize = (int)Mathf.Max(1, 12f * GlobalScale);
-            Installizer.contentContent.text = string.Format("<b>{0} ({1})</b>", node.Self.BTMeta.DisplayName, node.Self.BTId);
-            GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-            r.position += Vector2.up * (tsize.y + 5);
-            OnPropertiesList(ref r, node.Self, tsize, dsize);
-
+            r.size = new Vector2(tsize.x, tsize.y + properties.Length * (tsize.y + dsize.y) + tsize.y);
+            QuickGUI.DrawBox(r, node.Self.BTMeta.color, Color.black);
+            if (r.Contains(Event.current.mousePosition))
+                mRaycastDecorator = node.Self;
+            Rect tmp = new Rect();
+            tmp.size = tsize;
+            tmp.position = new Vector2(r.xMin, r.yMin);
+            Installizer.titleStyle.alignment = TextAnchor.MiddleCenter;
+            Installizer.titleStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.FONT_SIZE * GlobalScale);
+            Installizer.titleContent.text = string.Format("<b>{0}</b>", node.Self.BTMeta.DisplayName);
+            GUI.Label(tmp, Installizer.titleContent, Installizer.titleStyle);
+            tmp.y += tsize.y + 4 * GlobalScale;
+            OnPropertiesList(tmp, node.Self, tsize, dsize);
+            r.y = r.yMax;
             //services
             OnAttachedDecoratorListGUI(ref r, tsize, dsize, node, node.services);
 
@@ -328,7 +429,15 @@ namespace DevilEditor
                 Rect r = new Rect();
                 r.size = new Vector2(rect.size.x - 20, 20);
                 r.position = rect.position;
-                mSearchContext = GUI.TextField(r, mSearchContext, "SearchTextField").ToLower();
+                mRaycastSearch = r.Contains(Event.current.mousePosition);
+                if (mFocusSearch)
+                {
+                    mSearchContext = GUI.TextField(r, mSearchContext, "SearchTextField").ToLower();
+                }
+                else
+                {
+                    GUI.Label(r, mSearchContext, "SearchTextField");
+                }
                 r.size = new Vector2(20, 20);
                 r.position = new Vector2(GlobalRect.xMax - 20, GlobalRect.yMin + 2);
                 if (GUI.Button(r, "", "SearchCancelButton"))
@@ -360,85 +469,7 @@ namespace DevilEditor
 
             r.size = new Vector2(tsize.x, GlobalRect.height - delta);
             r.position = new Vector2(GlobalRect.xMax - tsize.x, GlobalRect.yMin + 20);
-            BeginScroll(r,ref mScrollRect);
-
-            Installizer.contentStyle.fontSize = (int)Mathf.Max(1, 12f * GlobalScale);
-            r.size = tsize;
-            r.position = new Vector2(0, mScrollOffset);
-            GUI.Label(r, "", "flow overlay box");
-            Installizer.contentContent.text = "<b>Condtions</b>";
-            GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-            r.position += Vector2.up * tsize.y;
-
-            Rect btn = new Rect();
-            btn.size = new Vector2(20, 20);
-            bool editmode = dsize.y > 13 && node != null; // 可编辑装饰节点
-
-            // decorators
-            r.size = dsize;
-            for (int i = 0; i < Installizer.BTConditions.Count; i++)
-            {
-                if(search && !Installizer.BTConditions[i].SearchName.Contains(mSearchContext))
-                {
-                    continue;
-                }
-                if (r.yMax < 0 || r.yMin > GlobalRect.height)
-                {
-                    r.position += Vector2.up * dsize.y;
-                    continue;
-                }
-                bool owns = node.GetDecorator(Installizer.BTConditions[i]) != null;
-                if (owns)
-                    continue;
-                bool inter = r.Contains(Event.current.mousePosition);
-                if (inter && editmode)
-                {
-                    GUI.Label(r, "", "Icon.ClipSelected");
-                    mRaycastMeta = Installizer.BTConditions[i];
-                }
-                Installizer.contentContent.text = string.Format("<color={0}>{1} <b>?</b></color>",
-                   inter ? "yellow" : "white", Installizer.BTConditions[i].DisplayName);
-                GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-                btn.center = new Vector2(r.xMax - 12, r.center.y);
-                
-                r.position += Vector2.up * tsize.y;
-            }
-
-            r.size = tsize;
-            GUI.Label(r, "", "flow overlay box");
-            Installizer.contentContent.text = "<b>Services</b>";
-            GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-            r.position += Vector2.up * tsize.y;
-
-            // services
-            r.size = dsize;
-            for (int i = 0; i < Installizer.BTServices.Count; i++)
-            {
-                if (search && !Installizer.BTServices[i].SearchName.Contains(mSearchContext))
-                {
-                    continue;
-                }
-                if (r.yMax < 0 || r.yMin > GlobalRect.height)
-                {
-                    r.position += Vector2.up * dsize.y;
-                    continue;
-                }
-                bool owns = node.GetDecorator(Installizer.BTServices[i]) != null;
-                if (owns)
-                    continue;
-                bool inter = r.Contains(Event.current.mousePosition);
-                if (inter && editmode)
-                {
-                    GUI.Label(r, "", "Icon.ClipSelected");
-                    mRaycastMeta = Installizer.BTServices[i];
-                }
-                Installizer.contentContent.text = string.Format("<color={0}>{1}</color>",
-                   inter ? "yellow" : "white", Installizer.BTServices[i].DisplayName);
-                GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-                btn.center = new Vector2(r.xMax - 12, r.center.y);
-                r.position += Vector2.up * dsize.y;
-            }
-            EndScroll(r.yMax, ref mScrollRect, ref mScrollOffset);
+            OnMetaList(mDecoratorList, r, search, true);
         }
 
         void OnNewNodeGUI()
@@ -451,6 +482,65 @@ namespace DevilEditor
                 LocalRect = rect;
             }
             OnTaskList();
+        }
+
+        void OnMetaList(List<MetaUI> metas, Rect r, bool search, bool skipExist)
+        {
+            Vector2 dsize = new Vector2(r.width, BehaviourNodeGUI.SUB_FONT_SIZE * GlobalScale);
+            dsize.y += 10 * GlobalScale;
+            Vector2 tsize = new Vector2(dsize.x, dsize.y * 1.2f);
+            BeginScroll(r, ref mScrollRect);
+
+            Installizer.contentStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.SUB_FONT_SIZE * GlobalScale);
+            r.size = tsize;
+            r.position = new Vector2(0, mScrollOffset);
+            
+            // controllers
+            r.size = dsize;
+            int len = metas.Count;
+            Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
+            BehaviourNodeGUI context = Context as BehaviourNodeGUI;
+            Color color = Color.gray;
+            bool collape = true;
+            for (int i = 0; i < len; i++)
+            {
+                MetaUI meta = metas[i];
+                if (!meta.IsTitle)
+                {
+                    if (collape && !search)
+                        continue;
+                    if (search && !meta.BTMeta.SearchName.Contains(mSearchContext))
+                    {
+                        continue;
+                    }
+                    if (skipExist && context != null && context.ContainsDecorator(meta.BTMeta))
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    collape = meta != mDropDownMeta;
+                }
+                r.height = meta.Height * GlobalScale;
+                if (r.yMax >= 0 && r.yMin < GlobalRect.height)
+                {
+                    bool inter = r.Contains(Event.current.mousePosition);
+                    if (inter)
+                    {
+                        //GUI.Label(r, "", "flow node 0");// "Icon.ClipSelected");
+                        mRaycastMeta = meta;//SelectionRect
+                    }
+                    meta.OnGUI(r, GlobalScale, mDropDownMeta == meta);
+                    //QuickGUI.DrawBox(r, new Color(0.3f, 0.3f, 0.3f), Color.yellow, inter ? 2 : 0);
+                    //Installizer.contentContent.text = meta.DisplayName;
+                    //GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
+                }
+                r.y += meta.Height * GlobalScale;
+
+            }
+            
+            EndScroll(r.yMax, ref mScrollRect, ref mScrollOffset);
         }
         
         void OnTaskList()
@@ -472,132 +562,102 @@ namespace DevilEditor
 
             r.size = new Vector2(tsize.x, GlobalRect.height - delta);
             r.position = new Vector2(GlobalRect.xMax - tsize.x, GlobalRect.yMin + 20);
-            BeginScroll(r, ref mScrollRect);
 
-            Installizer.contentStyle.fontSize = (int)Mathf.Max(1, 12f * GlobalScale);
-            r.size = tsize;
-            r.position = new Vector2(0, mScrollOffset);
-            GUI.Label(r, "", "flow overlay box");
-            Installizer.contentContent.text = "<b>Composites</b>";
-            GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-            r.position += Vector2.up * tsize.y;
-
-            Rect btn = new Rect();
-            btn.size = new Vector2(20, 20);
-            bool editmode = dsize.y > 13 && node != null; // 可编辑装饰节点
-
-            // controllers
-            r.size = dsize;
-            for (int i = 0; i < Installizer.BTControllers.Count; i++)
-            {
-                if (search && !Installizer.BTControllers[i].SearchName.Contains(mSearchContext))
-                {
-                    continue;
-                }
-                if (r.yMax < 0 || r.yMin > GlobalRect.height)
-                {
-                    r.position += Vector2.up * dsize.y;
-                    continue;
-                }
-                bool inter = r.Contains(Event.current.mousePosition);
-                if (inter)
-                {
-                    GUI.Label(r, "", "Icon.ClipSelected");
-                    mRaycastMeta = Installizer.BTControllers[i];//SelectionRect
-                }
-                Installizer.contentContent.text = string.Format("<color={0}>{1}</color>",
-                   inter ? "yellow" : "white", Installizer.BTControllers[i].DisplayName);
-                GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-                btn.center = new Vector2(r.xMax - 12, r.center.y);
-                r.position += Vector2.up * dsize.y;
-            }
-
-            r.size = tsize;
-            GUI.Label(r, "", "flow overlay box");
-            Installizer.contentContent.text = "<b>Tasks</b>";
-            GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-            r.position += Vector2.up * tsize.y;
-
-            // tasks
-            r.size = dsize;
-            for (int i = 0; i < Installizer.BTTasks.Count; i++)
-            {
-                if (search && !Installizer.BTTasks[i].SearchName.Contains(mSearchContext))
-                {
-                    continue;
-                }
-                if (r.yMax < 0 || r.yMin > GlobalRect.height)
-                {
-                    r.position += Vector2.up * dsize.y;
-                    continue;
-                }
-                bool inter = r.Contains(Event.current.mousePosition);
-                if (inter)
-                {
-                    GUI.Label(r, "", "Icon.ClipSelected");
-                    mRaycastMeta = Installizer.BTTasks[i];//SelectionRect
-                }
-                Installizer.contentContent.text = string.Format("<color={0}>{1}</color>",
-                   inter ? "yellow" : "white", Installizer.BTTasks[i].DisplayName);
-                GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-                btn.center = new Vector2(r.xMax - 12, r.center.y);
-                r.position += Vector2.up * dsize.y;
-                
-            }
-            EndScroll(r.yMax, ref mScrollRect, ref mScrollOffset);
+            OnMetaList(mTaskList, r, search, false);
         }
 
         public override bool InteractMouseClick(EMouseButton button, Vector2 mousePosition)
         {
             if (!Visible)
                 return false;
-            if(mRaycastMeta != null)
+            mFocusSearch = mRaycastSearch;
+            if(mRaycastMeta != null && button == EMouseButton.left)
             {
-                switch (mRaycastMeta.NodeType)
+                if (mRaycastMeta.IsTitle)
+                    mDropDownMeta = mRaycastMeta == mDropDownMeta ? null : mRaycastMeta;
+                else
                 {
-                    case EBTNodeType.task:
-                    case EBTNodeType.controller:
-                        mWindow.AddChild(Context, mRaycastMeta, new Vector2(LocalRect.center.x, LocalRect.yMin));
-                        Hide();
-                        return true;
-                    case EBTNodeType.condition:
-                    case EBTNodeType.service:
-                        BehaviourNodeGUI node = Context as BehaviourNodeGUI;
-                        if (node != null)
-                        {
-                            BehaviourNodeGUI.Decorator decor = node.AddDecorator(mRaycastMeta);
-                            if (decor != null && decor.Properties.Length > 0)
+                    switch (mRaycastMeta.BTMeta.NodeType)
+                    {
+                        case EBTNodeType.task:
+                        case EBTNodeType.controller:
+                            mWindow.AddChild(Context, mRaycastMeta.BTMeta, new Vector2(LocalRect.center.x, LocalRect.yMin));
+                            Hide();
+                            return true;
+                        case EBTNodeType.condition:
+                        case EBTNodeType.service:
+                            BehaviourNodeGUI node = Context as BehaviourNodeGUI;
+                            if (node != null)
                             {
-                                mFocusDecorator = decor;
-                                decor.UpdatePropertiesInfo();
+                                BehaviourNodeGUI.Decorator decor = node.AddDecorator(mRaycastMeta.BTMeta);
+                                if (decor != null && decor.Properties.Length > 0)
+                                {
+                                    //mFocusDecorator = decor;
+                                    decor.UpdatePropertiesInfo();
+                                }
+                                //Hide();
+                                node.Resize();
+                                if (decor == null)
+                                {
+                                    EditorCanvasTip.NewTip("不能添加<color=yellow>" + mRaycastMeta.BTMeta.DisplayName + "</color>", 2)
+                                        .Show(mWindow.RootCanvas, mWindow.RootCanvas.CalculateLocalPosition(mousePosition - Vector2.up * 20));
+                                }
                             }
-                            //Hide();
-                            node.Resize();
-                        }
-                        return true;
-                    default:
-                        break;
+                            return true;
+                        default:
+                            break;
+                    }
                 }
             }
+            bool act = mFocusProperty == null && mRaycastProperty == null;
+            if (mFocusProperty != mRaycastProperty)
+                SubmitProperty();
             mFocusProperty = mRaycastProperty;
-            if (mRaycastDecorator != null && mRaycastDecorator.Properties.Length > 0)
-            {
-                mFocusDecorator = mRaycastDecorator;
-            }
+            mFocusDecorator = mRaycastDecorator;
+            if (act && mRaycastDecorator != null && mRaycastDecorator.BTMeta.NodeType == EBTNodeType.condition)
+                mRaycastDecorator.NotFlag = !mRaycastDecorator.NotFlag;
+            //if (mRaycastDecorator != null && mRaycastDecorator.Properties.Length > 0)
+            //{
+            //    mFocusDecorator = mRaycastDecorator;
+            //}
             return Visible;
         }
 
         public override bool InteractDragBegin(EMouseButton button, Vector2 mousePosition)
         {
-            mDragEnd = false;
-            return Visible;
+            if (Visible && button == EMouseButton.left)
+            {
+                mDragEnd = false;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        void SubmitProperty()
+        {
+            if (mFocusProperty != null && mFocusProperty.ReguexData() && mFocusDecorator != null)
+            {
+                mFocusDecorator.UpdatePropertiesInfo();
+            }
+            mFocusProperty = null;
+
         }
 
         public override bool InteractDragEnd(EMouseButton button, Vector2 mousePosition)
         {
-            mDragEnd = true;
-            mFocusProperty = null;
-            return Visible;
+            if (Visible && button == EMouseButton.left)
+            {
+                mDragEnd = true;
+                SubmitProperty();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public override bool InteractDrag(EMouseButton button, Vector2 mousePosition, Vector2 mouseDelta)
@@ -616,5 +676,14 @@ namespace DevilEditor
             return Visible;
         }
 
+        public override bool InteractKeyUp(KeyCode key)
+        {
+            if(mFocusProperty!=null && key == KeyCode.Return)
+            {
+                SubmitProperty();
+                return true;
+            }
+            return false;
+        }
     }
 }

@@ -6,9 +6,9 @@ namespace Devil.AI
 {
     public class BTTask : BTNodeBase
     {
-        IBTTask mTask;
+        BTTaskBase mTask;
 
-        public BTTask(int id, IBTTask task) : base(id)
+        public BTTask(int id, BTTaskBase task) : base(id)
         {
             mTask = task;
         }
@@ -18,7 +18,7 @@ namespace Devil.AI
             get { return null; }
         }
 
-        public override void ReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(EBTTaskState state)
         {
         }
 
@@ -26,7 +26,7 @@ namespace Devil.AI
         {
             if (mTask != null)
             {
-                State = mTask.OnStartTask(behaviourTree);
+                State = mTask.OnTaskStart(behaviourTree);
             }
             else
             {
@@ -34,10 +34,10 @@ namespace Devil.AI
             }
         }
 
-        public override void InitData(string jsonData)
+        public override void InitData(BehaviourTreeRunner btree, string jsonData)
         {
             if (mTask != null)
-                mTask.OnInitData(jsonData);
+                mTask.OnInitData(btree, jsonData);
         }
 
         protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
@@ -46,10 +46,10 @@ namespace Devil.AI
                 State = mTask.OnTaskTick(behaviourTree, deltaTime);
         }
 
-        public override bool AbortWithSucces()
+        public override bool AbortAndReturnSuccess(BehaviourTreeRunner behaviourTree)
         {
             if (mTask != null)
-                return mTask.AbortWithSuccess();
+                return mTask.OnTaskAbortAndReturnSuccess(behaviourTree);
             else
                 return false;
         }
@@ -66,7 +66,7 @@ namespace Devil.AI
             get { return null; }
         }
 
-        public override void ReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(EBTTaskState state)
         {
         }
 

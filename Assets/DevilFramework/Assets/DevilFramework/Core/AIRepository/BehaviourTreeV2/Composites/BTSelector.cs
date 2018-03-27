@@ -4,9 +4,7 @@ using UnityEngine;
 
 namespace Devil.AI
 {
-    [BehaviourTree(FrameStyle = "flow node 1", DisplayName = "SELECTOR", SubTitle = 
-@"选择执行子节点，直到第一个成功的
-任务结束，类似于 OR 运算。", SortOrder = -2)]
+    [BTComposite(Title = "选择", Detail = "SELECTOR", IconPath = "Assets/DevilFramework/Editor/Icons/selector.png")]
     public class BTSelector : BTNodeBase
     {
         int mVisitIndex;
@@ -30,7 +28,7 @@ namespace Devil.AI
             }
         }
 
-        public override void ReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(EBTTaskState state)
         {
             if(state == EBTTaskState.faild)
             {

@@ -1,27 +1,25 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Devil.AI
 {
     public class BehaviourLooper
     {
         BTNodeBase mRoot;
-        BTNodeBase mRuntimeNode;
-        float mRuntimeNodeTime;
-        public float NodeRuntime { get { return mRuntimeNodeTime; } }
+        public float NodeRuntime { get; private set; }
         public bool IsComplate { get; private set; }
-        public BTNodeBase RuntimeNode { get { return mRuntimeNode; } }
+        public BTNodeBase RuntimeNode { get; private set; }
+        public EBTTaskState State { get; private set; }
 
         public BehaviourLooper(BTNodeBase rootNode)
         {
             mRoot = rootNode;
+            IsComplate = mRoot == null;
         }
 
         public void Reset()
         {
-            IsComplate = false;
-            mRuntimeNode = null;
+            IsComplate = mRoot == null;
+            RuntimeNode = null;
         }
 
         public void ResetTreeState()
@@ -44,28 +42,32 @@ namespace Devil.AI
         public void Update(BehaviourTreeRunner runner, float deltaTime)
         {
             if (mRoot == null)
+            {
+                IsComplate = true;
                 return;
-            if (mRuntimeNode == null)
+            }
+            if (RuntimeNode == null)
             {
                 IsComplate = false;
-#if DEBUG_AI
+#if UNITY_EDITOR
                 runner.NotifyBehaviourTreeBegin();
 #endif
-                mRuntimeNode = mRoot;
-                mRuntimeNodeTime = 0;
-                mRuntimeNode.Visit(runner);
+                RuntimeNode = mRoot;
+                NodeRuntime = 0;
+                RuntimeNode.Visit(runner);
             }
             else
             {
-                mRuntimeNode.Tick(runner, Time.deltaTime);
-                mRuntimeNodeTime += Time.deltaTime;
+                RuntimeNode.Tick(runner, Time.deltaTime);
+                NodeRuntime += Time.deltaTime;
             }
-            mRuntimeNode = VisitChildren(runner, mRuntimeNode);
-            if(mRuntimeNode == null)
+            RuntimeNode = VisitChildren(runner, RuntimeNode);
+            State = mRoot.State;
+            if(RuntimeNode == null)
             {
                 IsComplate = true;
             }
-#if DEBUG_AI
+#if UNITY_EDITOR
             runner.NotifyBehaviourTreeFrame();
             if (IsComplate)
             {
@@ -87,6 +89,7 @@ namespace Devil.AI
                 {
                     if (tmp.State == EBTTaskState.running)
                         return tmp;
+                    tmp.Cleanup(runner);
                     parent = tmp == mRoot ? null : tmp.ParentNode;
                     if (parent != null)
                         parent.ReturnWithState(tmp.State);
@@ -94,7 +97,7 @@ namespace Devil.AI
                 }
                 else
                 {
-                    mRuntimeNodeTime = 0;
+                    NodeRuntime = 0;
                     child.Visit(runner);
                     tmp = child;
                 }

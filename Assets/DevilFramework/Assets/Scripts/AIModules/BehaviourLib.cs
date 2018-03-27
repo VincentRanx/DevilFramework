@@ -1,5 +1,4 @@
 ﻿using Devil.AI;
-using GameExt;
 
 public class BehaviourLib : BehaviourLibrary
 {
@@ -10,14 +9,17 @@ public class BehaviourLib : BehaviourLibrary
 
     protected override void OnInit()
     {
-        mTasks["BTCoolDownTask"] = () => new BTCoolDownTask();
-        mConditions["BTCondtionTrue"] = () => new BTCondtionTrue();
-        mServices["BTFindTargetArroundPlayerService"] = () => new BTFindTargetArroundPlayerService();
-        mServices["BTFindTargetService"] = () => new BTFindTargetService();
-        mControllers["BTRandom"] = (id) => new BTRandom(id);
         mControllers["BTParralel"] = (id) => new BTParralel(id);
         mControllers["BTSelector"] = (id) => new BTSelector(id);
         mControllers["BTSequence"] = (id) => new BTSequence(id);
+        mControllers["BTSubTreeTask"] = (id) => new BTSubTreeTask(id);
+        mConditions["BTFoundTarget"] = (id) => new BTFoundTarget(id);
+        mConditions["BTBlackboardSetCondtion"] = (id) => new BTBlackboardSetCondtion(id);
+        mConditions["BTCoolDownCondition"] = (id) => new BTCoolDownCondition(id);
+        mServices["BTFindTargetService"] = (id) => new BTFindTargetService(id);
+        mTasks["BTWalkAway"] = (id) => new BTWalkAway(id);
+        mTasks["BTFindTargetTask"] = (id) => new BTFindTargetTask(id);
+        mTasks["BTMoveTo"] = (id) => new BTMoveTo(id);
 
     }
 }

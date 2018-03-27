@@ -1,4 +1,5 @@
-﻿using Devil.Utility;
+﻿using Devil;
+using Devil.Utility;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -295,6 +296,29 @@ public class Graph<T> where T : class
         }
     }
 
+    public T GetParent(int layer, int index)
+    {
+        if (index < 0 || index >= mNodes.Count)
+            return null;
+        int from, to;
+        for (int i = 0; i < mLinks[layer].Count; i++)
+        {
+            uint link = mLinks[layer][i];
+            from = (int)((link & 0xffff0000u) >> 16);
+            to = (int)(link & 0xffffu);
+            if (to == index)
+            {
+                return mNodes[from];
+            }
+        }
+        return null;
+    }
+
+    public T GetParent(int layer, T child)
+    {
+        return GetParent(0, IndexOf(child));
+    }
+
     public void GetAllParentIndex(int layer, int index, ICollection<int> parents)
     {
         if (index < 0 || index >= mNodes.Count)
@@ -383,4 +407,14 @@ public class Graph<T> where T : class
         return false;
     }
 
+    public T FindNode(FilterDelegate<T> filter)
+    {
+        for(int i = 0; i < NodeLength; i++)
+        {
+            T n = this[i];
+            if (filter(n))
+                return n;
+        }
+        return null;
+    }
 }

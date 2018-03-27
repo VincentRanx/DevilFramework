@@ -84,6 +84,17 @@ namespace Devil.Utility
             }
         }
 
+        public static int ToHash(string str)
+        {
+            int hash = 0;
+            int len = str == null ? 0 : str.Length;
+            for(int i = 0; i < len; i++)
+            {
+                hash = hash * 31 + str[i];
+            }
+            return hash;
+        }
+
         public static void ReadDictionary(string str, Dictionary<string,string> dic)
         {
             string[] lines = str.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);

@@ -1,144 +1,204 @@
 ﻿using Devil.AI;
 using Devil.Utility;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Xml;
 using UnityEngine;
 
 namespace DevilEditor
 {
-    public enum EInputType
-    {
-        text,
-        raw,
-    }
-
-    public class BehaviourInputProperty
+    public class BTInputProperty
     {
         public string PropertyName { get; private set; }
-        public EInputType InputType { get; private set; }
-        public string InputData { get; set; }
-
-        public BehaviourInputProperty(string desc)
+        public string TypeName { get; private set; }
+        public string DefaultValue { get; set; }
+        string mInputData;
+        bool mIsDataDirty;
+        public string InputData
         {
-            int n = desc.IndexOf(':');
-            if (n > 0)
-                PropertyName = desc.Substring(0, n).Trim();
-            if (n > 0 && n < desc.Length - 1)
-                InputType = desc.Substring(n + 1).Trim().ToLower() == "raw" ? EInputType.raw : EInputType.text;
+            get
+            {
+                return mInputData;
+            }
+            set
+            {
+                if (mInputData != value)
+                {
+                    mIsDataDirty = true;
+                    mInputData = value;
+                }
+            }
+        }
+
+        public bool IsDefaultValue { get { return mInputData == DefaultValue; } }
+
+        public bool ReguexData()
+        {
+            if (mIsDataDirty)
+            {
+                mIsDataDirty = false;
+                string reg = DevilCfg.ReguexTypeValue(TypeName, mInputData, DefaultValue);
+                bool dirty = reg != mInputData;
+                if (dirty)
+                {
+                    mInputData = reg;
+                }
+                else
+                {
+                    DefaultValue = reg;
+                }
+                return dirty;
+            }
             else
-                InputType = EInputType.text;
-            if (InputType == EInputType.raw)
-                InputData = "0";
+            {
+                return false;
+            }
         }
 
-        public BehaviourInputProperty(string propertyName, EInputType type)
+        public BTInputProperty(string propertyName, string type)
         {
-            PropertyName = PropertyName;
-            InputType = type;
-            if (InputType == EInputType.raw)
-                InputData = "0";
+            PropertyName = propertyName;
+            TypeName = type;
+            InputData = DevilCfg.DefaultTypeValue(TypeName);
+            DefaultValue = InputData;
         }
 
-        public BehaviourInputProperty(BehaviourInputProperty prop)
+        public BTInputProperty(BTInputProperty prop)
         {
             PropertyName = prop.PropertyName;
-            InputType = prop.InputType;
+            TypeName = prop.TypeName;
             InputData = prop.InputData;
+            DefaultValue = prop.DefaultValue;
         }
 
-        public string GetJsonPattern()
+        public BTInputProperty(FieldInfo field, BTVariableAttribute attr)
         {
-            if (InputType == EInputType.raw)
-                return string.Format("\"{0}\":{1}", PropertyName, string.IsNullOrEmpty(InputData) ? "0" : InputData);
+            if (string.IsNullOrEmpty(attr.Name))
+                PropertyName = field.Name;
             else
-                return string.Format("\"{0}\":\"{1}\"", PropertyName, InputData);
+                PropertyName = attr.Name;
+            if (string.IsNullOrEmpty(attr.TypePattern))
+                TypeName = field.FieldType.Name;
+            else
+                TypeName = attr.TypePattern;
+            if (string.IsNullOrEmpty(attr.DefaultVallue))
+                DefaultValue = DevilCfg.DefaultTypeValue(TypeName);
+            else
+                DefaultValue = attr.DefaultVallue;
+            InputData = DefaultValue;
         }
     }
 
     public class BehaviourMeta
     {
-        public int SortOrder { get { return Attribute == null ? 0 : Attribute.SortOrder; } }
-        public string Name { get { return TargetType.Name; } }
-        public string Namespace { get { return TargetType.Namespace; } }
+        public int SortOrder { get; private set; }
+        public string Name { get; private set; }
+        public string Namespace { get; private set; }
         public string DisplayName { get; private set; }
-        public System.Type TargetType { get; private set; }
-        public BehaviourTreeAttribute Attribute { get; private set; }
+        public string NotDisplayName { get; private set; }
+        //public System.Type TargetType { get; private set; }
         public string SearchName { get; private set; }
         public EBTNodeType NodeType { get; private set; }
-        public BehaviourInputProperty[] Properties { get; private set; }
-        public string SubTitle { get { return Attribute == null ? "" : Attribute.SubTitle; } }
-        public Texture2D Background
-        {
-            get
-            {
-                if (Attribute == null || string.IsNullOrEmpty(Attribute.IconPath))
-                    return null;
-                else
-                    return DevilEditorUtility.GetTexture(Attribute.IconPath);
-            }
-        }
-
-        public string FrameStyle
-        {
-            get
-            {
-                string style = Attribute == null ? null : Attribute.FrameStyle;
-                if (string.IsNullOrEmpty(style))
-                    style = "flow node 0";
-                return style;
-            }
-        }
-
-
+        public BTInputProperty[] Properties { get; private set; }
+        public string SubTitle { get; private set; }
+        public string Category { get; private set; }
+        public Texture2D Icon { get; private set; }
+        public bool HideProperty { get; private set; }
+        public bool IsDecoratorNode { get { return NodeType == EBTNodeType.condition || NodeType == EBTNodeType.service; } }
+        public bool IsCompositeNode { get { return NodeType == EBTNodeType.controller || NodeType == EBTNodeType.task; } }
+        public Color color { get; set; }
 
         public BehaviourMeta(System.Type target)
         {
-            TargetType = target;
-            Attribute = Ref.GetCustomAttribute<BehaviourTreeAttribute>(target);
-            List<BehaviourInputProperty> properties = new List<BehaviourInputProperty>();
-            if(Attribute != null)
-            {
-                DisplayName = Attribute.DisplayName;
-                if (!string.IsNullOrEmpty(Attribute.InputDatas))
-                {
-                    string[] data = Attribute.InputDatas.Split(',');
-                    for(int i=0;i<data.Length;i++)
-                    {
-                        string str = data[i].Trim();
-                        if (string.IsNullOrEmpty(str))
-                            continue;
-                        properties.Add(new BehaviourInputProperty(data[i]));
-                    }
-                }
-            }
-            Properties = properties.ToArray();
-            if (string.IsNullOrEmpty(DisplayName))
-                DisplayName = target.Name;
-
-            SearchName = Name.ToLower() + " " + DisplayName.ToLower();
-            System.Type[] interfaces = target.GetInterfaces();
-            foreach (System.Type i in interfaces)
-            {
-                if (i == typeof(IBTTask))
-                {
-                    NodeType = EBTNodeType.task;
-                    break;
-                }
-                else if (i == typeof(IBTCondition))
-                {
-                    NodeType = EBTNodeType.condition;
-                    break;
-                }
-                else if (i == typeof(IBTService))
-                {
-                    NodeType = EBTNodeType.service;
-                    break;
-                }
-            }
-            if (target.IsSubclassOf(typeof(BTNodeBase)) && target.GetConstructor(new System.Type[] { typeof(int) }) != null)
+            //TargetType = target;
+            Name = target.Name;
+            DisplayName = Name;
+            Namespace = target.Namespace;
+            string iconPath = "";
+            if (target.IsSubclassOf(typeof(BTNodeBase)))
             {
                 NodeType = EBTNodeType.controller;
+                Category = "Composite";
+                iconPath = Installizer.InstallRoot + "/DevilFramework/Editor/Icons/composite.png";
             }
+            else if (target.IsSubclassOf(typeof(BTTaskBase)))
+            {
+                NodeType = EBTNodeType.task;
+                Category = "Task";
+                iconPath = Installizer.InstallRoot + "/DevilFramework/Editor/Icons/task.png";
+            }
+            else if (target.IsSubclassOf(typeof(BTConditionBase)))
+            {
+                NodeType = EBTNodeType.condition;
+                Category = "Condition";
+            }
+            else if (target.IsSubclassOf(typeof(BTServiceBase)))
+            {
+                NodeType = EBTNodeType.service;
+                Category = "Service";
+            }
+            else
+            {
+                NodeType = EBTNodeType.invalid;
+                Category = "Invalid";
+            }
+
+            BTCompositeAttribute attr = Ref.GetCustomAttribute<BTCompositeAttribute>(target);
+            if (attr != null)
+            {
+                if (!string.IsNullOrEmpty(attr.Title))
+                    DisplayName = attr.Title;
+                if (!string.IsNullOrEmpty(attr.Detail))
+                    SubTitle = attr.Detail;
+                if (!string.IsNullOrEmpty(attr.IconPath))
+                    iconPath = attr.IconPath;
+                if (!string.IsNullOrEmpty(attr.Category))
+                    Category = attr.Category;
+                HideProperty = attr.HideProperty;
+            }
+            FieldInfo[] fields = target.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            List<BTInputProperty> propperties = new List<BTInputProperty>();
+            for(int i = 0; i < fields.Length; i++)
+            {
+                BTVariableAttribute vatt = Ref.GetCustomAttribute<BTVariableAttribute>(fields[i]);
+                if(vatt != null)
+                {
+                    BTInputProperty pro = new BTInputProperty(fields[i], vatt);
+                    propperties.Add(pro);
+                }
+            }
+            Icon = DevilEditorUtility.GetTexture(iconPath);
+            Properties = propperties.ToArray();
+            NotDisplayName = string.Format("<b><color=yellow>NOT</color></b> {0}", DisplayName);
+            SearchName = Name.ToLower() + " " + DisplayName.ToLower();
+            color = BehaviourModuleManager.GetOrNewInstance().GetCategoryColor(Category);
         }
 
+
+
+//        XmlElement cfg = DevilCfg.CfgAtPath("behaviour-composite/" + target.Name);
+//            if(cfg != null)
+//            {
+//                SubTitle = DevilCfg.CfgValue("detail", null, cfg);
+//                iconPath = DevilCfg.CfgValue("icon", iconPath, cfg);
+//                DisplayName = DevilCfg.CfgValue("title", target.Name, cfg);
+//                XmlElement inputs = DevilCfg.CfgAtPath("input", cfg);
+//                if(inputs != null)
+//                {
+//                    List<BehaviourInputProperty> properties = new List<BehaviourInputProperty>();
+//        XmlElement child = inputs.FirstChild as XmlElement;
+//                    while(child != null)
+//                    {
+//                        BehaviourInputProperty p = new BehaviourInputProperty(child.Name, child.GetAttribute("type"));
+//        p.DefaultValue = child.InnerText;
+//                        properties.Add(p);
+//                        child = child.NextSibling as XmlElement;
+//                    }
+//    Properties = properties.ToArray();
+//                }
+//Category = DevilCfg.CfgValue("category", Category, cfg);
+//            }
     }
 }

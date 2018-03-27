@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Devil.AI;
+using System.IO;
 
 namespace DevilEditor
 {
@@ -14,10 +15,12 @@ namespace DevilEditor
         BehaviourTreeDesignerWindow mWindow;
         bool mDrag;
         string mTitle;
+        Texture mLockTex;
 
         public BehaviourRootGUI(BehaviourTreeDesignerWindow window) : base()
         {
             mWindow = window;
+            mLockTex = DevilEditorUtility.GetTexture(Path.Combine(Installizer.InstallRoot, "DevilFramework/Editor/Icons/lock.png"));
         }
 
         public void UpdateLocalData()
@@ -61,6 +64,7 @@ namespace DevilEditor
                 GUI.Label(rect, "", "Icon.OutlineBorder");
                 Installizer.titleStyle.normal.textColor = Color.white;
                 Installizer.titleStyle.fontSize = Mathf.Max(1, (int)(30 * GlobalScale));
+                Installizer.titleStyle.alignment = TextAnchor.MiddleCenter;
                 Installizer.titleContent.text = mTitle;
                 GUI.Label(rect, Installizer.titleContent, Installizer.titleStyle);
             }
@@ -91,12 +95,21 @@ namespace DevilEditor
                     GUI.Label(rect, "", "textarea");
                 }
             }
+            if (mWindow.LockTarget && mLockTex != null)
+            {
+                rect.size = new Vector2(GlobalRect.height * 0.5f, GlobalRect.height * 0.5f);
+                rect.position = new Vector2(GlobalRect.xMax - rect.width, GlobalRect.yMin);
+                GUI.DrawTexture(rect, mLockTex, ScaleMode.ScaleToFit);
+            }
         }
 
         public override bool InteractMouseClick(EMouseButton button, Vector2 mousePosition)
         {
-            if (mWindow.BehaviourAsset != null && !Application.isPlaying)
-                EditorGUIUtility.PingObject(mWindow.BehaviourAsset);
+            if (mWindow.BehaviourAsset != null)
+            {
+                //EditorGUIUtility.PingObject(mWindow.BehaviourAsset);
+                mWindow.LockTarget = !mWindow.LockTarget;
+            }
             return true;
         }
     }

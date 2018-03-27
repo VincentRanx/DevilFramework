@@ -1,4 +1,6 @@
 ﻿using Devil.Utility;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -24,40 +26,36 @@ namespace DevilEditor
 
         EMouseAction mouseAction;
         EMouseButton mouseButton;
+        private string statInfo = "";
 
-        protected EditorGUICanvas mClipCanvas;
-        protected EditorGUICanvas mScaledCanvas;
-        protected EditorGUICanvas mGridCanvas;
-        protected string statInfo = "";
-
-        public EditorGUICanvas RootCanvas { get { return mClipCanvas; } }
-        public EditorGUICanvas GraphCanvas { get { return mGridCanvas; } }
-        public EditorGUICanvas ScaledCanvas { get { return mScaledCanvas; } }
+        public EditorGUICanvas RootCanvas { get; private set; }
+        public EditorGUICanvas GraphCanvas { get; private set; }
+        public EditorGUICanvas ScaledCanvas { get; private set; }
         public Vector2 GlobalMousePosition { get; private set; }
         protected float mMinScale = 0.1f;
         protected float mMaxScale = 5f;
 
         protected virtual void UpdateStateInfo()
         {
-            statInfo = string.Format("<b><size=20>[{0} : 1]</size></b>", mScaledCanvas.LocalScale.ToString("0.00"));
+            statInfo = string.Format("<b><size=20>[{0} : 1]</size></b>", ScaledCanvas.LocalScale.ToString("0.00"));
         }
 
         protected virtual void InitCanvas()
         {
-            mClipCanvas = new EditorGUICanvas();
-            mClipCanvas.Pivot = new Vector2(0, 0);
+            RootCanvas = new EditorGUICanvas();
+            RootCanvas.Pivot = new Vector2(0, 0);
 
-            mScaledCanvas = new EditorGUICanvas();
-            mScaledCanvas.SortOrder = -1;
-            mClipCanvas.AddElement(mScaledCanvas);
+            ScaledCanvas = new EditorGUICanvas();
+            ScaledCanvas.SortOrder = -1;
+            RootCanvas.AddElement(ScaledCanvas);
 
-            mGridCanvas = new EditorGUICanvas();
-            mScaledCanvas.AddElement(mGridCanvas);
+            GraphCanvas = new EditorGUICanvas();
+            ScaledCanvas.AddElement(GraphCanvas);
 
-            mGridCanvas.GridLineColor = new Color(0.2f, 0.2f, 0.2f, 1f);
-            mGridCanvas.ShowGridLine = true;
-            mGridCanvas.GridSize = 100;
-            mGridCanvas.LocalRect = new Rect(-10000, -10000, 20000, 20000);
+            GraphCanvas.GridLineColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+            GraphCanvas.ShowGridLine = true;
+            GraphCanvas.GridSize = 100;
+            GraphCanvas.LocalRect = new Rect(-10000, -10000, 20000, 20000);
 
             UpdateStateInfo();
         }
@@ -68,9 +66,44 @@ namespace DevilEditor
             InitCanvas();
         }
 
-        protected void OnGUI()
+        protected virtual void OnEnable()
+        {
+            ReadData();
+        }
+
+        protected virtual void OnDisable()
+        {
+            SaveData();
+        }
+
+        void ReadData()
+        {
+            string str = EditorPrefs.GetString("can.sav");
+            if (!string.IsNullOrEmpty(str))
+            {
+                JObject obj = JsonConvert.DeserializeObject<JObject>(str);
+                ScaledCanvas.LocalScale = obj.Value<float>("scale");
+                Rect rect = GraphCanvas.LocalRect;
+                rect.x = Mathf.Clamp(obj.Value<float>("x"), -20000, 20000);
+                rect.y = Mathf.Clamp(obj.Value<float>("y"), -20000, 20000);
+                GraphCanvas.LocalRect = rect;
+            }
+        }
+
+        void SaveData()
+        {
+            JObject obj = new JObject();
+            obj["scale"] = ScaledCanvas.LocalScale;
+            obj["x"] = GraphCanvas.LocalRect.x;
+            obj["y"] = GraphCanvas.LocalRect.y;
+            EditorPrefs.SetString("can.sav", JsonConvert.SerializeObject(obj));
+        }
+
+        protected virtual void OnGUI()
         {
             ProcessMouseDeltaPos();
+
+            Input.imeCompositionMode = IMECompositionMode.On;
 
             GUI.skin.label.richText = true;
 
@@ -111,10 +144,10 @@ namespace DevilEditor
             GUI.BeginClip(clipRect);
             GlobalMousePosition = Event.current.mousePosition;
             Rect r = new Rect(Vector2.zero, clipRect.size);
-            mClipCanvas.LocalRect = r;
-            mScaledCanvas.LocalRect = r;
-            mClipCanvas.CalculateGlobalRect(true);
-            mClipCanvas.OnGUI(r);
+            RootCanvas.LocalRect = r;
+            ScaledCanvas.LocalRect = r;
+            RootCanvas.CalculateGlobalRect(true);
+            RootCanvas.OnGUI(r);
             GUI.EndClip();
         }
 
@@ -141,54 +174,58 @@ namespace DevilEditor
         //聚焦状态图中心
         private void ProcessFocusCenter()
         {
-            if (focusCenter && Vector2.Distance(-0.5f * mGridCanvas.LocalRect.size, mGridCanvas.LocalRect.position) > 1)
+            if (focusCenter)
             {
-                repaint |= true;
-                Rect rect = mGridCanvas.LocalRect;
-                rect.position = Vector2.Lerp(rect.position, -0.5f * mGridCanvas.LocalRect.size, 0.1f);
-                mGridCanvas.LocalRect = rect;
-            }
-            else
-            {
-                focusCenter = false;
+                Vector2 delta =  ScaledCanvas.GlobalCentroid- GraphCanvas.GlobalCentroid;
+                if (delta.sqrMagnitude > 1)
+                {
+                    repaint |= true;
+                    Rect rect = GraphCanvas.LocalRect;
+                    rect.position += Vector2.Lerp(Vector2.zero, delta / GraphCanvas.GlobalScale, 0.1f);
+                    GraphCanvas.LocalRect = rect;
+                }
+                else
+                {
+                    focusCenter = false;
+                }
             }
         }
 
         void OnDragBegin()
         {
-            mClipCanvas.InteractDragBegin(mouseButton, GlobalMousePosition);
+            RootCanvas.InteractDragBegin(mouseButton, GlobalMousePosition);
         }
 
         void OnDrag()
         {
-            if (mClipCanvas.InteractDrag(mouseButton, GlobalMousePosition, mouseDeltaPos))
+            if (RootCanvas.InteractDrag(mouseButton, GlobalMousePosition, mouseDeltaPos))
                 return;
             if (mouseButton == EMouseButton.middle || mouseButton == EMouseButton.right)
             {
-                Rect rect = mGridCanvas.LocalRect;
-                rect.position += mouseDeltaPos / (mGridCanvas.GlobalScale > 0 ? mGridCanvas.GlobalScale : 1);
-                mGridCanvas.LocalRect = rect;
+                Rect rect = GraphCanvas.LocalRect;
+                rect.position += mouseDeltaPos / (GraphCanvas.GlobalScale > 0 ? GraphCanvas.GlobalScale : 1);
+                GraphCanvas.LocalRect = rect;
             }
         }
 
         void OnDragEnd()
         {
-            mClipCanvas.InteractDragEnd(mouseButton, GlobalMousePosition);
+            RootCanvas.InteractDragEnd(mouseButton, GlobalMousePosition);
         }
 
         void OnClick()
         {
-            mClipCanvas.InteractMouseClick(mouseButton, GlobalMousePosition);
+            RootCanvas.InteractMouseClick(mouseButton, GlobalMousePosition);
         }
 
         void OnKeyDown()
         {
-            mClipCanvas.InteractKeyDown(Event.current.keyCode);
+            RootCanvas.InteractKeyDown(Event.current.keyCode);
         }
 
         void OnKeyUp()
         {
-            if(mClipCanvas.InteractKeyUp(Event.current.keyCode))
+            if(RootCanvas.InteractKeyUp(Event.current.keyCode))
             {
                 return;
             }
@@ -244,10 +281,23 @@ namespace DevilEditor
             }
             if (Event.current.type == EventType.ScrollWheel)
             {
-                float f = Mathf.Clamp(mScaledCanvas.LocalScale - Event.current.delta.y * mScaledCanvas.LocalScale * 0.05f, mMinScale, mMaxScale);
-                if ((f < 1 && mScaledCanvas.LocalScale > 1) || (f > 1 && mScaledCanvas.LocalScale < 1))
+                Vector2 cen = Vector2.zero;
+                if (!Event.current.control)
+                {
+                    cen = GraphCanvas.Parent.CalculateLocalPosition(GlobalMousePosition);
+                }
+                float f = Mathf.Clamp(ScaledCanvas.LocalScale - Event.current.delta.y * ScaledCanvas.LocalScale * 0.05f, mMinScale, mMaxScale);
+                if ((f < 1 && ScaledCanvas.LocalScale > 1) || (f > 1 && ScaledCanvas.LocalScale < 1))
                     f = 1;
-                mScaledCanvas.LocalScale = f;
+                ScaledCanvas.LocalScale = f;
+                if (!Event.current.control)
+                {
+                    Rect r = GraphCanvas.LocalRect;
+                    Vector2 p = GraphCanvas.Parent.CalculateLocalPosition(GlobalMousePosition);
+                    Vector2 delta = p - cen;
+                    r.position += delta;
+                    GraphCanvas.LocalRect = r;
+                }
                 UpdateStateInfo();
             }
         }

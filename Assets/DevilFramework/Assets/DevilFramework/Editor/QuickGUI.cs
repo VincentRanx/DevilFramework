@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using System.IO;
 
 namespace DevilEditor
 {
@@ -8,6 +9,7 @@ namespace DevilEditor
         static Rect cachedViewportRect;
         static Vector2 mousePos;
         static Vector2 mouseDeltaPos;
+        static Texture boxTex;
 
         public delegate bool DrawCallback(int id, int counter);
 
@@ -66,6 +68,26 @@ namespace DevilEditor
             GUI.skin.label.fontStyle = defStyle;
             GUI.skin.label.normal.textColor = defColor;
             return ret;
+        }
+
+        public static void DrawBox(Rect rect, Color color, Color borderColor, float borderSize = 1, bool outlineBorder = false)
+        {
+            if (!boxTex)
+                boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Editor/Icons/box.png"));
+            if(color.a > 0)
+                GUI.DrawTexture(rect, boxTex, ScaleMode.StretchToFill, true, 0, color, 0, 0);
+            if (borderSize > 0 && borderColor.a > 0)
+            {
+                if (outlineBorder)
+                {
+                    Rect r = new Rect();
+                    r.size = rect.size + Vector2.one * 2 * borderSize;
+                    r.center = rect.center;
+                    rect = r;
+                }
+                GUI.DrawTexture(rect, boxTex, ScaleMode.StretchToFill, true, 0, borderColor, borderSize, borderSize);
+            }
+            //GUI.DrawTexture(rect, )
         }
 
         //标题栏,返回按钮索引,0表示标题本身

@@ -10,7 +10,6 @@ namespace DevilEditor
 {
     public class Installizer
     {
-        static string AI_IMPORT_FOLDER = "Assets/Scripts/AIModules";
 
         public static string InstallRoot { get; private set; }
 
@@ -24,11 +23,6 @@ namespace DevilEditor
         public static float ContentHeight { get; private set; }
 
         public static event System.Action OnReloaded = () => { };
-
-        public static List<BehaviourMeta> BTTasks { get; private set; }
-        public static List<BehaviourMeta> BTConditions { get; private set; }
-        public static List<BehaviourMeta> BTServices { get; private set; }
-        public static List<BehaviourMeta> BTControllers { get; private set; }
 
         static string libTemplate = 
 @"%namespace%
@@ -44,27 +38,6 @@ public class BehaviourLib : BehaviourLibrary
 %pattern%
     }
 }";
-
-        public static BehaviourMeta FindBTMeta(EBTNodeType type, string bname)
-        {
-            List<BehaviourMeta> lst = null;
-            if (type == EBTNodeType.task)
-                lst = BTTasks;
-            else if (type == EBTNodeType.controller)
-                lst = BTControllers;
-            else if (type == EBTNodeType.condition)
-                lst = BTConditions;
-            else if (type == EBTNodeType.service)
-                lst = BTServices;
-            if (lst == null)
-                return null;
-            for(int i = 0; i < lst.Count; i++)
-            {
-                if (lst[i].Name == bname)
-                    return lst[i];
-            }
-            return null;
-        }
 
         public static Vector2 SizeOfTitle(string text)
         {
@@ -87,6 +60,9 @@ public class BehaviourLib : BehaviourLibrary
         [InitializeOnLoadMethod]
         static void OnUnityLoaded()
         {
+            DevilEditorUtility.ReleaseCache();
+            DevilCfg.LoadConfiguration();
+
             titleStyle.alignment = TextAnchor.MiddleCenter;
             titleStyle.richText = true;
             titleStyle.fontSize = 13;
@@ -124,108 +100,8 @@ public class BehaviourLib : BehaviourLibrary
                     Debug.Log("Devil Framework install at path: " + path);
                 }
             }
-
-                GenerateAILibrary();
-                OnReloaded();
-        }
-
-        static void ParseAILibs(string scriptPath)
-        {
-            MonoScript mono = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptPath);
-            if (mono == null)
-                return;
-            System.Type t = mono.GetClass();
-            if (t == null)
-                return;
-            BehaviourTreeAttribute attr = Ref.GetCustomAttribute<BehaviourTreeAttribute>(t);
-            BehaviourMeta meta = new BehaviourMeta(t);
-            switch (meta.NodeType)
-            {
-                case EBTNodeType.task:
-                    BTTasks.Add(meta);
-                    break;
-                case EBTNodeType.service:
-                    BTServices.Add(meta);
-                    break;
-                case EBTNodeType.condition:
-                    BTConditions.Add(meta);
-                    break;
-                case EBTNodeType.controller:
-                    BTControllers.Add(meta);
-                    break;
-                default:
-                    break;
-            }
-            GlobalUtil.Sort(BTTasks, (x, y) => x.SortOrder - y.SortOrder);
-            GlobalUtil.Sort(BTServices, (x, y) => x.SortOrder - y.SortOrder);
-            GlobalUtil.Sort(BTConditions, (x, y) => x.SortOrder - y.SortOrder);
-            GlobalUtil.Sort(BTControllers, (x, y) => x.SortOrder - y.SortOrder);
-        }
-
-        static void GenerateAILibrary()
-        {
-            BTTasks = new List<BehaviourMeta>();
-            BTServices = new List<BehaviourMeta>();
-            BTConditions = new List<BehaviourMeta>();
-            BTControllers = new List<BehaviourMeta>();
-
-            string[] scripts = AssetDatabase.FindAssets("t:script", new string[] { AI_IMPORT_FOLDER, Path.Combine(InstallRoot, "DevilFramework/Core/AIRepository/BehaviourTreeV2") });
-            foreach (string guid in scripts)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                ParseAILibs(path);
-            }
-        }
-
-        [MenuItem("Devil Framework/Update AI Library Script")]
-        static void GenerateAICSharpe()
-        {
-            HashSet<string> namespaces = new HashSet<string>();
-            List<string> genPatterns = new List<string>();
-            namespaces.Add("Devil.AI");
-            foreach(BehaviourMeta meta in BTTasks)
-            {
-                if(!string.IsNullOrEmpty(meta.Namespace))
-                    namespaces.Add(meta.Namespace);
-                genPatterns.Add(string.Format("mTasks[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
-            }
-            foreach (BehaviourMeta meta in BTConditions)
-            {
-                if (!string.IsNullOrEmpty(meta.Namespace))
-                    namespaces.Add(meta.Namespace);
-                genPatterns.Add(string.Format("mConditions[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
-            }
-            foreach (BehaviourMeta meta in BTServices)
-            {
-                if (!string.IsNullOrEmpty(meta.Namespace))
-                    namespaces.Add(meta.Namespace);
-                genPatterns.Add(string.Format("mServices[\"{0}\"] = () => new {1}();", meta.Name, meta.Name));
-            }
-            foreach (BehaviourMeta meta in BTControllers)
-            {
-                if (!string.IsNullOrEmpty(meta.Namespace))
-                    namespaces.Add(meta.Namespace);
-                genPatterns.Add(string.Format("mControllers[\"{0}\"] = (id) => new {1}(id);", meta.Name, meta.Name));
-            }
-            StringBuilder builder = new StringBuilder();
-            int n0 = libTemplate.IndexOf("%namespace%");
-            int len0 = 11;
-            int n1 = libTemplate.IndexOf("%pattern%");
-            int len2 = 9;
-            builder.Append(libTemplate.Substring(0, n0));
-            foreach (string str in namespaces)
-            {
-                builder.Append("using ").Append(str).Append(";\n");
-            }
-            builder.Append(libTemplate.Substring(n0 + len0, n1 - (n0 + len0)));
-            foreach (string str in genPatterns)
-            {
-                builder.Append("        ").Append(str).Append('\n');
-            }
-            builder.Append(libTemplate.Substring(n1 + len2));
-
-            File.WriteAllText(Path.Combine(AI_IMPORT_FOLDER, "BehaviourLib.cs"), builder.ToString(), Encoding.UTF8);
-            AssetDatabase.Refresh();
+            BehaviourModuleManager.GetOrNewInstance().Load();
+            OnReloaded();
         }
     }
 }

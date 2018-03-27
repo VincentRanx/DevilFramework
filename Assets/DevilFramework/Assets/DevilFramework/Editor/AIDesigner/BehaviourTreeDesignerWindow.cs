@@ -1,25 +1,37 @@
 ﻿using Devil;
 using Devil.AI;
 using Devil.Utility;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
 namespace DevilEditor
 {
-    using BTNode = BehaviourTreeAsset.BTData;
+    using BTData = BehaviourTreeAsset.BTData;
+
 
     public class BehaviourTreeDesignerWindow : EditorCanvasWindow
     {
+        public class DelayTask
+        {
+            public int Id { get; private set; }
+            public System.Action Act { get; set; }
+            public DelayTask(int id, System.Action act)
+            {
+                this.Id = id;
+                this.Act = act;
+            }
+        }
+
         public enum ENodeEditMode
         {
             none,
             modify_parent,
             modify_child,
         }
+
+        public const int TASK_SAVE = 1;
+        public const int TASK_RESELECT = 2;
 
         public BehaviourTreeRunner Runner { get; private set; }
         public BehaviourTreeAsset BehaviourAsset { get; private set; }
@@ -33,14 +45,30 @@ namespace DevilEditor
         public ENodeEditMode EditMode { get; private set; }
         public PaintElement EditTarget { get; private set; }
         BehaviourRootGUI mRootGUI;
+        bool mLockTarget;
+        public bool LockTarget
+        {
+            get { return mLockTarget; }
+            set
+            {
+                bool loc = mLockTarget;
+                mLockTarget = value;
+                if(loc && !value)
+                {
+                    LoadSelectedAsset();
+                }
+            }
+        }
 
         public int GenerateId { get { return ++mIdCounter; } }
-
+        List<DelayTask> mPostTasks = new List<DelayTask>();
 
         bool mBuildIndex;
         int mIdCounter;
 
-        [MenuItem("Devil Framework/Behaviour Design")]
+        public bool IsPlaying { get { return EditorApplication.isPlaying && Runner != null; } }
+
+        [MenuItem("Devil Framework/AI/Behaviour Tree Design")]
         public static void OpenEditor()
         {
             GameObject obj = Selection.activeGameObject;
@@ -55,12 +83,24 @@ namespace DevilEditor
             window.Show();
         }
 
+        public static void OpenEditor(BehaviourTreeAsset asset)
+        {
+            BehaviourTreeDesignerWindow window = GetWindow<BehaviourTreeDesignerWindow>();
+            window.InitWith(asset);
+            window.Show();
+        }
+
         public BehaviourTreeDesignerWindow() : base()
         {
+            mMaxScale = 2;
             GraphCanvas.GridSize = 200;
             SelectionRect = new SelectionGUI();
             RootCanvas.AddElement(SelectionRect);
-            mScaledCanvas.Pivot = new Vector2(0.5f, 0.25f);
+            ScaledCanvas.Pivot = new Vector2(0.5f, 0.25f);
+            GraphCanvas.Pivot = new Vector2(0.5f, 0.1f);
+            Rect r = GraphCanvas.LocalRect;
+            r.position = new Vector2(-0.5f * r.width, -0.1f * r.height);
+            GraphCanvas.LocalRect = r;
 
             TreeGraph = new Graph<PaintElement>(1);
 
@@ -81,13 +121,28 @@ namespace DevilEditor
             ContextMenu = new BehaviourTreeContextMenuGUI(this);
             GraphCanvas.AddElement(ContextMenu);
 
-            mClipCanvas.Resort(true);
+            RootCanvas.Resort(true);
 
             GraphCanvas.OnDragBegin = OnGraphDragBegin;
             GraphCanvas.OnDrag = OnGraphDrag;
             GraphCanvas.OnDragEnd = OnGraphDragEnd;
             GraphCanvas.OnMouseClick = OnGraphClick;
             GraphCanvas.OnKeyUp = OnGraphKeyUp;
+        }
+
+        public void AddDelayTask(int id, System.Action act)
+        {
+            if (act == null)
+                return;
+            for (int i = 0; i < mPostTasks.Count; i++)
+            {
+                if (mPostTasks[i].Id == id)
+                {
+                    mPostTasks[i].Act = act;
+                    return;
+                }
+            }
+            mPostTasks.Add(new DelayTask(id, act));
         }
 
         void ResetIdCounter()
@@ -115,22 +170,22 @@ namespace DevilEditor
             }
         }
 
-        BehaviourNodeGUI InitNode(BTNode node)
+        BehaviourNodeGUI NewNode(BTData data)
         {
-            BehaviourMeta meta = Installizer.FindBTMeta(node.m_Type, node.m_Name);
-            if (meta == null)
+            BehaviourMeta meta = BehaviourModuleManager.GetOrNewInstance().FindBTMeta(data.m_Type, data.m_Name);
+            if (meta == null || (meta.NodeType != EBTNodeType.task && meta.NodeType != EBTNodeType.controller))
                 return null;
             BehaviourNodeGUI bnode = new BehaviourNodeGUI(this);
-            bnode.Self = new BehaviourNodeGUI.Decorator(node.m_Id, meta);
-            bnode.Self.ParseData(node.m_JsonData);
-            if (node.m_Services != null)
+            bnode.Self = new BehaviourNodeGUI.Decorator(data.m_Id, meta);
+            bnode.Self.ParseData(data.m_JsonData);
+            if (data.m_Services != null)
             {
-                for (int i = 0; i < node.m_Services.Length; i++)
+                for (int i = 0; i < data.m_Services.Length; i++)
                 {
-                    BTNode serv = BehaviourAsset.GetDataById(node.m_Services[i]);
+                    BTData serv = BehaviourAsset.GetDataById(data.m_Services[i]);
                     if (serv == null)
                         continue;
-                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.service, serv.m_Name);
+                    BehaviourMeta bm = BehaviourModuleManager.GetOrNewInstance().FindBTMeta(EBTNodeType.service, serv.m_Name);
                     if (bm != null)
                     {
                         BehaviourNodeGUI.Decorator decor = new BehaviourNodeGUI.Decorator(serv.m_Id, bm);
@@ -139,45 +194,63 @@ namespace DevilEditor
                     }
                 }
             }
-            //bnode.services.AddRange(node.m_Services);
-            if (node.m_Conditions != null)
+            if (data.m_Conditions != null)
             {
-                for (int i = 0; i < node.m_Conditions.Length; i++)
+                for (int i = 0; i < data.m_Conditions.Length; i++)
                 {
-                    BTNode cond = BehaviourAsset.GetDataById(node.m_Conditions[i]);
+                    BTData cond = BehaviourAsset.GetDataById(data.m_Conditions[i]);
                     if (cond == null)
                         continue;
-                    BehaviourMeta bm = Installizer.FindBTMeta(EBTNodeType.condition, cond.m_Name);
+                    BehaviourMeta bm = BehaviourModuleManager.GetOrNewInstance().FindBTMeta(EBTNodeType.condition, cond.m_Name);
                     if (bm != null)
                     {
                         BehaviourNodeGUI.Decorator decor = new BehaviourNodeGUI.Decorator(cond.m_Id, bm);
+                        decor.NotFlag = cond.m_NotFlag;
                         decor.ParseData(cond.m_JsonData);
                         bnode.conditions.Add(decor);
                     }
                 }
             }
-            //bnode.decorators.AddRange(node.m_Decorators);
             Rect r = new Rect();
             r.size = bnode.CalculateLocalSize();
-            r.position = node.m_Pos - Vector2.right * r.size.x * 0.5f;
+            r.position = data.m_Pos - Vector2.right * r.size.x * 0.5f;
             bnode.LocalRect = r;
-            TreeGraph.AddNode(bnode);
-            TreeCanvas.AddElement(bnode);
-            int children = node.m_Children == null ? 0 : node.m_Children.Length;
-            for (int i = 0; i < children; i++)
-            {
-                BTNode child = BehaviourAsset.GetDataById(node.m_Children[i]);
-                if (child == null)
-                    continue;
-                BehaviourNodeGUI bchild = InitNode(child);
-                if(bchild != null)
-                   TreeGraph.AddPath(0, bnode, bchild);
-            }
             return bnode;
+        }
+
+        public void InitWith(BehaviourTreeAsset asset)
+        {
+            if (EditorApplication.isPlaying)
+            {
+                BindBehaviourTreeEvent(false);
+            }
+            ContextMenu.Hide();
+            Runner = null;
+            BehaviourAsset = asset;
+            TreeCanvas.ClearElements();
+            CommentCanvas.ClearElements();
+            TreeGraph.Clear();
+
+            mRootGUI = new BehaviourRootGUI(this);
+            mRootGUI.UpdateLocalData();
+            TreeCanvas.AddElement(mRootGUI);
+            TreeGraph.AddNode(mRootGUI);
+
+            if (BehaviourAsset != null)
+            {
+                ImportTreeData();
+            }
+            ResetIdCounter();
+            RebuildExecutionOrder();
+            UpdateStateInfo();
         }
 
         public void InitWith(BehaviourTreeRunner runner)
         {
+            if (EditorApplication.isPlaying)
+            {
+                BindBehaviourTreeEvent(false);
+            }
             ContextMenu.Hide();
             Runner = runner;
             BehaviourAsset = Runner == null ? (Selection.activeObject as BehaviourTreeAsset) : Runner.SourceAsset;
@@ -192,23 +265,125 @@ namespace DevilEditor
 
             if (BehaviourAsset != null)
             {
-                BTNode broot = BehaviourAsset.GetDataById(BehaviourAsset.m_RootNodeId);
-                if (broot != null)
-                {
-                    BehaviourNodeGUI bnode = InitNode(broot);
-                    TreeGraph.AddPath(0, mRootGUI, bnode);
-                }
-                for(int i = 0; i < BehaviourAsset.m_Comments.Length; i++)
-                {
-                    BehaviourCommentGUI comment = new BehaviourCommentGUI(this);
-                    comment.Comment = BehaviourAsset.m_Comments[i].m_Comment;
-                    comment.LocalRect = BehaviourAsset.m_Comments[i].m_Rect;
-                    CommentCanvas.AddElement(comment);
-                }
+                ImportTreeData();
             }
             ResetIdCounter();
             RebuildExecutionOrder();
             UpdateStateInfo();
+            if (EditorApplication.isPlaying)
+            {
+                BindBehaviourTreeEvent(true);
+            }
+            Repaint();
+        }
+
+        void ImportTreeData()
+        {
+            for (int i = 0; i < BehaviourAsset.m_Datas.Length; i++)
+            {
+                BehaviourNodeGUI node = NewNode(BehaviourAsset.m_Datas[i]);
+                if(node != null)
+                {
+                    TreeGraph.AddNode(node);
+                    TreeCanvas.AddElement(node);
+                }
+            }
+            int id = 0;
+            FilterDelegate<PaintElement> filter = (x) =>
+            {
+                BehaviourNodeGUI bx = x as BehaviourNodeGUI;
+                return bx != null && bx.Self.BTId == id;
+            };
+            for (int i = 0; i < BehaviourAsset.m_Datas.Length; i++)
+            {
+                BTData data = BehaviourAsset.m_Datas[i];
+                id = data.m_Id;
+                BehaviourNodeGUI gnode = TreeGraph.FindNode(filter) as BehaviourNodeGUI;
+                if (gnode == null)
+                    continue;
+                int len = data.m_Children == null ? 0 : data.m_Children.Length;
+                for(int j = 0; j < len; j++)
+                {
+                    id = data.m_Children[j];
+                    BehaviourNodeGUI gchild = TreeGraph.FindNode(filter) as BehaviourNodeGUI;
+                    if (gchild != null)
+                        TreeGraph.AddPath(0, gnode, gchild);
+                }
+            }
+            id = BehaviourAsset.m_RootNodeId;
+            BehaviourNodeGUI root = TreeGraph.FindNode(filter) as BehaviourNodeGUI;
+            if (root != null)
+                TreeGraph.AddPath(0, mRootGUI, root);
+            
+            for (int i = 0; i < BehaviourAsset.m_Comments.Length; i++)
+            {
+                BehaviourCommentGUI comment = new BehaviourCommentGUI(this);
+                comment.Comment = BehaviourAsset.m_Comments[i].m_Comment;
+                comment.LocalRect = BehaviourAsset.m_Comments[i].m_Rect;
+                CommentCanvas.AddElement(comment);
+            }
+        }
+
+        void SaveAsset()
+        {
+            bool refresh = false;
+            if (BehaviourAsset == null)
+            {
+                BehaviourAsset = DevilEditorUtility.CreateAsset<BehaviourTreeAsset>(null, true);
+                mRootGUI.UpdateLocalData();
+                refresh = true;
+            }
+            if (BehaviourAsset == null)
+            {
+                return;
+            }
+            ExportTreeData();
+            if (refresh)
+                AssetDatabase.Refresh();
+        }
+
+        void ExportTreeData()
+        {
+            List<BTData> nodes = new List<BTData>();
+            List<PaintElement> children = new List<PaintElement>();
+            int rootId = 0;
+            for (int i = 0; i < TreeCanvas.ElementCount; i++)
+            {
+                BehaviourNodeGUI bnode = TreeCanvas.GetElement<BehaviourNodeGUI>(i);
+                if (bnode == null)
+                    continue;
+                if (TreeGraph.GetParent(0, bnode) == mRootGUI)
+                    rootId = bnode.Self.BTId;
+                BTData data = bnode.ExportNodeData(nodes);
+
+                children.Clear();
+                TreeGraph.GetAllChildren(0, bnode, children);
+                GlobalUtil.Sort(children, (x, y) => x.LocalRect.center.x <= y.LocalRect.center.x ? -1 : 1);
+                data.m_Children = new int[children.Count];
+                for (int j = 0; j < children.Count; j++)
+                {
+                    BehaviourNodeGUI child = children[j] as BehaviourNodeGUI;
+                    data.m_Children[j] = child == null ? 0 : child.Self.BTId;
+                }
+            }
+            BehaviourAsset.m_RootNodeId = rootId;
+            GlobalUtil.Sort(nodes, (x, y) => x.m_Id - y.m_Id);
+            BehaviourAsset.m_Datas = nodes.ToArray();
+            BehaviourAsset.m_Sorted = true;
+
+            BehaviourTreeAsset.Comment[] comments = new BehaviourTreeAsset.Comment[CommentCanvas.ElementCount];
+            for (int i = 0; i < comments.Length; i++)
+            {
+                comments[i] = new BehaviourTreeAsset.Comment();
+                BehaviourCommentGUI com = CommentCanvas.GetElement<BehaviourCommentGUI>(i);
+                if (com != null)
+                {
+                    comments[i].m_Rect = com.LocalRect;
+                    comments[i].m_Comment = com.Comment ?? "";
+                }
+            }
+            BehaviourAsset.m_Comments = comments;
+            EditorUtility.SetDirty(BehaviourAsset);
         }
 
         void DoBuildExecutionOrder()
@@ -242,104 +417,46 @@ namespace DevilEditor
             }
         }
 
-        void SaveAsset()
+        protected override void OnEnable()
         {
-            bool refresh = false;
-            if (BehaviourAsset == null)
-            {
-                BehaviourAsset = DevilEditorUtility.CreateAsset<BehaviourTreeAsset>(null, true);
-                mRootGUI.UpdateLocalData();
-                refresh = true;
-            }
-            if (BehaviourAsset == null)
-            {
-                return;
-            }
-            List<PaintElement> children = new List<PaintElement>();
-            TreeGraph.GetAllChildren(0, TreeGraph.Root, children);
-            List<BTNode> nodes = new List<BTNode>();
-            for (int i = 0; i < children.Count; i++)
-            {
-                BTNode node = SaveAssetAtRoot(children[i], nodes);
-                if (node != null)
-                {
-                    BehaviourAsset.m_RootNodeId = node.m_Id;
-                    GlobalUtil.Sort(nodes, (x, y) => x.m_Id - y.m_Id);
-                    BehaviourAsset.m_Datas = nodes.ToArray();
-                    BehaviourAsset.m_Sorted = true;
-                    break;
-                }
-            }
-            BehaviourTreeAsset.Comment[] comments = new BehaviourTreeAsset.Comment[CommentCanvas.ElementCount];
-            for(int i = 0; i < comments.Length; i++)
-            {
-                comments[i] = new BehaviourTreeAsset.Comment();
-                BehaviourCommentGUI com = CommentCanvas.GetElement<BehaviourCommentGUI>(i);
-                if(com!= null)
-                {
-                    comments[i].m_Rect = com.LocalRect;
-                    comments[i].m_Comment = com.Comment ?? "";
-                }
-            }
-            BehaviourAsset.m_Comments = comments;
-            EditorUtility.SetDirty(BehaviourAsset);
-            if(refresh)
-                AssetDatabase.Refresh();
-        }
-
-        BTNode SaveAssetAtRoot(PaintElement root, ICollection<BTNode> collection)
-        {
-            BehaviourNodeGUI node = root as BehaviourNodeGUI;
-            if (node == null)
-                return null;
-            BTNode bnode = node.ExportNodeData(collection);
-            List<PaintElement> children = new List<PaintElement>();
-            TreeGraph.GetAllChildren(0, root, children);
-            GlobalUtil.Sort(children, (x, y) => x.LocalRect.center.x <= y.LocalRect.center.x ? -1 : 1);
-            bnode.m_Children = new int[children.Count];
-            for (int i = 0; i < children.Count; i++)
-            {
-                BTNode child = SaveAssetAtRoot(children[i], collection);
-                bnode.m_Children[i] = child == null ? -1 : child.m_Id;
-            }
-            return bnode;
-        }
-
-        private void OnEnable()
-        {
+            base.OnEnable();
             Selection.selectionChanged += OnSelectedObjectChanged;
             EditorApplication.playModeStateChanged += OnPlayStateChanged;
+            Installizer.OnReloaded += ReloadGraph;
             OnSelectedObjectChanged();
-            
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
+            base.OnDisable();
             Selection.selectionChanged -= OnSelectedObjectChanged;
             EditorApplication.playModeStateChanged -= OnPlayStateChanged;
+            Installizer.OnReloaded -= ReloadGraph;
+        }
+
+        void ReloadGraph()
+        {
+            if (Runner != null && Runner.BehaviourAsset != null)
+                InitWith(Runner);
+            else
+                InitWith(BehaviourAsset);
+        }
+        
+        void LoadSelectedAsset()
+        {
+            BehaviourTreeRunner r;
+            GameObject obj = Selection.activeGameObject;
+            r = obj == null ? null : obj.GetComponent<BehaviourTreeRunner>();
+            InitWith(r);
         }
 
         void OnSelectedObjectChanged()
         {
-            GameObject obj = Selection.activeGameObject;
-            BehaviourTreeRunner r = obj == null ? null : obj.GetComponent<BehaviourTreeRunner>();
-#if DEBUG_AI
-            if (EditorApplication.isPlaying)
-            {
-                BindBehaviourTreeEvent(false);
-            }
-#endif
-            InitWith(r);
-#if DEBUG_AI
-            if (EditorApplication.isPlaying)
-            {
-                BindBehaviourTreeEvent(true);
-            }
-#endif
-            Repaint();
+            if (LockTarget && (Runner != null || BehaviourAsset != null))
+                return;
+            LoadSelectedAsset();
         }
 
-#if DEBUG_AI
         void BindBehaviourTreeEvent(bool bind)
         {
             if (Runner == null)
@@ -348,18 +465,37 @@ namespace DevilEditor
             {
                 Runner.OnBehaviourTreeBegin += OnBehaviourTreeBegin;
                 Runner.OnBehaviourTreeFrame += OnBehaviourTreeFrame;
+                for(int i = 0; i < TreeCanvas.ElementCount; i++)
+                {
+                    BehaviourNodeGUI node = TreeCanvas.GetElement<BehaviourNodeGUI>(i);
+                    if (node == null)
+                        continue;
+                    node.RuntimeNode = Runner.FindRuntimeNode(node.Self.BTId);
+                }
             }
             else
             {
                 Runner.OnBehaviourTreeBegin -= OnBehaviourTreeBegin;
                 Runner.OnBehaviourTreeFrame -= OnBehaviourTreeFrame;
+                for (int i = 0; i < TreeCanvas.ElementCount; i++)
+                {
+                    BehaviourNodeGUI node = TreeCanvas.GetElement<BehaviourNodeGUI>(i);
+                    if (node == null)
+                        continue;
+                    node.RuntimeNode = null;
+                }
             }
         }
         private void OnBehaviourTreeFrame(BehaviourTreeRunner btree)
         {
             if (btree == Runner)
             {
-                ResetRuntimeTreeState(btree.RootNode);
+                for(int i = 0; i < TreeCanvas.ElementCount; i++)
+                {
+                    BehaviourNodeGUI node = TreeCanvas.GetElement<BehaviourNodeGUI>(i);
+                    if (node != null)
+                        node.SyncRuntimeState(btree);
+                }
             }
         }
 
@@ -376,7 +512,7 @@ namespace DevilEditor
                 BehaviourNodeGUI node = TreeGraph[i] as BehaviourNodeGUI;
                 if (node != null && node.Self.BTId == nodeId)
                 {
-                    node.BTRuntimeState = state;
+                    node.Self.BTRuntimeState = state;
                     return;
                 }
             }
@@ -394,35 +530,34 @@ namespace DevilEditor
             }
         }
 
-        void ResetRuntimeTreeState(BTNodeBase node)
-        {
-            if (node == null)
-                return;
-            SetNodeRuntimeState(node.NodeId, node.State);
-            for (int i = 0; i < node.ChildLength; i++)
-            {
-                BTNodeBase child = node.ChildAt(i);
-                ResetRuntimeTreeState(child);
-            }
-        }
-
-#endif
-
         protected override void OnTitleGUI()
         {
-            GUILayout.Label(BehaviourAsset == null ? "<i>NO TREE</i>" : BehaviourAsset.name);
-            if (GUILayout.Button("REVERT", "TE toolbarbutton", GUILayout.Width(70)))
+            if (GUILayout.Button(Runner == null ? "<i>[NO RUNNER]</i>" : Runner.name, "GUIEditor.BreadcrumbLeft") && Runner != null)
             {
-                OnSelectedObjectChanged();
+                EditorGUIUtility.PingObject(Runner);
             }
-            if (GUILayout.Button("APPLY", "TE toolbarbutton", GUILayout.Width(70)))
+            if (GUILayout.Button(BehaviourAsset == null ? "<i>[NO TREE]</i>" : BehaviourAsset.name, "GUIEditor.BreadcrumbMid") && BehaviourAsset != null)
             {
-                SaveAsset();
+                EditorGUIUtility.PingObject(BehaviourAsset);
+            }
+            GUILayout.Label("");
+            if (GUILayout.Button("重置", "TE toolbarbutton", GUILayout.Width(70)))
+            {
+                AddDelayTask(TASK_RESELECT, new System.Action(ReloadGraph));
+            }
+            if (GUILayout.Button("更新", "TE toolbarbutton", GUILayout.Width(70)))
+            {
+                AddDelayTask(TASK_SAVE, new System.Action(SaveAsset));
             }
         }
 
         protected override void OnPostGUI()
         {
+            for(int i = 0; i < mPostTasks.Count; i++)
+            {
+                mPostTasks[i].Act();
+            }
+            mPostTasks.Clear();
             if (mBuildIndex)
             {
                 mBuildIndex = false;
@@ -439,7 +574,7 @@ namespace DevilEditor
                 rect.position = RootCanvas.CalculateLocalPosition(mousePosition);
                 SelectionRect.LocalRect = rect;
                 SelectionRect.Visible = true;
-                SelectComment(null);
+                SelectComment(null, false);
                 return true;
             }
             return false;
@@ -464,7 +599,7 @@ namespace DevilEditor
                 SelectionRect.Visible = false;
                 if (Event.current.control)
                 {
-                    SelectNodes((x) => x.Selected || SelectionRect.GlobalRect.Overlaps(x.GlobalRect, true));
+                    SelectNodes((x) => x.IsSelected || SelectionRect.GlobalRect.Overlaps(x.GlobalRect, true));
                 }
                 else
                 {
@@ -479,7 +614,7 @@ namespace DevilEditor
         bool OnGraphClick(EMouseButton button, Vector2 mousePositoin)
         {
             SelectNodes((x) => false);
-            SelectComment(null);
+            SelectComment(null, false);
             ContextMenu.Hide();
             if (button == EMouseButton.right)
             {
@@ -498,24 +633,26 @@ namespace DevilEditor
 
         private void OnPlayStateChanged(PlayModeStateChange obj)
         {
-#if DEBUG_AI
             if (obj == PlayModeStateChange.EnteredPlayMode)
             {
-                OnSelectedObjectChanged();
+                LoadSelectedAsset();
+                EditorApplication.update += Repaint;
             }
             else if (obj == PlayModeStateChange.ExitingPlayMode)
             {
-                OnSelectedObjectChanged();
+                EditorApplication.update -= Repaint;
+                LoadSelectedAsset();
             }
-#endif
         }
 
         bool OnGraphKeyUp(KeyCode key)
         {
+            if (IsPlaying)
+                return false;
             if (key == KeyCode.Delete)
             {
                 List<BehaviourNodeGUI> nodes = new List<BehaviourNodeGUI>();
-                EditNodes((x) => { if (x.Selected) nodes.Add(x); });
+                EditNodes((x) => { if (x.IsSelected) nodes.Add(x); });
                 for (int i = 0; i < nodes.Count; i++)
                 {
                     TreeCanvas.RemoveElement(nodes[i]);
@@ -552,7 +689,7 @@ namespace DevilEditor
             {
                 BehaviourNodeGUI node = TreeCanvas.GetElement<BehaviourNodeGUI>(i);
                 if (node != null)
-                    node.Selected = selector(node);
+                    node.IsSelected = selector(node);
             }
         }
 
@@ -598,17 +735,25 @@ namespace DevilEditor
             if (parent != null)
                 TreeGraph.AddPath(0, parent, node);
             RebuildExecutionOrder();
+
             return node;
         }
 
-        public void SelectComment(BehaviourCommentGUI target)
+        public void SelectComment(BehaviourCommentGUI target, bool multiselect)
         {
             for (int i = 0; i < CommentCanvas.ElementCount; i++)
             {
                 BehaviourCommentGUI com = CommentCanvas.GetElement<BehaviourCommentGUI>(i);
                 if (com == null)
                     continue;
-                com.IsSelected = com == target;
+                if(com == target)
+                {
+                    com.IsSelected = true;
+                }
+                else if (!multiselect)
+                {
+                    com.IsSelected = false;
+                }
             }
         }
     }

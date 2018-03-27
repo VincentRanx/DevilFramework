@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Devil.AI
@@ -12,47 +11,49 @@ namespace Devil.AI
         public BehaviourTreeAsset SourceAsset { get { return m_BehaviourAsset; } }
 
         [SerializeField]
+        BlackboardAsset m_Blackboard;
+
+        [SerializeField]
         [Range(0.01f, 1f)]
         float m_ServiceInterval = 0.1f;
 
-        List<IBTService> mServices = new List<IBTService>();
-        BTNodeBase mRoot;
+        [SerializeField]
+        bool m_BreakAtStart;
+
+        LinkedList<BTServiceBase> mServices = new LinkedList<BTServiceBase>();
         BehaviourLooper mLooper;
         float mServiceTimer;
         float mServiceDeltaTime;
-
+        private BTNodeBase mRootNode;
         BehaviourTreeAsset mAsset;
+        public BTBlackboard Blackboard { get; private set; }
         public BehaviourTreeAsset BehaviourAsset { get { return mAsset ?? m_BehaviourAsset; } }
         public float TaskTime { get { return mLooper.NodeRuntime; } }
+        public float BehaviourTime { get; private set; }
 
-        void StartService(IBTService service)
+        public void StartService(BTServiceBase service)
         {
             if (service != null)
             {
-                service.LiveCounter++;
-                if (service.LiveCounter == 1)
-                {
-                    mServices.Add(service);
-                    service.OnStartService(this);
-                }
+                mServices.AddLast(service);
+                service.OnServiceStart(this);
             }
         }
 
-        void StopService(IBTService service)
+        public void StopService(BTServiceBase service)
         {
-            if (service != null )
+            if (service != null)
             {
-                service.LiveCounter--;
-                if (service.LiveCounter == 0)
+                service.OnServiceStop(this);
+                LinkedListNode<BTServiceBase> serv = mServices.Last;
+                while (serv != null)
                 {
-                    for (int i = mServices.Count - 1; i >= 0; i--)
+                    if (serv.Value == service)
                     {
-                        if (mServices[i] == service)
-                        {
-                            mServices.RemoveAt(i);
-                            break;
-                        }
+                        mServices.Remove(serv);
+                        break;
                     }
+                    serv = serv.Previous;
                 }
             }
         }
@@ -60,42 +61,40 @@ namespace Devil.AI
         private void Start()
         {
             mServiceDeltaTime = m_ServiceInterval;
-            mServiceTimer = m_ServiceInterval;
+            mServiceTimer = 0;
+
+            if (m_Blackboard != null)
+                Blackboard = new BTBlackboard(m_Blackboard);
+            else
+                Blackboard = new BTBlackboard();
 
             mAsset = m_BehaviourAsset;
-            if(mAsset != null)
-                mRoot = mAsset.CreateBehaviourTree(this);
-            mLooper = new BehaviourLooper(mRoot);
-            //if (mRoot != null)
-            //    mRoot.InitWith(this);
-
-            //PrintTree(mRoot, "");
-            //enabled = false;
+            if (mAsset != null)
+                mRootNode = mAsset.CreateBehaviourTree(this);
+            mLooper = new BehaviourLooper(mRootNode);
+#if UNITY_EDITOR
+            if (m_BreakAtStart)
+                Debug.Break();
+#endif
         }
-
-        //void PrintTree(BTNodeBase node, string prefix)
-        //{
-        //    Debug.Log(prefix + node.GetType().Name);
-        //    for(int i = 0; i < node.ChildLength; i++)
-        //    {
-        //        PrintTree(node.ChildAt(i), prefix + "----");
-        //    }
-        //}
 
         private void FixedUpdate()
         {
-            if (mServiceTimer <= 0)
+            if (mServiceTimer >= m_ServiceInterval)
             {
-                for (int i = 0; i < mServices.Count; i++)
+                float t = mServiceTimer - mServiceDeltaTime;
+                LinkedListNode<BTServiceBase> serv = mServices.First;
+                while (serv != null)
                 {
-                    mServices[i].OnServiceTick(this, mServiceDeltaTime);
+                    serv.Value.OnServiceTick(this, t);
+                    serv = serv.Next;
                 }
-                mServiceTimer += m_ServiceInterval;
+                mServiceTimer -= m_ServiceInterval;
                 mServiceDeltaTime = mServiceTimer;
             }
             else
             {
-                mServiceTimer -= Time.fixedDeltaTime;
+                mServiceTimer += Time.fixedDeltaTime;
             }
         }
 
@@ -106,9 +105,40 @@ namespace Devil.AI
                 mLooper.ResetTreeState();
             }
             mLooper.Update(this, Time.deltaTime);
+            BehaviourTime += Time.deltaTime;
         }
 
-#if DEBUG_AI
+        public BTNodeBase FindRuntimeNode(int nodeId)
+        {
+            return FindNodeRecursize(nodeId, mRootNode);
+        }
+
+        private BTNodeBase FindNodeRecursize(int nodeId, BTNodeBase root)
+        {
+            if (root == null || root.NodeId == nodeId)
+                return root;
+            for(int i = 0; i < root.ChildLength; i++)
+            {
+                BTNodeBase node = FindNodeRecursize(nodeId, root.ChildAt(i));
+                if (node != null)
+                    return node;
+            }
+            return null;
+        }
+
+        public bool IsServiceActive(int servId)
+        {
+            LinkedListNode<BTServiceBase> serv = mServices.First;
+            while(serv != null)
+            {
+                if (serv.Value.Id == servId)
+                    return true;
+                serv = serv.Next;
+            }
+            return false;
+        }
+
+#if UNITY_EDITOR
         public event System.Action<BehaviourTreeRunner> OnBehaviourTreeFrame = (x) => { };
         public void NotifyBehaviourTreeFrame()
         {
@@ -124,7 +154,7 @@ namespace Devil.AI
         {
             OnBehaviourTreeEnd(this);
         }
-        public BTNodeBase RootNode { get { return mRoot; } }
+        public BTNodeBase RootNode { get { return mRootNode; } }
         public BTNodeBase RuntimeNode { get { return mLooper.RuntimeNode; } }
 #endif
 

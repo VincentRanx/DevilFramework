@@ -291,13 +291,14 @@ namespace Devil.Utility
         {
 #if USE_REFLECTION
             MemberInfo field = memberInfo as MemberInfo;
-            object[] attr = field.GetCustomAttributes(true);
-            for (int i = 0; i < attr.Length; i++)
-            {
-                if (attr[i] is T)
-                    return attr[i] as T;
-            }
-            return null;
+            return System.Attribute.GetCustomAttribute(field, typeof(T)) as T;
+            //object[] attr = field.GetCustomAttributes(true);
+            //for (int i = 0; i < attr.Length; i++)
+            //{
+            //    if (attr[i] is T)
+            //        return attr[i] as T;
+            //}
+            //return null;
 #else
             Debug.LogWarning("Reflection is not supported but \"Ref.GetCustomAttribute<T>(MemberInfo)\" require it!");
             return null;

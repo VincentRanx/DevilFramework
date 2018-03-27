@@ -1,10 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace Devil.AI
+﻿namespace Devil.AI
 {
-    [BehaviourTree(FrameStyle = "flow node 3", DisplayName = "PARRALEL", SubTitle = "并行执行子节点，相互不干扰,类似于并发", SortOrder = -1)]
+    [BTComposite(Title = "并行", Detail = "PARRALEL", IconPath = "Assets/DevilFramework/Editor/Icons/parralel.png")]
     public class BTParralel: BTNodeBase
     {
         BehaviourLooper[] mLoopers;
@@ -43,7 +39,7 @@ namespace Devil.AI
             }
         }
 
-        public override void ReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(EBTTaskState state)
         {
 
         }
@@ -72,7 +68,7 @@ namespace Devil.AI
                 State = EBTTaskState.success;
         }
 
-        public override bool AbortWithSucces()
+        public override bool AbortAndReturnSuccess(BehaviourTreeRunner behaviourTree)
         {
             return true;
         }

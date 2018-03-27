@@ -53,6 +53,8 @@ namespace DevilEditor
             Pivot = new Vector2(0.5f, 0.5f);
         }
 
+        public virtual void OnRemoved() { }
+
         public virtual void CalculateGlobalRect(bool recursive)
         {
             GlobalScale = 1;
@@ -71,6 +73,11 @@ namespace DevilEditor
             {
                 GlobalRect.position = LocalRect.position * GlobalScale + Parent.GlobalCentroid;
             }
+        }
+
+        public Vector2 CalculateGlobalPosition(Vector2 localPos)
+        {
+            return localPos * GlobalScale * LocalScale + GlobalCentroid;
         }
 
         // calculate child local rect
@@ -103,7 +110,6 @@ namespace DevilEditor
 
     public class EditorGUICanvas : PaintElement
     {
-        Vector2 mScrollPos;
         public float GridSize { get; set; }
         public bool ShowGridLine { get; set; }
         public bool ColorAxis { get; set; }
@@ -143,7 +149,7 @@ namespace DevilEditor
             if(ele.Parent == this)
             {
                 ele.Parent = null;
-                Elements.Remove(ele);
+                //Elements.Remove(ele);
             }
         }
 
@@ -151,7 +157,10 @@ namespace DevilEditor
 
         public T GetElement<T>(int index) where T: PaintElement
         {
-            return Elements[index] as T;
+            T t = Elements[index] as T;
+            if (t != null && t.Parent != this)
+                t = null;
+            return t;
         }
 
         public void ClearElements()
@@ -253,6 +262,7 @@ namespace DevilEditor
             {
                 OnDrawGridLine(clipRect, gsize);
             }
+            bool clean = false;
             if(LocalScale > 0)
             {
                 for(int i = 0; i < Elements.Count; i++)
@@ -260,6 +270,22 @@ namespace DevilEditor
                     PaintElement ele = Elements[i];
                     if (clipRect.Overlaps(ele.GlobalRect))
                         ele.OnGUI(clipRect);
+                    if(ele.Parent != this)
+                    {
+                        clean = true;
+                    }
+                }
+            }
+            if (clean)
+            {
+                for (int i = Elements.Count - 1; i >= 0; i--)
+                {
+                    PaintElement ele = Elements[i];
+                    if (ele.Parent != this)
+                    {
+                        Elements.RemoveAt(i);
+                        ele.OnRemoved();
+                    }
                 }
             }
         }

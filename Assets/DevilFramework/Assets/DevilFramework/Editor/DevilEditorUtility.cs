@@ -10,6 +10,11 @@ namespace DevilEditor
     {
         static Dictionary<string, Texture2D> m2DCache = new Dictionary<string, Texture2D>();
 
+        public static void ReleaseCache()
+        {
+            m2DCache.Clear();
+        }
+
         public static T CreateAsset<T>(string fullPath, bool selectFile = false) where T:ScriptableObject
         {
             if (selectFile)
@@ -45,6 +50,8 @@ namespace DevilEditor
 
         public static Texture2D GetTexture(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                return null;
             Texture2D tex;
             if(m2DCache.TryGetValue(path, out tex))
             {

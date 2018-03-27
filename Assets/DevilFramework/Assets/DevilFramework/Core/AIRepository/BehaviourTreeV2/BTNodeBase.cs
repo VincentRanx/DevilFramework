@@ -22,48 +22,51 @@ namespace Devil.AI
 
     public abstract class BTNodeBase
     {
-        int mNodeId;
-        public int NodeId { get { return mNodeId; } }
-        int mChildLen;
-        public int ChildLength { get { return mChildLen; } }
+        public int NodeId { get; private set; }
+        public int ChildLength { get; private set; }
         BTNodeBase[] mChildren;
-
-        int mConditionLen;
-        public int DecoratorLength { get { return mConditionLen; } }
-        IBTCondition[] mDecorators;
-
-        int mServiceLen;
-        public int ServiceLength { get { return mServiceLen; } }
-        IBTService[] mServices;
+        public int ConditionLength { get; private set; }
+        BTConditionBase[] mConditions;
+        public int ServiceLength { get; private set; }
+        BTServiceBase[] mServices;
+        private bool mVisited;
+        private uint mNotFlags;
 
         public EBTTaskState State { get; protected set; }
-        public bool AbortIsSuccess { get; protected set; }
+
+#if UNITY_EDITOR
+        public bool[] ConditionBuffer;
+        public bool BreakToggle { get; set; }
+#endif
 
         public BTNodeBase(int id)
         {
-            mNodeId = id;
+            NodeId = id;
         }
 
         public virtual void InitDecoratorSize(int conditionLen, int childLen, int serviceLen)
         {
-            mConditionLen = conditionLen;
-            mChildLen = childLen;
-            mServiceLen = serviceLen;
+            ConditionLength = conditionLen;
+            ChildLength = childLen;
+            ServiceLength = serviceLen;
             if (childLen > 0)
             {
                 mChildren = new BTNodeBase[childLen];
             }
             if (serviceLen > 0)
             {
-                mServices = new IBTService[serviceLen];
+                mServices = new BTServiceBase[serviceLen];
             }
             if (conditionLen > 0)
             {
-                mDecorators = new IBTCondition[conditionLen];
+                mConditions = new BTConditionBase[conditionLen];
             }
+#if UNITY_EDITOR
+            ConditionBuffer = new bool[conditionLen];
+#endif
         }
 
-        public virtual void InitData(string jsonData)
+        public virtual void InitData(BehaviourTreeRunner btree, string jsonData)
         {
 
         }
@@ -84,48 +87,84 @@ namespace Devil.AI
             }
         }
 
-        public IBTCondition GetCondition(int index)
+        public BTConditionBase GetCondition(int index)
         {
-            return mDecorators[index];
+            return mConditions[index];
         }
 
-        public virtual void SetCondition(int index, IBTCondition decorator)
+        public virtual void SetCondition(int index, BTConditionBase condition)
         {
-            mDecorators[index] = decorator;
+            mConditions[index] = condition;
         }
 
-        public IBTService GetService(int index)
+        public BTServiceBase GetService(int index)
         {
             return mServices[index];
         }
 
-        public virtual void SetService(int index, IBTService service)
+        public virtual void SetService(int index, BTServiceBase service)
         {
             mServices[index] = service;
         }
 
+        public void SetNotFlag(int conditionIndex, bool flag)
+        {
+            if (flag)
+                mNotFlags |= (1u << conditionIndex);
+            else
+                mNotFlags &= ~(1u << conditionIndex);
+        }
+
+        public bool GetNotFlag(int conditionIndex)
+        {
+            return (mNotFlags & (1u << conditionIndex)) != 0;
+        }
+
         public bool IsRunnable(BehaviourTreeRunner runner)
         {
-            for (int i = 0; i < DecoratorLength; i++)
+            for (int i = 0; i < ConditionLength; i++)
             {
-                IBTCondition decor = GetCondition(i);
-                if (decor != null && !decor.IsTaskRunnable(runner))
+                BTConditionBase decor = GetCondition(i);
+                if (decor != null && !(decor.IsTaskRunnable(runner) ^ GetNotFlag(i)))
                 {
+#if UNITY_EDITOR
+                    ConditionBuffer[i] = false;
+                    for (int k = i + 1; k < ConditionLength; k++)
+                    {
+                        decor = GetCondition(k);
+                        ConditionBuffer[k] = decor == null ? false : decor.IsTaskRunnable(runner);
+                    }
+#endif
                     return false;
                 }
+#if UNITY_EDITOR
+                ConditionBuffer[i] = true;
+#endif
             }
+
             return true;
         }
 
         public bool IsOnCondition(BehaviourTreeRunner runner)
         {
-            for (int i = 0; i < DecoratorLength; i++)
+            for (int i = 0; i < ConditionLength; i++)
             {
-                IBTCondition decor = GetCondition(i);
-                if (decor != null && !decor.IsTaskOnCondition(runner))
+                BTConditionBase decor = GetCondition(i);
+                if (decor != null && !(decor.IsTaskOnCondition(runner) ^ GetNotFlag(i)))
                 {
+#if UNITY_EDITOR
+                    ConditionBuffer[i] = false;
+                    for (int k = i + 1; k < ConditionLength; k++)
+                    {
+                        decor = GetCondition(k);
+                        ConditionBuffer[k] = decor == null ? false : decor.IsTaskRunnable(runner);
+                    }
+#endif
                     return false;
                 }
+#if UNITY_EDITOR
+                ConditionBuffer[i] = true;
+#endif
             }
             return true;
         }
@@ -143,35 +182,74 @@ namespace Devil.AI
             }
             else
             {
-                State = AbortWithSucces() ? EBTTaskState.success : EBTTaskState.faild;
+                State = AbortAndReturnSuccess(behaviourTree) ? EBTTaskState.success : EBTTaskState.faild;
             }
         }
 
-        public void Visit(BehaviourTreeRunner runner)
+        public void Visit(BehaviourTreeRunner btree)
         {
-            if (IsRunnable(runner))
-                OnVisit(runner);
+#if UNITY_EDITOR
+            if (BreakToggle)
+            {
+                Debug.Break();
+            }
+#endif
+            if (IsRunnable(btree))
+            {
+                for (int i = 0; i < ServiceLength; i++)
+                {
+                    BTServiceBase serv = mServices[i];
+                    if (serv != null)
+                        btree.StartService(serv);
+                }
+                mVisited = true;
+                OnVisit(btree);
+            }
             else
+            {
                 State = EBTTaskState.faild;
+            }
         }
+
+        public void Cleanup(BehaviourTreeRunner btree)
+        {
+            if (mVisited)
+            {
+                mVisited = false;
+                for (int i = ServiceLength - 1; i >= 0; i--)
+                {
+                    BTServiceBase serv = mServices[i];
+                    if (serv != null)
+                        btree.StopService(serv);
+                }
+                OnCleanup(btree);
+            }
+        }
+
+        public void ReturnWithState(EBTTaskState state)
+        {
+            OnReturnWithState(state);
+        }
+
+        public abstract BTNodeBase ChildForVisit { get; }
+
+        public virtual bool AbortAndReturnSuccess(BehaviourTreeRunner behaviourTree)
+        {
+            return false;
+        }
+
+        protected virtual void OnCleanup(BehaviourTreeRunner btree) { }
 
         protected abstract void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime);
 
         protected abstract void OnVisit(BehaviourTreeRunner behaviourTree);
 
-        public abstract BTNodeBase ChildForVisit { get; }
-
-        public virtual bool AbortWithSucces()
-        {
-            return AbortIsSuccess;
-        }
-
-        public abstract void ReturnWithState(EBTTaskState state);
+        protected abstract void OnReturnWithState(EBTTaskState state);
 
 #if UNITY_EDITOR
         public override string ToString()
         {
-            return string.Format("{0}({1})", GetType().Name, mNodeId);
+            return string.Format("{0}({1})", GetType().Name, NodeId);
         }
 #endif
     }

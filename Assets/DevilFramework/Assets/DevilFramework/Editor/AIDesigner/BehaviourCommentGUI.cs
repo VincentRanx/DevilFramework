@@ -50,11 +50,19 @@ namespace DevilEditor
 
         public override void OnGUI(Rect clipRect)
         {
+            int fsize = GUI.skin.textArea.fontSize;
+            int lsize = GUI.skin.label.fontSize;
+            FontStyle fstyle = GUI.skin.textArea.fontStyle;
+            FontStyle lstyle = GUI.skin.label.fontStyle;
+
+            GUI.skin.label.fontStyle = FontStyle.Bold;
+            GUI.skin.label.fontSize = 15;
+            GUI.skin.textArea.fontStyle = FontStyle.Bold;
+            GUI.skin.textArea.fontSize = 15;
             GUI.Label(GlobalRect, "", IsSelected ? "SelectionRect" : "box");//U2D.createRect
             Vector2 offset = Vector2.one * 10 * GlobalScale;
             if (mEditMode)
             {
-                Input.imeCompositionMode = IMECompositionMode.On;
                 Comment = GUI.TextArea(GlobalRect, Comment, "textarea");
             }
             else
@@ -69,8 +77,13 @@ namespace DevilEditor
                 r.center = mWindow.GlobalMousePosition;
                 GUI.Label(r, "", "GridToggle");
             }
+            GUI.skin.textArea.fontSize = fsize;
+            GUI.skin.textArea.fontStyle = fstyle;
+            GUI.skin.label.fontSize = lsize;
+            GUI.skin.label.fontStyle = lstyle;
             if (!IsSelected)
                 mEditMode = false;
+
         }
 
         void RaycastBoarder()
@@ -121,13 +134,27 @@ namespace DevilEditor
                 if (IsSelected)
                     mEditMode = true;
                 else
-                    mWindow.SelectComment(this);
+                    mWindow.SelectComment(this, Event.current.control);
                 mWindow.SelectNodes((x) => false);
                 mWindow.ContextMenu.Hide();
                 return true;
             }
             return false;
         }
+
+        void Move(Vector2 delta)
+        {
+            Rect rect = LocalRect;
+            rect.position += delta;
+            LocalRect = rect;
+            for (int i = 0; i < targets.Count; i++)
+            {
+                rect = targets[i].LocalRect;
+                rect.position += delta;
+                targets[i].LocalRect = rect;
+            }
+        }
+
 
         public override bool InteractDragBegin(EMouseButton button, Vector2 mousePosition)
         {
@@ -136,10 +163,15 @@ namespace DevilEditor
             if (button == EMouseButton.left)
             {
                 mDragEnd = false;
-                mWindow.SelectComment(this);
+                mWindow.SelectComment(this, IsSelected);
                 if (mBoarders == EDragBoarder.none)
                 {
-                    GetContainsTarget();
+                    for (int i = 0; i < mWindow.CommentCanvas.ElementCount; i++)
+                    {
+                        BehaviourCommentGUI com = mWindow.CommentCanvas.GetElement<BehaviourCommentGUI>(i);
+                        if (com != null && com.IsSelected)
+                            com.GetContainsTarget();
+                    }
                 }
                 return true;
             }
@@ -151,25 +183,23 @@ namespace DevilEditor
 
         public override bool InteractDrag(EMouseButton button, Vector2 mousePosition, Vector2 mouseDelta)
         {
-            if (!IsSelected)
+            if (!IsSelected || EditorApplication.isPlayingOrWillChangePlaymode)
                 return false;
             if (button == EMouseButton.left)
             {
-                Rect rect = LocalRect;
                 Vector2 delta = mouseDelta / GlobalScale;
                 if (mBoarders == EDragBoarder.none)
                 {
-                    rect.position += delta;
-                    LocalRect = rect;
-                    for (int i = 0; i < targets.Count; i++)
+                    for(int i = 0; i < mWindow.CommentCanvas.ElementCount; i++)
                     {
-                        rect = targets[i].LocalRect;
-                        rect.position += mouseDelta / targets[i].GlobalScale;
-                        targets[i].LocalRect = rect;
+                        BehaviourCommentGUI com = mWindow.CommentCanvas.GetElement<BehaviourCommentGUI>(i);
+                        if (com != null && com.IsSelected)
+                            com.Move(delta);
                     }
                 }
                 else if(!mEditMode)
                 {
+                    Rect rect = LocalRect;
                     if ((mBoarders & EDragBoarder.left) != 0)
                         rect.xMin += delta.x;
                     if ((mBoarders & EDragBoarder.right) != 0)
@@ -196,7 +226,12 @@ namespace DevilEditor
             if (button == EMouseButton.left)
             {
                 mDragEnd = true;
-                targets.Clear();
+                for (int i = 0; i < mWindow.CommentCanvas.ElementCount; i++)
+                {
+                    BehaviourCommentGUI com = mWindow.CommentCanvas.GetElement<BehaviourCommentGUI>(i);
+                    if (com != null && com.IsSelected)
+                        com.targets.Clear();
+                }
                 return true;
             }
             else

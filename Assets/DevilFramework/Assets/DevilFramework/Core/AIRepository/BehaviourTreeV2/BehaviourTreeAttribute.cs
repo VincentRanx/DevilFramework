@@ -1,14 +1,26 @@
 ﻿namespace Devil.AI
 {
+    [System.AttributeUsage(System.AttributeTargets.Class)]
+    public class BTCompositeAttribute : System.Attribute
+    {
+        public string Title { get; set; }
+        public string Detail { get; set; }
+        public string IconPath { get; set; }
+        public string Category { get; set; }
+        public bool HideProperty { get; set; }
+    }
+
+    [System.AttributeUsage(System.AttributeTargets.Field)]
+    public class BTVariableAttribute : System.Attribute
+    {
+        public string Name { get; set; }
+        public string TypePattern { get; set; }
+        public string DefaultVallue { get; set; }
+    }
 
     [System.AttributeUsage(System.AttributeTargets.Class)]
-    public class BehaviourTreeAttribute : System.Attribute
+    public class BTSharedTypeAttribute :System.Attribute
     {
-        public int SortOrder { get; set; } // 排序
-        public string DisplayName { get; set; } // 标题
-        public string SubTitle { get; set; } // 注释标题
-        public string FrameStyle { get; set; } // 底框
-        public string IconPath { get; set; } // 底框图片
-        public string InputDatas { get; set; } // property1:type,property2:type, note:type=[row,text]
+
     }
 }

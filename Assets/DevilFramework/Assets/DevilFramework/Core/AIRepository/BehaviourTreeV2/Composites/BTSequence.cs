@@ -4,9 +4,7 @@ using UnityEngine;
 
 namespace Devil.AI
 {
-    [BehaviourTree(FrameStyle = "flow node 1", DisplayName = "SEQUENCE", SubTitle = 
-@"顺序执行子节点，直到第一个失败的
-任务结束，类似于 AND 运算。", SortOrder = -3)]
+    [BTComposite(Title = "序列", Detail = "SEQUENCE", IconPath = "Assets/DevilFramework/Editor/Icons/sequence.png")]
     public class BTSequence : BTNodeBase
     {
         int mVisitIndex;
@@ -31,7 +29,7 @@ namespace Devil.AI
             }
         }
 
-        public override void ReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(EBTTaskState state)
         {
             if(state == EBTTaskState.success)
             {

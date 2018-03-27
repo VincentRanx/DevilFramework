@@ -27,8 +27,17 @@ namespace Devil.Utility
             }
         }
 
+        public static long NowMillies
+        {
+            get
+            {
+                return System.DateTime.Now.ToUniversalTime().Ticks / 10000 - 62135596800000;
+            }
+        }
+
         public System.DateTime Time { get { return mTime; } set { mTime = value; } }
         public System.DateTime LocalTime { get { return mTime.ToLocalTime(); } set { mTime = value.ToUniversalTime(); } }
+
         public long JMilliseconds
         {
             get { return mTime.Ticks / 10000 - 62135596800000; }
