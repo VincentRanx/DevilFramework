@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Xml;
 using UnityEditor;
@@ -42,7 +43,7 @@ namespace DevilEditor
 
         public static void LoadConfiguration()
         {
-            string[] assets = AssetDatabase.FindAssets("DevilFramework-Cfg");
+            string[] assets = AssetDatabase.FindAssets("t:textasset DevilFramework-Cfg");
             string cfg = DEFAULT_CFG;
             if (assets == null || assets.Length == 0)
             {
@@ -51,12 +52,29 @@ namespace DevilEditor
             else
             {
                 string path = AssetDatabase.GUIDToAssetPath(assets[0]);
-                if (assets.Length > 1)
+                int num = 0;
+                for(int i = 0; i < assets.Length; i++)
                 {
-                    EditorUtility.DisplayDialog("TIP", string.Format("检测到多个 DevilFramework-Cfg.xml, 将使用 {0} 作为配置文件。", path), "OK");
+                    string p = AssetDatabase.GUIDToAssetPath(assets[i]);
+                    if(Path.GetFileName(p) == "DevilFramework-Cfg.xml")
+                    {
+                        num++;
+                        path = p;
+                    }
                 }
-                TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
-                cfg = asset.text;
+                if(num == 0)
+                {
+                    EditorUtility.DisplayDialog("ERROR", "找不到配置文件 DevilFramework-Cfg.xml。", "OK");
+                }
+                else
+                {
+                    TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
+                    cfg = asset.text;
+                    if (num > 1)
+                    {
+                        EditorUtility.DisplayDialog("TIP", string.Format("检测到多个 DevilFramework-Cfg.xml, 将使用 {0} 作为配置文件。", path), "OK");
+                    }
+                }
             }
             try
             {

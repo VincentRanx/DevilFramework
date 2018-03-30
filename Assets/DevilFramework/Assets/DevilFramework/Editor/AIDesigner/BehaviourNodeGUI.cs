@@ -296,6 +296,11 @@ namespace DevilEditor
                 bool sel = mWindow.EditMode == BehaviourTreeDesignerWindow.ENodeEditMode.none && !mWindow.ContextMenu.Visible && decors[i] == mRaycastDecorator && rect.height >= btn.height;
                 QuickGUI.DrawBox(rect, new Color(0.3f, 0.3f, 0.3f), sel ? Color.yellow : Color.black, sel ? 3 : 0);
                 //GUI.Label(rect, "", sel ? "flow node 0 on" : "flow node 0");
+                if(decors[i].BTMeta.Icon != null)
+                {
+                    Rect tmp = new Rect(rect.x + 1, rect.y + 1, h0, h0);
+                    GUI.DrawTexture(tmp, decors[i].BTMeta.Icon, ScaleMode.ScaleToFit);
+                }
                 EBTTaskState stat = mWindow.IsPlaying ? decors[i].BTRuntimeState : EBTTaskState.inactive;
                 if (stat == EBTTaskState.success)
                 {

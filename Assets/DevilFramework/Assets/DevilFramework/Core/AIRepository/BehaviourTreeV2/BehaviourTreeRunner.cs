@@ -58,7 +58,7 @@ namespace Devil.AI
             }
         }
 
-        private void Start()
+        protected virtual void Start()
         {
             mServiceDeltaTime = m_ServiceInterval;
             mServiceTimer = 0;
@@ -78,7 +78,7 @@ namespace Devil.AI
 #endif
         }
 
-        private void FixedUpdate()
+        protected virtual void FixedUpdate()
         {
             if (mServiceTimer >= m_ServiceInterval)
             {
@@ -98,11 +98,11 @@ namespace Devil.AI
             }
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             if (mLooper.IsComplate)
             {
-                mLooper.ResetTreeState();
+                mLooper.Reset();
             }
             mLooper.Update(this, Time.deltaTime);
             BehaviourTime += Time.deltaTime;

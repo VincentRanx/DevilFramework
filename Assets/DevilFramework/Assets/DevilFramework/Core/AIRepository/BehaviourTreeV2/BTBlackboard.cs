@@ -40,7 +40,7 @@ namespace Devil.AI
 
     public class BTBlackboardGetter<T>
     {
-        BTBlackboarProperty mProperty;
+        protected BTBlackboarProperty mProperty;
 
         public BTBlackboardGetter(BTBlackboarProperty prop)
         {
@@ -49,22 +49,12 @@ namespace Devil.AI
 
         public bool IsSet { get { return mProperty.IsSet; } }
 
-        public T GetValue()
-        {
-            return (T)mProperty.Value;
-        }
+        public T Value { get { return IsSet ? (T)mProperty.Value : default(T); } }
     }
 
-    public class BTBlackboardSetter<T>
+    public class BTBlackboardSetter<T> : BTBlackboardGetter<T>
     {
-        BTBlackboarProperty mProperty;
-
-        public BTBlackboardSetter(BTBlackboarProperty prop)
-        {
-            mProperty = prop;
-        }
-
-        public bool IsSet { get { return mProperty.IsSet; } }
+        public BTBlackboardSetter(BTBlackboarProperty prop) : base(prop) { }
 
         public void SetValue(T valule)
         {

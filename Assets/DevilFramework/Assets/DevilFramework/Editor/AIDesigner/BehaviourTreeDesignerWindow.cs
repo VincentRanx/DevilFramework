@@ -121,6 +121,10 @@ namespace DevilEditor
             ContextMenu = new BehaviourTreeContextMenuGUI(this);
             GraphCanvas.AddElement(ContextMenu);
 
+            BlackboardMonitorGUI blackboard = new BlackboardMonitorGUI(this);
+            blackboard.LocalRect = new Rect(0, 0, 200, 180);
+            RootCanvas.AddElement(blackboard);
+
             RootCanvas.Resort(true);
 
             GraphCanvas.OnDragBegin = OnGraphDragBegin;
@@ -274,7 +278,6 @@ namespace DevilEditor
             {
                 BindBehaviourTreeEvent(true);
             }
-            Repaint();
         }
 
         void ImportTreeData()
@@ -432,11 +435,13 @@ namespace DevilEditor
             Selection.selectionChanged -= OnSelectedObjectChanged;
             EditorApplication.playModeStateChanged -= OnPlayStateChanged;
             Installizer.OnReloaded -= ReloadGraph;
+            BindBehaviourTreeEvent(false);
+            Runner = null;
         }
 
         void ReloadGraph()
         {
-            if (Runner != null && Runner.BehaviourAsset != null)
+            if (Runner != null)
                 InitWith(Runner);
             else
                 InitWith(BehaviourAsset);
@@ -636,15 +641,13 @@ namespace DevilEditor
             if (obj == PlayModeStateChange.EnteredPlayMode)
             {
                 LoadSelectedAsset();
-                EditorApplication.update += Repaint;
             }
             else if (obj == PlayModeStateChange.ExitingPlayMode)
             {
-                EditorApplication.update -= Repaint;
                 LoadSelectedAsset();
             }
         }
-
+        
         bool OnGraphKeyUp(KeyCode key)
         {
             if (IsPlaying)

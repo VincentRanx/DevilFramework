@@ -1,6 +1,6 @@
 ﻿namespace Devil.AI
 {
-    [System.AttributeUsage(System.AttributeTargets.Class)]
+    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class BTCompositeAttribute : System.Attribute
     {
         public string Title { get; set; }
@@ -10,7 +10,7 @@
         public bool HideProperty { get; set; }
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Field)]
+    [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
     public class BTVariableAttribute : System.Attribute
     {
         public string Name { get; set; }
@@ -18,7 +18,7 @@
         public string DefaultVallue { get; set; }
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Class)]
+    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class BTSharedTypeAttribute :System.Attribute
     {
 

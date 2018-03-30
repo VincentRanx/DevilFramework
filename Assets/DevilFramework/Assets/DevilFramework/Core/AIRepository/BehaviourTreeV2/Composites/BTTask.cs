@@ -18,7 +18,7 @@ namespace Devil.AI
             get { return null; }
         }
 
-        protected override void OnReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(BehaviourTreeRunner btree, EBTTaskState state)
         {
         }
 
@@ -45,39 +45,12 @@ namespace Devil.AI
             if (mTask != null)
                 State = mTask.OnTaskTick(behaviourTree, deltaTime);
         }
-
-        public override bool AbortAndReturnSuccess(BehaviourTreeRunner behaviourTree)
+        
+        protected override void OnAbort(BehaviourTreeRunner btree)
         {
             if (mTask != null)
-                return mTask.OnTaskAbortAndReturnSuccess(behaviourTree);
-            else
-                return false;
+                mTask.OnAbort(btree);
         }
     }
-
-    public class BTConstTask : BTNodeBase
-    {
-        EBTTaskState mState;
-
-        public BTConstTask(EBTTaskState state) : base(0) { mState = state; }
-
-        public override BTNodeBase ChildForVisit
-        {
-            get { return null; }
-        }
-
-        protected override void OnReturnWithState(EBTTaskState state)
-        {
-        }
-
-        protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
-        {
-        }
-
-        protected override void OnVisit(BehaviourTreeRunner behaviourTree)
-        {
-            State = mState;
-        }
-
-    }
+    
 }

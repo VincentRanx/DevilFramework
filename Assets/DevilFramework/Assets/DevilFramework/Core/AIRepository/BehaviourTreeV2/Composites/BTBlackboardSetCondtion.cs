@@ -1,15 +1,12 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace Devil.AI
 {
     [BTComposite(Title = "黑板", Detail = "黑板设置了属性 {property}", IconPath = "Assets/DevilFramework/Editor/Icons/blackboard.png")]
     public class BTBlackboardSetCondtion : BTConditionBase
     {
-        [BTVariable(Name = "property" )]
+        [BTVariable(Name = "property", TypePattern = "name")]
         string mBlackboardVar;
         int mBlackboardId;
 

@@ -1,9 +1,15 @@
-﻿namespace Devil.AI
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace Devil.AI
 {
     [BTComposite(Title = "并行", Detail = "PARRALEL", IconPath = "Assets/DevilFramework/Editor/Icons/parralel.png")]
     public class BTParralel: BTNodeBase
     {
+        [BTVariable(Name = "mainTaskIndex", DefaultVallue = "0")]
+        int mMainTaskIndex;
         BehaviourLooper[] mLoopers;
+        BehaviourLooper mMainLooper;
 
         public BTParralel(int id) : base(id)
         {
@@ -15,6 +21,12 @@
             {
                 return null;
             }
+        }
+
+        public override void InitData(BehaviourTreeRunner btree, string jsonData)
+        {
+            JObject obj = JsonConvert.DeserializeObject<JObject>(jsonData);
+            mMainTaskIndex = obj.Value<int>("mainTaskIndex");
         }
 
         public override void InitDecoratorSize(int conditionLen, int childLen, int serviceLen)
@@ -35,11 +47,11 @@
             base.Reset();
             for (int i = 0; i < mLoopers.Length; i++)
             {
-                mLoopers[i].ResetTreeState();
+                mLoopers[i].Reset();
             }
         }
 
-        protected override void OnReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(BehaviourTreeRunner btree, EBTTaskState state)
         {
 
         }
@@ -52,6 +64,8 @@
                 if (mLoopers[i] != null)
                     mLoopers[i].Reset();
             }
+            if (mMainTaskIndex < mLoopers.Length && mMainTaskIndex >= 0)
+                mMainLooper = mLoopers[mMainTaskIndex];
         }
 
         protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
@@ -64,13 +78,24 @@
                 mLoopers[i].Update(behaviourTree, deltaTime);
                 num++;
             }
-            if (num == 0)
-                State = EBTTaskState.success;
+            if (mMainLooper != null)
+            {
+                State = mMainLooper.State;
+            }
+            else
+            {
+                State = (num == 0) ? EBTTaskState.success : EBTTaskState.running;
+            }
         }
 
-        public override bool AbortAndReturnSuccess(BehaviourTreeRunner behaviourTree)
+        protected override void OnAbort(BehaviourTreeRunner btree)
         {
-            return true;
+            for (int i = 0; i < mLoopers.Length; i++)
+            {
+                if (mLoopers[i] == null || mLoopers[i].IsComplate)
+                    continue;
+                mLoopers[i].Abort(btree);
+            }
         }
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DevilEditor
 {
-    [CustomEditor(typeof(BehaviourTreeRunner))]
+    [CustomEditor(typeof(BehaviourTreeRunner), true)]
     public class BehaviourTreeRunnerInspector : Editor
     {
         public override void OnInspectorGUI()

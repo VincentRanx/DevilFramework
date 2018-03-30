@@ -32,6 +32,21 @@ namespace Devil.AI
         private bool mVisited;
         private uint mNotFlags;
 
+        private float mStartTime;
+        private float mEndTime;
+        public float NodeRuntime
+        {
+            get
+            {
+                if (State == EBTTaskState.inactive)
+                    return 0;
+                else if (State == EBTTaskState.running)
+                    return Time.time - mStartTime;
+                else
+                    return mEndTime - mStartTime;
+            }
+        }
+
         public EBTTaskState State { get; protected set; }
 
 #if UNITY_EDITOR
@@ -174,20 +189,20 @@ namespace Devil.AI
             State = EBTTaskState.inactive;
         }
 
-        public void Tick(BehaviourTreeRunner behaviourTree, float deltaTime)
+        public void Tick(BehaviourTreeRunner btree, float deltaTime)
         {
-            if (IsOnCondition(behaviourTree))
+            if (!IsOnCondition(btree))
             {
-                OnTick(behaviourTree, deltaTime);
+                Abort(btree);
             }
-            else
-            {
-                State = AbortAndReturnSuccess(behaviourTree) ? EBTTaskState.success : EBTTaskState.faild;
-            }
+            OnTick(btree, deltaTime);
+            if (State != EBTTaskState.running)
+                mEndTime = Time.time;
         }
 
         public void Visit(BehaviourTreeRunner btree)
         {
+            mStartTime = Time.time;
 #if UNITY_EDITOR
             if (BreakToggle)
             {
@@ -216,6 +231,7 @@ namespace Devil.AI
             if (mVisited)
             {
                 mVisited = false;
+                mEndTime = Time.time;
                 for (int i = ServiceLength - 1; i >= 0; i--)
                 {
                     BTServiceBase serv = mServices[i];
@@ -226,25 +242,27 @@ namespace Devil.AI
             }
         }
 
-        public void ReturnWithState(EBTTaskState state)
+        public void Abort(BehaviourTreeRunner btree)
         {
-            OnReturnWithState(state);
+            OnAbort(btree);
+        }
+
+        public void ReturnWithState(BehaviourTreeRunner btree, EBTTaskState state)
+        {
+            OnReturnWithState(btree, state);
         }
 
         public abstract BTNodeBase ChildForVisit { get; }
 
-        public virtual bool AbortAndReturnSuccess(BehaviourTreeRunner behaviourTree)
-        {
-            return false;
-        }
-
         protected virtual void OnCleanup(BehaviourTreeRunner btree) { }
+
+        protected abstract void OnAbort(BehaviourTreeRunner btree);
 
         protected abstract void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime);
 
         protected abstract void OnVisit(BehaviourTreeRunner behaviourTree);
 
-        protected abstract void OnReturnWithState(EBTTaskState state);
+        protected abstract void OnReturnWithState(BehaviourTreeRunner btree, EBTTaskState state);
 
 #if UNITY_EDITOR
         public override string ToString()

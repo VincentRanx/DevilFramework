@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Devil.AI
 {
-    public class BehaviourLibrary
+    public abstract class BehaviourLibrary : MonoBehaviour
     {
         public delegate T BTGenerator<T>(int id);
 
@@ -15,16 +15,22 @@ namespace Devil.AI
         protected Dictionary<string, BTGenerator<BTServiceBase>> mServices;
         protected Dictionary<string, BTGenerator<BTNodeBase>> mControllers;
 
-        public static void InitWithType<T>() where T: BehaviourLibrary, new()
-        {
-            if (sInstance == null || sInstance.GetType() != typeof(T))
-                sInstance = new T();
-            IsInit = true;
-        }
+        [SerializeField]
+        bool m_DontDestroyOnLoad;
+        [SerializeField]
+        BlackboardAsset m_GlobalBlackboard;
 
-        protected BehaviourLibrary()
+        BTBlackboard mBlackboard;
+
+        protected virtual void Awake()
         {
             sInstance = this;
+            if (m_DontDestroyOnLoad)
+                DontDestroyOnLoad(gameObject);
+            if (m_GlobalBlackboard == null)
+                mBlackboard = new BTBlackboard();
+            else
+                mBlackboard = new BTBlackboard(m_GlobalBlackboard);
             mTasks = new Dictionary<string, BTGenerator<BTTaskBase>>();
             mConditions = new Dictionary<string, BTGenerator<BTConditionBase>>();
             mServices = new Dictionary<string, BTGenerator<BTServiceBase>>();
@@ -32,12 +38,26 @@ namespace Devil.AI
             OnInit();
         }
 
-        protected virtual void OnInit() { }
+        protected virtual void OnDestroy()
+        {
+            if (sInstance == this)
+                sInstance = null;
+        }
+
+        protected abstract void OnInit();
+
+        public static BTBlackboard GlobalBlackboard
+        {
+            get { return sInstance == null ? null : sInstance.mBlackboard; }
+        }
 
         public static BTTaskBase NewTask(string taskName, int id)
         {
             if (sInstance == null)
-                sInstance = new BehaviourLibrary();
+            {
+                Debug.LogError("在使用行为树之前，您需要初始化行为树模块。");
+                return null;
+            }
             BTGenerator<BTTaskBase> gen;
             if (sInstance.mTasks.TryGetValue(taskName, out gen))
                 return gen(id);
@@ -49,8 +69,8 @@ namespace Devil.AI
         {
             if (sInstance == null)
             {
-                sInstance = new BehaviourLibrary();
-                Debug.LogError("在使用行为树之前，您需要通过 BehaviourLibrary.InitWithType<T>() 方法初始化行为树模块。");
+                Debug.LogError("在使用行为树之前，您需要初始化行为树模块。");
+                return null;
             }
             BTGenerator<BTConditionBase> gen;
             if (sInstance.mConditions.TryGetValue(conditionName, out gen))
@@ -63,8 +83,8 @@ namespace Devil.AI
         {
             if (sInstance == null)
             {
-                sInstance = new BehaviourLibrary();
-                Debug.LogError("在使用行为树之前，您需要通过 BehaviourLibrary.InitWithType<T>() 方法初始化行为树模块。");
+                Debug.LogError("在使用行为树之前，您需要初始化行为树模块。");
+                return null;
             }
             BTGenerator<BTServiceBase> gen;
             if (sInstance.mServices.TryGetValue(serviceName, out gen))
@@ -77,8 +97,8 @@ namespace Devil.AI
         {
             if (sInstance == null)
             {
-                sInstance = new BehaviourLibrary();
-                Debug.LogError("在使用行为树之前，您需要通过 BehaviourLibrary.InitWithType<T>() 方法初始化行为树模块。");
+                Debug.LogError("在使用行为树之前，您需要初始化行为树模块。");
+                return null;
             }
             BTGenerator<BTNodeBase> gen;
             if (sInstance.mControllers.TryGetValue(pluginName, out gen))

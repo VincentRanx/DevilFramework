@@ -3,7 +3,7 @@
     <ai-default>Assets/DevilFramework/Core/AIRepository/BehaviourTreeV2</ai-default>
     <ai-editor>Assets/DevilFramework/Editor/AIDesigner</ai-editor>
     <ai-export>Assets/Scripts/AIModules</ai-export>
-    <ai-import>Assets/Scripts/AIModules</ai-import>
+    <ai-import>Assets/Scripts</ai-import>
   </folder>
   
   <type-pattern>

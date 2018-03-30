@@ -21,16 +21,19 @@ namespace DevilEditor
             public BehaviourMeta BTMeta { get; private set; }
             public Vector2 TitleSize { get; private set; }
             public Vector2 DetailSize { get; private set; }
-            public float Width { get { return Mathf.Max(TitleSize.x, DetailSize.x); } }
+            public float Width { get { return Mathf.Max(TitleSize.x + BehaviourNodeGUI.FONT_SIZE, DetailSize.x); } }
             public float Height { get { return TitleSize.y + DetailSize.y; } }
             public string Category { get; private set; }
             public bool IsTitle { get { return BTMeta == null; } }
+            public bool Collaped { get; set; }
 
             public MetaUI(BehaviourMeta meta)
             {
                 BTMeta = meta;
                 Installizer.contentStyle.fontSize = (int)BehaviourNodeGUI.SUB_FONT_SIZE;
-                TitleSize = Installizer.SizeOfContent(meta.DisplayName) + new Vector2(10, 10);
+                Vector2 size = Installizer.SizeOfContent(meta.DisplayName) + new Vector2(10, 10);
+                size.y = Mathf.Max(size.y, BehaviourNodeGUI.FONT_SIZE);
+                TitleSize = size;
                 if (string.IsNullOrEmpty(meta.SubTitle))
                 {
                     DetailSize = new Vector2(TitleSize.x, 0);
@@ -50,12 +53,19 @@ namespace DevilEditor
                 DetailSize = Vector2.zero;
             }
 
-            public void OnGUI(Rect rect, float scale, bool dropDown)
+            public void OnGUI(Rect rect, float scale)
             {
                 if (BTMeta != null)
                 {
                     QuickGUI.DrawBox(rect, new Color(0.3f, 0.3f, 0.3f), Color.yellow, rect.Contains(Event.current.mousePosition) ? 2 : 0);
                     Rect r = rect;
+                    r.size = Vector2.one * (BehaviourNodeGUI.FONT_SIZE * scale);
+                    r.position += Vector2.one * (3 * scale);
+                    Texture icon = BTMeta.Icon;
+                    if (icon != null)
+                        GUI.DrawTexture(r, icon, ScaleMode.ScaleToFit);
+                    r.position = new Vector2(rect.x + r.size.x, rect.y );
+                    r.width = rect.width - r.size.x;
                     r.height = TitleSize.y * scale;
                     Installizer.contentStyle.fontStyle = FontStyle.Bold;
                     Installizer.contentStyle.normal.textColor = Color.white;
@@ -63,10 +73,10 @@ namespace DevilEditor
                     Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
                     Installizer.contentContent.text = BTMeta.DisplayName;
                     GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
-                    r.y += TitleSize.y * scale;
+                    r.y = rect.y + TitleSize.y * scale;
                     r.height = DetailSize.y * scale;
-                    r.width -= 6 * scale;
-                    r.x += 5 * scale;
+                    r.width = rect.width - 6 * scale;
+                    r.x = rect.x + 5 * scale;
                     Installizer.contentStyle.fontStyle = FontStyle.Normal;
                     Installizer.contentStyle.normal.textColor = new Color(0.7f, 0.7f, 0.7f);
                     Installizer.contentStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.SUB_FONT_SIZE * 0.9f * scale);
@@ -77,7 +87,7 @@ namespace DevilEditor
                 else
                 {
                     Color c = BehaviourModuleManager.GetOrNewInstance().GetCategoryColor(Category);
-                    QuickGUI.DrawBox(rect, dropDown ? c : new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f), Color.yellow, 0);
+                    QuickGUI.DrawBox(rect, Collaped ? c : new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f), Color.yellow, 0);
                     Installizer.titleStyle.fontSize = (int)Mathf.Max(1, BehaviourNodeGUI.SUB_FONT_SIZE * scale);
                     Installizer.titleStyle.alignment = TextAnchor.MiddleCenter;
                     Installizer.titleContent.text = Category;
@@ -142,24 +152,25 @@ namespace DevilEditor
         {
             if (EditorApplication.isPlaying || context == null)
                 return;
-            mMinTaskWidth = 200;
-            mMinDecoratorWidth = 200;
-            mTaskList.Clear();
-            mDecoratorList.Clear();
             List<BehaviourMeta> lst;
-            lst = BehaviourModuleManager.GetOrNewInstance().Decorators;
-            string category = null;
-            for (int i = 0; i < lst.Count; i++)
+            if (mDecoratorList.Count < 2 || !BehaviourModuleManager.GetOrNewInstance().Decorators.Contains(mDecoratorList[1].BTMeta))
             {
-                MetaUI m = new MetaUI(lst[i]);
-                if (m.BTMeta.Category != category)
+                mMinDecoratorWidth = 200;
+                mDecoratorList.Clear();
+                lst = BehaviourModuleManager.GetOrNewInstance().Decorators;
+                string category = null;
+                for (int i = 0; i < lst.Count; i++)
                 {
-                    category = m.BTMeta.Category;
-                    mDropDownMeta = new MetaUI(category);
-                    mDecoratorList.Add(mDropDownMeta);
+                    MetaUI m = new MetaUI(lst[i]);
+                    if (m.BTMeta.Category != category)
+                    {
+                        category = m.BTMeta.Category;
+                        mDropDownMeta = new MetaUI(category);
+                        mDecoratorList.Add(mDropDownMeta);
+                    }
+                    mDecoratorList.Add(m);
+                    mMinDecoratorWidth = Mathf.Max(mMinDecoratorWidth, m.Width);
                 }
-                mDecoratorList.Add(m);
-                mMinDecoratorWidth = Mathf.Max(mMinDecoratorWidth, m.Width);
             }
 
             Mode = EMode.alter_node;
@@ -183,24 +194,25 @@ namespace DevilEditor
         {
             if (EditorApplication.isPlaying)
                 return;
-            mMinTaskWidth = 200;
-            mMinDecoratorWidth = 200;
-            mTaskList.Clear();
-            mDecoratorList.Clear();
-            List<BehaviourMeta> lst;
-            lst = BehaviourModuleManager.GetOrNewInstance().Composites;
-            string category = null;
-            for (int i = 0; i < lst.Count; i++)
+            if (mTaskList.Count < 2 || !BehaviourModuleManager.GetOrNewInstance().Composites.Contains(mTaskList[1].BTMeta))
             {
-                MetaUI m = new MetaUI(lst[i]);
-                if (m.BTMeta.Category != category)
+                mTaskList.Clear();
+                mMinTaskWidth = 200;
+                List<BehaviourMeta> lst;
+                lst = BehaviourModuleManager.GetOrNewInstance().Composites;
+                string category = null;
+                for (int i = 0; i < lst.Count; i++)
                 {
-                    category = m.BTMeta.Category;
-                    mDropDownMeta = new MetaUI(category);
-                    mTaskList.Add(mDropDownMeta);
+                    MetaUI m = new MetaUI(lst[i]);
+                    if (m.BTMeta.Category != category)
+                    {
+                        category = m.BTMeta.Category;
+                        mDropDownMeta = new MetaUI(category);
+                        mTaskList.Add(mDropDownMeta);
+                    }
+                    mTaskList.Add(m);
+                    mMinTaskWidth = Mathf.Max(mMinTaskWidth, m.Width);
                 }
-                mTaskList.Add(m);
-                mMinTaskWidth = Mathf.Max(mMinTaskWidth, m.Width);
             }
 
             Mode = EMode.new_node;
@@ -297,6 +309,13 @@ namespace DevilEditor
                 bool inter = r.Contains(Event.current.mousePosition);
                 //GUI.Label(r, "", inter ? "flow node 0" : "sv_iconselector_back");
                 QuickGUI.DrawBox(r, new Color(0.3f, 0.3f, 0.3f), inter ? Color.yellow : Color.black, inter ? 2 : 0);
+                Texture icon = decor.BTMeta.Icon;
+                if(icon != null)
+                {
+                    tmp.size = Vector2.one * tsize.y;
+                    tmp.position = new Vector2(r.xMin + 1, r.yMin + 1);
+                    GUI.DrawTexture(tmp, icon, ScaleMode.ScaleToFit);
+                }
                 if (inter)//|| mFocusDecorator == decorators[i])
                 {
                     mRaycastDecorator = decor;
@@ -319,6 +338,7 @@ namespace DevilEditor
                 OnPropertiesList(tmp, decor, tsize, dsize);
                 r.position += Vector2.up * h;
             }
+            r.height = 0;
         }
 
         void OnPropertiesList(Rect r, BehaviourNodeGUI.Decorator decorator, Vector2 tsize, Vector2 dsize)
@@ -401,6 +421,13 @@ namespace DevilEditor
             if (r.Contains(Event.current.mousePosition))
                 mRaycastDecorator = node.Self;
             Rect tmp = new Rect();
+            Texture icon = node.Self.BTMeta.Icon;
+            if (icon != null)
+            {
+                tmp.size = Vector2.one * tsize.y;
+                tmp.position = new Vector2(r.xMin + 1, r.yMin + 1);
+                GUI.DrawTexture(tmp, icon, ScaleMode.ScaleToFit);
+            }
             tmp.size = tsize;
             tmp.position = new Vector2(r.xMin, r.yMin);
             Installizer.titleStyle.alignment = TextAnchor.MiddleCenter;
@@ -501,7 +528,7 @@ namespace DevilEditor
             Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
             BehaviourNodeGUI context = Context as BehaviourNodeGUI;
             Color color = Color.gray;
-            bool collape = true;
+            bool collape = false;
             for (int i = 0; i < len; i++)
             {
                 MetaUI meta = metas[i];
@@ -520,7 +547,7 @@ namespace DevilEditor
                 }
                 else
                 {
-                    collape = meta != mDropDownMeta;
+                    collape = meta.Collaped;// != mDropDownMeta;
                 }
                 r.height = meta.Height * GlobalScale;
                 if (r.yMax >= 0 && r.yMin < GlobalRect.height)
@@ -531,7 +558,7 @@ namespace DevilEditor
                         //GUI.Label(r, "", "flow node 0");// "Icon.ClipSelected");
                         mRaycastMeta = meta;//SelectionRect
                     }
-                    meta.OnGUI(r, GlobalScale, mDropDownMeta == meta);
+                    meta.OnGUI(r, GlobalScale);
                     //QuickGUI.DrawBox(r, new Color(0.3f, 0.3f, 0.3f), Color.yellow, inter ? 2 : 0);
                     //Installizer.contentContent.text = meta.DisplayName;
                     //GUI.Label(r, Installizer.contentContent, Installizer.contentStyle);
@@ -574,7 +601,8 @@ namespace DevilEditor
             if(mRaycastMeta != null && button == EMouseButton.left)
             {
                 if (mRaycastMeta.IsTitle)
-                    mDropDownMeta = mRaycastMeta == mDropDownMeta ? null : mRaycastMeta;
+                    mRaycastMeta.Collaped = !mRaycastMeta.Collaped;
+                    //mDropDownMeta = mRaycastMeta == mDropDownMeta ? null : mRaycastMeta;
                 else
                 {
                     switch (mRaycastMeta.BTMeta.NodeType)

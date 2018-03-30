@@ -4,13 +4,16 @@ using UnityEngine;
 
 namespace Devil.AI
 {
-    public class BTSubTreeTask : BTNodeBase
+    [BTComposite(Title = "运行行为树", Detail = "以其他行为树作为任务")]
+    public class BTSubTreeTask : BTTaskBase
     {
+        [BTVariable(Name = "asset")]
         string mAssetPath;
+
         BehaviourLooper mLooper;
         public BTSubTreeTask(int id) : base(id) { }
-
-        public override void InitData(BehaviourTreeRunner btree, string jsonData)
+        
+        public override void OnInitData(BehaviourTreeRunner btree, string jsonData)
         {
             JObject obj = JsonConvert.DeserializeObject<JObject>(jsonData);
             mAssetPath = obj.Value<string>("asset");
@@ -23,38 +26,48 @@ namespace Devil.AI
             }
             BTNodeBase tree = asset.CreateBehaviourTree(btree);
             mLooper = new BehaviourLooper(tree);
-
         }
 
-        public override BTNodeBase ChildForVisit { get { return null; } }
-
-        protected override void OnReturnWithState(EBTTaskState state)
+        public override EBTTaskState OnTaskStart(BehaviourTreeRunner btree)
         {
+            if (mLooper == null)
+            {
+                return EBTTaskState.faild;
+            }
+            else
+            {
+                mLooper.Reset();
+                return EBTTaskState.running;
+            }
         }
 
-        protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
+        public override EBTTaskState OnTaskTick(BehaviourTreeRunner btree, float deltaTime)
         {
             if (mLooper != null)
             {
-                mLooper.Update(behaviourTree, deltaTime);
+                mLooper.Update(btree, deltaTime);
                 if (mLooper.IsComplate)
                 {
-                    State = mLooper.State;
+                    return mLooper.State;
+                }
+                else
+                {
+                    return EBTTaskState.running;
                 }
             }
             else
             {
-                State = EBTTaskState.faild;
+                return EBTTaskState.faild;
             }
         }
 
-        protected override void OnVisit(BehaviourTreeRunner behaviourTree)
+        public override void OnAbort(BehaviourTreeRunner btree)
         {
-            if(mLooper != null)
+            if(mLooper != null && mLooper.RuntimeNode != null)
             {
-                mLooper.Reset();
+                mLooper.RuntimeNode.Abort(btree);
             }
-            State = EBTTaskState.running;
         }
+        
     }
 }

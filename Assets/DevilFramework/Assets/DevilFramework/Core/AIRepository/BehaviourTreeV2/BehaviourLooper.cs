@@ -5,7 +5,7 @@ namespace Devil.AI
     public class BehaviourLooper
     {
         BTNodeBase mRoot;
-        public float NodeRuntime { get; private set; }
+        public float NodeRuntime { get { return RuntimeNode == null ? 0 : RuntimeNode.NodeRuntime; } }
         public bool IsComplate { get; private set; }
         public BTNodeBase RuntimeNode { get; private set; }
         public EBTTaskState State { get; private set; }
@@ -22,23 +22,35 @@ namespace Devil.AI
             RuntimeNode = null;
         }
 
-        public void ResetTreeState()
-        {
-            ResetTreeStateRecursive(mRoot);
-            IsComplate = false;
-        }
+        //public void ResetTreeState()
+        //{
+        //    ResetTreeStateRecursive(mRoot);
+        //    IsComplate = mRoot == null;
+        //}
 
-        void ResetTreeStateRecursive(BTNodeBase root)
+        //void ResetTreeStateRecursive(BTNodeBase root)
+        //{
+        //    if (root == null)
+        //        return;
+        //    root.Reset();
+        //    for(int i = 0; i < root.ChildLength; i++)
+        //    {
+        //        ResetTreeStateRecursive(root.ChildAt(i));
+        //    }
+        //}
+
+        public void Abort(BehaviourTreeRunner btree)
         {
-            if (root == null)
-                return;
-            root.Reset();
-            for(int i = 0; i < root.ChildLength; i++)
+            BTNodeBase node = RuntimeNode;
+            while(node != null)
             {
-                ResetTreeStateRecursive(root.ChildAt(i));
+                node.Abort(btree);
+                if (node == mRoot)
+                    break;
+                node = node.ParentNode;
             }
         }
-
+        
         public void Update(BehaviourTreeRunner runner, float deltaTime)
         {
             if (mRoot == null)
@@ -53,15 +65,13 @@ namespace Devil.AI
                 runner.NotifyBehaviourTreeBegin();
 #endif
                 RuntimeNode = mRoot;
-                NodeRuntime = 0;
                 RuntimeNode.Visit(runner);
             }
             else
             {
                 RuntimeNode.Tick(runner, Time.deltaTime);
-                NodeRuntime += Time.deltaTime;
             }
-            RuntimeNode = VisitChildren(runner, RuntimeNode);
+            VisitChildren(runner, RuntimeNode);
             State = mRoot.State;
             if(RuntimeNode == null)
             {
@@ -77,7 +87,7 @@ namespace Devil.AI
         }
 
         // 返回 running 状态的节点
-        BTNodeBase VisitChildren(BehaviourTreeRunner runner, BTNodeBase root)
+        void VisitChildren(BehaviourTreeRunner runner, BTNodeBase root)
         {
             BTNodeBase tmp = root;
             BTNodeBase child;
@@ -88,21 +98,27 @@ namespace Devil.AI
                 if (child == null)
                 {
                     if (tmp.State == EBTTaskState.running)
-                        return tmp;
+                    {
+                        RuntimeNode = tmp;
+                        return;
+                    }
                     tmp.Cleanup(runner);
                     parent = tmp == mRoot ? null : tmp.ParentNode;
                     if (parent != null)
-                        parent.ReturnWithState(tmp.State);
+                    {
+                        RuntimeNode = parent;
+                        parent.ReturnWithState(runner, tmp.State);
+                    }
                     tmp = parent;
                 }
                 else
                 {
-                    NodeRuntime = 0;
+                    RuntimeNode = child;
                     child.Visit(runner);
                     tmp = child;
                 }
             }
-            return null;
+            RuntimeNode = null;
         }
     }
 }

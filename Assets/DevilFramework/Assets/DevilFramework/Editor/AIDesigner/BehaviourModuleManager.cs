@@ -13,7 +13,10 @@ namespace DevilEditor
     public class BehaviourModuleManager : Singleton<BehaviourModuleManager>
     {
         string libTemplate =
-@"%namespace%
+@"using UnityEngine;
+%namespace%
+
+[DefaultExecutionOrder(-100)]
 public class BehaviourLib : BehaviourLibrary
 {
     public BehaviourLib() : base()
@@ -109,6 +112,7 @@ public class BehaviourLib : BehaviourLibrary
             mSharedType.Add(typeof(float));
             mSharedType.Add(typeof(string));
             mSharedType.Add(typeof(bool));
+            mSharedType.Add(typeof(Vector3));
             mSharedType.Add(typeof(GameObject));
             mSharedType.Add(typeof(Transform));
             LoadModules();
@@ -174,7 +178,7 @@ public class BehaviourLib : BehaviourLibrary
             if (t == null)
                 return;
             // 解析数据类型
-            if (System.Attribute.IsDefined(t, typeof(BTSharedTypeAttribute)))
+            if (System.Attribute.IsDefined(t, typeof(BTSharedTypeAttribute), false))
             {
                 mSharedType.Add(t);
             }
@@ -183,7 +187,7 @@ public class BehaviourLib : BehaviourLibrary
             if (t.GetConstructor(new System.Type[] { typeof(int) }) == null)
                 return;
             BehaviourMeta meta = new BehaviourMeta(t);
-            if(meta.NodeType!= EBTNodeType.invalid)
+            if(meta.NodeType != EBTNodeType.invalid)
                 mModules.Add(meta);
         }
 

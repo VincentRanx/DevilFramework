@@ -8,6 +8,7 @@ namespace Devil.AI
     public class BTSequence : BTNodeBase
     {
         int mVisitIndex;
+        bool mAbort;
 
         public BTSequence(int id) : base(id)
         {
@@ -18,7 +19,7 @@ namespace Devil.AI
         {
             get
             {
-                if (State == EBTTaskState.running && mVisitIndex < ChildLength)
+                if (!mAbort && State == EBTTaskState.running && mVisitIndex < ChildLength)
                 {
                     return ChildAt(mVisitIndex);
                 }
@@ -29,31 +30,44 @@ namespace Devil.AI
             }
         }
 
-        protected override void OnReturnWithState(EBTTaskState state)
+        protected override void OnReturnWithState(BehaviourTreeRunner btree, EBTTaskState state)
         {
-            if(state == EBTTaskState.success)
+            if(state == EBTTaskState.faild || !IsOnCondition(btree))
+            {
+                this.State = EBTTaskState.faild;
+            }
+            else
             {
                 mVisitIndex++;
                 if (mVisitIndex >= ChildLength)
                     this.State = EBTTaskState.success;
-            }
-            else
-            {
-                this.State = EBTTaskState.faild;
             }
         }
 
         protected override void OnVisit(BehaviourTreeRunner behaviourTree)
         {
             mVisitIndex = 0;
+            mAbort = false;
             this.State = mVisitIndex < ChildLength ? EBTTaskState.running : EBTTaskState.success;
         }
 
         protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
         {
-            mVisitIndex++;
-            if (mVisitIndex >= ChildLength)
-                this.State = EBTTaskState.success;
+            if (mAbort)
+            {
+                State = EBTTaskState.faild;
+            }
+            else
+            {
+                mVisitIndex++;
+                if (mVisitIndex >= ChildLength)
+                    this.State = EBTTaskState.success;
+            }
+        }
+
+        protected override void OnAbort(BehaviourTreeRunner btree)
+        {
+            mAbort = true;
         }
     }
 }

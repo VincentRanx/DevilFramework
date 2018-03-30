@@ -133,11 +133,13 @@ namespace DevilEditor
             {
                 NodeType = EBTNodeType.condition;
                 Category = "Condition";
+                iconPath = Installizer.InstallRoot + "/DevilFramework/Editor/Icons/condition.png";
             }
             else if (target.IsSubclassOf(typeof(BTServiceBase)))
             {
                 NodeType = EBTNodeType.service;
                 Category = "Service";
+                iconPath = Installizer.InstallRoot + "/DevilFramework/Editor/Icons/service.png";
             }
             else
             {

@@ -1,21 +1,16 @@
-﻿using Devil.Utility;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.IO;
-using System.Xml;
 using UnityEditor;
 using UnityEngine;
 
 namespace DevilEditor
 {
-  
+
     public abstract class EditorCanvasWindow : EditorWindow
     {
 
         string viewportName = "Viewport";
 
-        bool repaint;
         bool focusCenter;
         Vector2 mousePos;
         Vector2 mouseDeltaPos;
@@ -34,10 +29,23 @@ namespace DevilEditor
         public Vector2 GlobalMousePosition { get; private set; }
         protected float mMinScale = 0.1f;
         protected float mMaxScale = 5f;
+        
+        double mTickTime;
 
         protected virtual void UpdateStateInfo()
         {
             statInfo = string.Format("<b><size=20>[{0} : 1]</size></b>", ScaledCanvas.LocalScale.ToString("0.00"));
+        }
+
+        void OnEditorUpdate()
+        {
+            double time = EditorApplication.timeSinceStartup;
+            float t = EditorApplication.isPlayingOrWillChangePlaymode ? 0.05f : 0.025f;
+            if (time > mTickTime + t)
+            {
+                mTickTime = time;
+                Repaint();
+            }
         }
 
         protected virtual void InitCanvas()
@@ -69,10 +77,12 @@ namespace DevilEditor
         protected virtual void OnEnable()
         {
             ReadData();
+            EditorApplication.update += OnEditorUpdate;
         }
 
         protected virtual void OnDisable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             SaveData();
         }
 
@@ -123,11 +133,10 @@ namespace DevilEditor
             ProcessEvent();
             ProcessFocusCenter();
             OnPostGUI();
-            if (repaint || onFocus)
-            {
-                Repaint();
-            }
-            repaint = false;
+            //if (repaint || onFocus)
+            //{
+            //    Repaint();
+            //}
         }
 
         protected virtual void OnTitleGUI()
@@ -176,10 +185,9 @@ namespace DevilEditor
         {
             if (focusCenter)
             {
-                Vector2 delta =  ScaledCanvas.GlobalCentroid- GraphCanvas.GlobalCentroid;
+                Vector2 delta = ScaledCanvas.GlobalCentroid - GraphCanvas.GlobalCentroid;
                 if (delta.sqrMagnitude > 1)
                 {
-                    repaint |= true;
                     Rect rect = GraphCanvas.LocalRect;
                     rect.position += Vector2.Lerp(Vector2.zero, delta / GraphCanvas.GlobalScale, 0.1f);
                     GraphCanvas.LocalRect = rect;
@@ -243,7 +251,6 @@ namespace DevilEditor
             {
                 return;
             }
-            repaint |= true;
             if(Event.current.type == EventType.KeyDown)
             {
                 OnKeyDown();
