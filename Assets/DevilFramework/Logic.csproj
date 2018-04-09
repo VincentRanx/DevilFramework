@@ -295,22 +295,22 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\BehaviourLib.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\CheerupTask.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\CoolDownCondition.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\DisplayTask.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\FindTargetService.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\LookAtTask.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\MoveToTask.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\PatrolTask.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\AIModules\SearchTask.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\HumanController.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\PlayerController.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\StandardScripts\AICharacterControl.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\StandardScripts\ThirdPersonCharacter.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\StandardScripts\ThirdPersonUserControl.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\Test.cs" />
-    <Compile Include="Assets\GitIgnored\Test\Scripts\TestTask.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\BehaviourLib.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\CheerupTask.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\CoolDownCondition.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\DisplayTask.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\FindTargetService.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\LookAtTask.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\MoveToTask.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\PatrolTask.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\AIModules\SearchTask.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\HumanController.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\PlayerController.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\StandardScripts\AICharacterControl.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\StandardScripts\ThirdPersonCharacter.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\StandardScripts\ThirdPersonUserControl.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\Test.cs" />
+    <Compile Include="Assets\TestAssets\Test\Scripts\TestTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\DevilFramework\Core\Command\notepadstyle.xml" />
@@ -322,14 +322,14 @@
     <None Include="Assets\DevilFramework\Core\GraphicsWork\Shaders\RefractionNormal-transport.shader" />
     <None Include="Assets\DevilFramework\Core\GraphicsWork\Shaders\UI-Advance.shader" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework-Cfg-Default.xml" />
-    <None Include="Assets\GitIgnored\DevilFramework-Cfg.xml" />
-    <None Include="Assets\GitIgnored\Standard Assets\Characters\FirstPersonCharacter\FirstPersonCharacterGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Standard Assets\Characters\RollerBall\RollerBallGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Standard Assets\Characters\ThirdPersonCharacter\ThirdPersonCharacterGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Test\Shaders\Blue.shader" />
-    <None Include="Assets\GitIgnored\Test\Shaders\Red.shader" />
-    <None Include="Assets\GitIgnored\Test\Shaders\pbr-demo.shader" />
+    <None Include="Assets\TestAssets\DevilFramework-Cfg.xml" />
+    <None Include="Assets\TestAssets\Standard Assets\Characters\FirstPersonCharacter\FirstPersonCharacterGuidelines.txt" />
+    <None Include="Assets\TestAssets\Standard Assets\Characters\RollerBall\RollerBallGuidelines.txt" />
+    <None Include="Assets\TestAssets\Standard Assets\Characters\ThirdPersonCharacter\ThirdPersonCharacterGuidelines.txt" />
+    <None Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
+    <None Include="Assets\TestAssets\Test\Shaders\Blue.shader" />
+    <None Include="Assets\TestAssets\Test\Shaders\Red.shader" />
+    <None Include="Assets\TestAssets\Test\Shaders\pbr-demo.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />

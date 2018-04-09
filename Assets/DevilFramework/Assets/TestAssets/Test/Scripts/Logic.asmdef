@@ -1,0 +1,8 @@
+{
+    "name": "Logic",
+    "references": [
+        "DevilAssembly-Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

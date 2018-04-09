@@ -293,57 +293,57 @@
       <Project>{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}</Project>
       <Name>DevilAssembly-Core</Name>
     </ProjectReference>
-    <ProjectReference Include="Logic.csproj">
-      <Project>{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}</Project>
-      <Name>Logic</Name>
-    </ProjectReference>
     <ProjectReference Include="DevilAssembly-GamePlay.csproj">
       <Project>{508531BD-5776-F174-3A07-15151A020BEC}</Project>
       <Name>DevilAssembly-GamePlay</Name>
     </ProjectReference>
+    <ProjectReference Include="Logic.csproj">
+      <Project>{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}</Project>
+      <Name>Logic</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\GitIgnored\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Characters\FirstPersonCharacter\Scripts\HeadBob.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Characters\FirstPersonCharacter\Scripts\MouseLook.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Characters\FirstPersonCharacter\Scripts\RigidbodyFirstPersonController.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Characters\RollerBall\Scripts\Ball.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Characters\RollerBall\Scripts\BallUserControl.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\AxisTouchButton.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\ButtonHandler.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\CrossPlatformInputManager.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\InputAxisScrollbar.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\Joystick.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\MobileControlRig.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\PlatformSpecific\MobileInput.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\PlatformSpecific\StandaloneInput.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\TiltInput.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\TouchPad.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\Scripts\VirtualInput.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\ActivateTrigger.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\AlphaButtonClickMask.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\AutoMobileShaderSwitch.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\AutoMoveAndRotate.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\CameraRefocus.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\CurveControlledBob.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\DragRigidbody.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\DynamicShadowSettings.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\EventSystemChecker.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\FollowTarget.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\ForcedReset.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\FOVKick.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\FPSCounter.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\LerpControlledBob.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\ObjectResetter.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\ParticleSystemDestroyer.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\PlatformSpecificContent.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\SimpleActivatorMenu.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\SimpleMouseRotator.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\SmoothFollow.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\TimedObjectActivator.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\TimedObjectDestructor.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\WaypointCircuit.cs" />
-    <Compile Include="Assets\GitIgnored\Standard Assets\Utility\WaypointProgressTracker.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Characters\FirstPersonCharacter\Scripts\HeadBob.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Characters\FirstPersonCharacter\Scripts\MouseLook.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Characters\FirstPersonCharacter\Scripts\RigidbodyFirstPersonController.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Characters\RollerBall\Scripts\Ball.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Characters\RollerBall\Scripts\BallUserControl.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\AxisTouchButton.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\ButtonHandler.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\CrossPlatformInputManager.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\InputAxisScrollbar.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\Joystick.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\MobileControlRig.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\PlatformSpecific\MobileInput.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\PlatformSpecific\StandaloneInput.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\TiltInput.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\TouchPad.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\Scripts\VirtualInput.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\ActivateTrigger.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\AlphaButtonClickMask.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\AutoMobileShaderSwitch.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\AutoMoveAndRotate.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\CameraRefocus.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\CurveControlledBob.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\DragRigidbody.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\DynamicShadowSettings.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\EventSystemChecker.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\FollowTarget.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\ForcedReset.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\FOVKick.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\FPSCounter.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\LerpControlledBob.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\ObjectResetter.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\ParticleSystemDestroyer.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\PlatformSpecificContent.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\SimpleActivatorMenu.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\SimpleMouseRotator.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\SmoothFollow.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\TimedObjectActivator.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\TimedObjectDestructor.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\WaypointCircuit.cs" />
+    <Compile Include="Assets\TestAssets\Standard Assets\Utility\WaypointProgressTracker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\DevilFramework\Core\Command\notepadstyle.xml" />
@@ -355,14 +355,14 @@
     <None Include="Assets\DevilFramework\Core\GraphicsWork\Shaders\RefractionNormal-transport.shader" />
     <None Include="Assets\DevilFramework\Core\GraphicsWork\Shaders\UI-Advance.shader" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework-Cfg-Default.xml" />
-    <None Include="Assets\GitIgnored\DevilFramework-Cfg.xml" />
-    <None Include="Assets\GitIgnored\Standard Assets\Characters\FirstPersonCharacter\FirstPersonCharacterGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Standard Assets\Characters\RollerBall\RollerBallGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Standard Assets\Characters\ThirdPersonCharacter\ThirdPersonCharacterGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
-    <None Include="Assets\GitIgnored\Test\Shaders\Blue.shader" />
-    <None Include="Assets\GitIgnored\Test\Shaders\Red.shader" />
-    <None Include="Assets\GitIgnored\Test\Shaders\pbr-demo.shader" />
+    <None Include="Assets\TestAssets\DevilFramework-Cfg.xml" />
+    <None Include="Assets\TestAssets\Standard Assets\Characters\FirstPersonCharacter\FirstPersonCharacterGuidelines.txt" />
+    <None Include="Assets\TestAssets\Standard Assets\Characters\RollerBall\RollerBallGuidelines.txt" />
+    <None Include="Assets\TestAssets\Standard Assets\Characters\ThirdPersonCharacter\ThirdPersonCharacterGuidelines.txt" />
+    <None Include="Assets\TestAssets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
+    <None Include="Assets\TestAssets\Test\Shaders\Blue.shader" />
+    <None Include="Assets\TestAssets\Test\Shaders\Red.shader" />
+    <None Include="Assets\TestAssets\Test\Shaders\pbr-demo.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
