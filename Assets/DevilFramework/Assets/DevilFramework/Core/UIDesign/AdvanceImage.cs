@@ -10,7 +10,25 @@ namespace Devil.UI
         [SerializeField]
         float m_Saturation = 1;
 
+        [SerializeField]
+        bool m_InstanceMaterial = true;
+
         int m_PropertyId;
+        Material mMaterialInstance;
+
+        public override Material materialForRendering
+        {
+            get
+            {
+                if (m_Material == null)
+                {
+                    return base.materialForRendering;
+                }
+                if (mMaterialInstance == null)
+                    mMaterialInstance = m_InstanceMaterial ? new Material(m_Material) : m_Material;
+                return mMaterialInstance;
+            }
+        }
 
         public float Staturation
         {
@@ -23,7 +41,8 @@ namespace Devil.UI
                 if (m_Saturation != value)
                 {
                     m_Saturation = value;
-                    ValidateSaturation();
+                    SetMaterialDirty();
+                    //ValidateSaturation();
                 }
             }
         }
@@ -42,7 +61,7 @@ namespace Devil.UI
             base.Awake();
             m_PropertyId = Shader.PropertyToID("_Saturation");
         }
-
+        
 #if UNITY_EDITOR
 
         protected override void OnValidate()

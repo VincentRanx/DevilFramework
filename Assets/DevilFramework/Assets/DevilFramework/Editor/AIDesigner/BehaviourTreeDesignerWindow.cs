@@ -424,7 +424,11 @@ namespace DevilEditor
         {
             base.OnEnable();
             Selection.selectionChanged += OnSelectedObjectChanged;
+#if UNITY_5_6
+            EditorApplication.playmodeStateChanged += OnPlayStateChanged;
+#else
             EditorApplication.playModeStateChanged += OnPlayStateChanged;
+#endif
             Installizer.OnReloaded += ReloadGraph;
             OnSelectedObjectChanged();
         }
@@ -433,7 +437,11 @@ namespace DevilEditor
         {
             base.OnDisable();
             Selection.selectionChanged -= OnSelectedObjectChanged;
+#if UNITY_5_6
+            EditorApplication.playmodeStateChanged -= OnPlayStateChanged;
+#else
             EditorApplication.playModeStateChanged -= OnPlayStateChanged;
+#endif
             Installizer.OnReloaded -= ReloadGraph;
             BindBehaviourTreeEvent(false);
             Runner = null;
@@ -636,6 +644,12 @@ namespace DevilEditor
             return true;
         }
 
+#if UNITY_5
+        private void OnPlayStateChanged()
+        {
+            LoadSelectedAsset();
+        }
+#else
         private void OnPlayStateChanged(PlayModeStateChange obj)
         {
             if (obj == PlayModeStateChange.EnteredPlayMode)
@@ -647,6 +661,8 @@ namespace DevilEditor
                 LoadSelectedAsset();
             }
         }
+#endif
+        
         
         bool OnGraphKeyUp(KeyCode key)
         {
