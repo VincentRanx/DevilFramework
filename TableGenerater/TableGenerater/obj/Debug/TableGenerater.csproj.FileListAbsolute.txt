@@ -28,3 +28,6 @@ D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\De
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csproj.CoreCompileInputs.cache
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.exe
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.pdb
+E:\GitRepository\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csprojResolveAssemblyReference.cache
+E:\GitRepository\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.exe
+E:\GitRepository\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.pdb
