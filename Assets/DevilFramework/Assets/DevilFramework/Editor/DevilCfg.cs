@@ -46,6 +46,8 @@ namespace DevilEditor
             string[] assets = AssetDatabase.FindAssets("t:textasset DevilFramework-Cfg");
             string cfg = DEFAULT_CFG;
             if (assets == null || assets.Length == 0)
+                assets = AssetDatabase.FindAssets("t:textasset DevilFramework-Cfg-Default");
+            if (assets == null || assets.Length == 0)
             {
                 EditorUtility.DisplayDialog("ERROR", "\"DevilFramework-Cfg.xml\" 文件丢失，将使用默认配置：\n" + cfg, "OK");
             }

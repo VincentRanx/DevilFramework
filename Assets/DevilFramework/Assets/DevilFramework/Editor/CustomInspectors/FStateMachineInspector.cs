@@ -56,6 +56,16 @@ namespace DevilEditor
         int interceptedState = -1;
         Vector2 interaceptPos;
 
+        private void OnEnable()
+        {
+            cellScale = EditorPrefs.GetFloat("fsmScale", 1);
+        }
+
+        private void OnDisable()
+        {
+            EditorPrefs.SetFloat("fsmScale", cellScale);
+        }
+
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
@@ -160,7 +170,7 @@ namespace DevilEditor
                 EditorGUILayout.BeginHorizontal();
                 float scale = EditorGUILayout.Slider("滑动缩放视图", cellScale, 0.5f, 3f);
                 EditorGUI.BeginDisabledGroup(Application.isPlaying);
-                bool regen = GUILayout.Button("刷新", GUILayout.Height(30));
+                bool regen = GUILayout.Button("刷新", GUILayout.Height(20));
                 EditorGUI.EndDisabledGroup();
                 EditorGUILayout.EndHorizontal();
 
@@ -374,7 +384,11 @@ namespace DevilEditor
                 {
                     style = inter ? "flow node 1 on" : "flow node 1";
                 }
-                GUI.Label(rect, state.m_StateName, style);
+                GUI.Label(rect, "", style);
+                Installizer.contentContent.text = state.m_StateName;
+                Installizer.contentStyle.fontSize = (int)((rect.height - 10) * cellScale);
+                Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
+                GUI.Label(rect, Installizer.contentContent, Installizer.contentStyle);
             }
         }
 

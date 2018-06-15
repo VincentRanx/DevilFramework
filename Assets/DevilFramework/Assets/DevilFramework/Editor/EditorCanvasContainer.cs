@@ -30,7 +30,7 @@ namespace DevilEditor
         {
         }
 
-        protected virtual void OnGUI()
+        public virtual void OnGUI()
         {
             ProcessMouseDeltaPos();
 
@@ -45,8 +45,10 @@ namespace DevilEditor
             if (rect.width > 1)
             {
                 cachedViewportRect = rect;
+                Rect local = LocalRect;
+                local.width = rect.width;
+                LocalRect = local;
             }
-
             clipRect = new Rect(cachedViewportRect.xMin + 1, cachedViewportRect.yMax + 1, GlobalRect.width - 2, GlobalRect.height - cachedViewportRect.height - 2);
             GUI.Label(clipRect, "", "CurveEditorBackground");
             OnCanvasGUI();

@@ -20,6 +20,9 @@ namespace Devil
             {
                 GameObject obj = new GameObject(string.Format("{0}[Singleton]", typeof(T).ToString()));
                 sInstance = obj.AddComponent<T>();
+#if UNITY_EDITOR
+                Debug.LogFormat("Instance Singleton<{0}>.", sInstance.GetType());
+#endif
             }
             return sInstance;
         }

@@ -35,6 +35,7 @@ namespace Devil
                 mInstance.OnInit();
 #if UNITY_EDITOR
                 mNewInstance = false;
+                Debug.LogFormat("Instance Singleton<{0}>.", mInstance.GetType());
 #endif
             }
             return mInstance;
