@@ -3,12 +3,14 @@ global Transform = typeForName("Transform");
 global SceneManager = typeForName("SceneManager");
 global IsChineseSupported = getProperty(runtime, "IsChineseSupported");
 
-void ImHere (a, b)
+/*
+void ImHere a, b)
 {
 	如果 a 大于 b 就 logi(a," 是大于 ",b," 的");
 	否则 logi(a," 不大于 ",b);
 };
 
+*/
 void loadScene(sceneName)
 {
 	if (typeof(sceneName) == int) then
@@ -21,10 +23,11 @@ void loadScene(sceneName)
 	};
 };
 
-global loopTimes = 50000;
+global loopTimes = 5000;
 
 void test1()
 {
+	logi("test1 begin...");
 	t0 = ticks;
 	global counter = 0;
 	for(;global counter<global loopTimes;global counter++)

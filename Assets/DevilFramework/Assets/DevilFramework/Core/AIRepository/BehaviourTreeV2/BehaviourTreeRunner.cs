@@ -117,7 +117,7 @@ namespace Devil.AI
         {
             if (root == null || root.NodeId == nodeId)
                 return root;
-            for(int i = 0; i < root.ChildLength; i++)
+            for (int i = 0; i < root.ChildLength; i++)
             {
                 BTNodeBase node = FindNodeRecursize(nodeId, root.ChildAt(i));
                 if (node != null)
@@ -129,7 +129,7 @@ namespace Devil.AI
         public bool IsServiceActive(int servId)
         {
             LinkedListNode<BTServiceBase> serv = mServices.First;
-            while(serv != null)
+            while (serv != null)
             {
                 if (serv.Value.Id == servId)
                     return true;
@@ -154,7 +154,15 @@ namespace Devil.AI
         {
             OnBehaviourTreeEnd(this);
         }
+        public event System.Action<BehaviourTreeRunner> OnBreakCallback = (x) => { };
+        public void NotifyBreakCallback(BTNodeBase node)
+        {
+            BreakNode = node;
+            OnBreakCallback(this);
+            Debug.Break();
+        }
         public BTNodeBase RootNode { get { return mRootNode; } }
+        public BTNodeBase BreakNode { get; private set; }
         public BTNodeBase RuntimeNode { get { return mLooper.RuntimeNode; } }
 #endif
 

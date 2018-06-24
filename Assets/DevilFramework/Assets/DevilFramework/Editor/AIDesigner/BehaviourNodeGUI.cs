@@ -252,7 +252,10 @@ namespace DevilEditor
         {
             mRaycastDecorator = null;
             string style;
-            style = IsSelected ? "flow node 0 on" : "flow node 0";
+            if (mWindow.IsPlaying && mWindow.BreakNode == this.RuntimeNode && Mathf.Repeat((float)EditorApplication.timeSinceStartup, 1) < 0.5f)
+                style = "flow node 5 on";
+            else
+                style = IsSelected ? "flow node 0 on" : "flow node 0";
             GUI.Label(GlobalRect, "", style);
             OnNodeGUI();
             OnSocketGUI();
@@ -261,7 +264,7 @@ namespace DevilEditor
                 Rect r = new Rect();
                 r.size = Vector2.one * 15;
                 r.center = new Vector2(GlobalRect.xMax - 8, GlobalRect.yMin - 8);
-                GUI.Label(r, "", "Icon.AutoKey");
+                GUI.Label(r, "", "MeTransPlayhead");
             }
         }
 
@@ -367,7 +370,7 @@ namespace DevilEditor
             r.size = new Vector2(w, (Self.SubTextHeight + Self.TextHeight) * GlobalScale);
             QuickGUI.DrawBox(r, Self.BTMeta.color, Color.black, 1);
             Texture2D icon = Self.BTMeta.Icon;
-            if(icon != null)
+            if (icon != null)
             {
                 Rect tmp = new Rect();
                 tmp.size = Vector2.one * ICON_SIZE * GlobalScale;
@@ -406,10 +409,18 @@ namespace DevilEditor
 
             // services
             OnDecoratorListGUI(services, ref r);
-            r.size = new Vector2(50, 20);
+            r.size = new Vector2(100, 20);
             r.position = new Vector2(GlobalRect.xMin, GlobalRect.yMin - 20);
-            GUI.Label(r, string.Format("<color={0}>[{1}]</color>", BTExecutionOrder > 0 ? "#10ff10" : "red",
-                BTExecutionOrder > 0 ? BTExecutionOrder.ToString() : "-"));
+            if (mWindow.IsPlaying && RuntimeNode != null)
+            {
+                GUI.Label(r, string.Format("<color={0}>#{1}</color>", BTExecutionOrder > 0 ? "#10ff10" : "red",
+                    BTExecutionOrder > 0 ? BTExecutionOrder.ToString() : "-"));
+            }
+            else
+            {
+                GUI.Label(r, string.Format("<color={0}>#{1}</color>", BTExecutionOrder > 0 ? "#10ff10" : "red",
+                    BTExecutionOrder > 0 ? BTExecutionOrder.ToString() : "-"));
+            }
             if (!string.IsNullOrEmpty(mError))
             {
                 r.size = new Vector2(200, 50);

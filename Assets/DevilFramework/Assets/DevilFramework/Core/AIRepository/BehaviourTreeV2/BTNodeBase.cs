@@ -202,13 +202,13 @@ namespace Devil.AI
 
         public void Visit(BehaviourTreeRunner btree)
         {
-            mStartTime = Time.time;
 #if UNITY_EDITOR
             if (BreakToggle)
             {
-                Debug.Break();
+                btree.NotifyBreakCallback(this);
             }
 #endif
+            mStartTime = Time.time;
             if (IsRunnable(btree))
             {
                 for (int i = 0; i < ServiceLength; i++)

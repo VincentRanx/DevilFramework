@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 
 namespace TableGenerater
 {
@@ -67,8 +69,10 @@ namespace TableGenerater
             }
             currExcel = filePath;
             fileName = Path.GetFileNameWithoutExtension(filePath);
-            app.Workbooks.Close();
-            book = app.Workbooks.Open(filePath);
+            //if (app.Worksheets.Count > 0)
+            //    app.Workbooks.Close();
+            object miss = Missing.Value;
+            book = app.Workbooks.Open(filePath, miss, true, miss, miss);
             sheet = book.Worksheets.Item[1];
             opened = sheet != null;
             if (opened)
@@ -85,8 +89,15 @@ namespace TableGenerater
         {
             if (app != null)
             {
-                app.Workbooks.Close();
+                if (app.Worksheets.Count > 0)
+                    app.Workbooks.Close();
                 app.Quit();
+                app = null;
+            }
+            Process[] procs = Process.GetProcessesByName("excel");
+            foreach (Process pro in procs)
+            {
+                pro.Kill();//没有更好的方法,只有杀掉进程
             }
         }
     }

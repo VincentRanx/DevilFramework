@@ -12,6 +12,7 @@ using ExcelBook = Microsoft.Office.Interop.Excel.Workbook;
 using ExcelSheet = Microsoft.Office.Interop.Excel.Worksheet;
 using ExcelRange = Microsoft.Office.Interop.Excel.Range;
 using System.Windows.Forms;
+using System.Configuration;
 
 namespace TableGenerater
 {
@@ -54,7 +55,7 @@ namespace TableGenerater
                 if(type == "bool" && isArray)
                     return string.Format("\"{0}\"", src.ToLower());
                 else if (isArray || type == "string")
-                    return string.Format("\"{0}\"", src);
+                    return string.Format("\"{0}\"", src.Replace("\"", "\\\""));
                 else if (type == "bool")
                     return src.ToLower() == "true" ? "true" : "false";
                 else if (type == "float")
@@ -252,7 +253,8 @@ namespace TableGenerater
                 fstr.Append("\t\t\t{\n");
                 if (f.isArray)
                 {
-                    fstr.Append("\t\t\t\tstring[] list = tok.ToObject<string>().Split(',');\n");
+                    fstr.Append("\t\t\t\tstring str = tok.ToObject<string>();\n");
+                    fstr.Append("\t\t\t\tstring[] list = string.IsNullOrEmpty(str) ? new string[0] : str.Split(',');\n");
                     if (f.arrayLen == -1 && tp == "string")
                     {
                         fstr.Append("\t\t\t\t").Append(f.name).Append(" = list;\n");
@@ -293,7 +295,8 @@ namespace TableGenerater
             }
            
             StringBuilder fstr = new StringBuilder();
-            fstr.Append("using DevilTeam.ContentProvider;\n");
+            //fstr.Append("using Devil.ContentProvider;\n");
+            fstr.Append("using ").Append(ConfigurationManager.AppSettings["useNamespace"]).Append(";\n");
             fstr.Append("using Newtonsoft.Json.Linq;\n\n");
             fstr.Append("namespace ").Append(NameSpace).Append("\n");
             fstr.Append("{\n");

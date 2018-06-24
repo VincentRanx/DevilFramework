@@ -7,6 +7,7 @@ using ExcelSheet = Microsoft.Office.Interop.Excel.Worksheet;
 using ExcelRange = Microsoft.Office.Interop.Excel.Range;
 using System.Text;
 using System.IO;
+using System.Configuration;
 
 namespace TableGenerater
 {
@@ -20,9 +21,11 @@ namespace TableGenerater
         HashSet<string> ids;
 
         string currentId;
+        bool asArray;
 
         public GenerateProgress(ClassModel model, ExcelReader excel, string output)
         {
+            asArray = ConfigurationManager.AppSettings["asJArray"] == "true";
             InitializeComponent();
             ids = new HashSet<string>();
             this.output = output;
@@ -48,6 +51,9 @@ namespace TableGenerater
             string range;
             StringBuilder fstr = new StringBuilder();
             int row = 4;
+            int len = 0;
+            if (asArray)
+                fstr.Append("[");
             while (true)
             {
                 range = excel.GetCell(row, 2);
@@ -55,19 +61,20 @@ namespace TableGenerater
                     break;
                 Action refresh = () =>
                 {
-                    genProgress.Value = Math.Min(totalNum, row ) * 100 / totalNum;
+                    genProgress.Value = Math.Min(totalNum, row) * 100 / totalNum;
                 };
                 Invoke(refresh);
-
+                if (asArray && len > 0)
+                    fstr.Append(",");
                 fstr.Append("{");
                 ClassModel.Field f = model.Fields[0];
                 fstr.Append("\"").Append(f.name).Append("\":");
                 fstr.Append(f.GetJsonValue(range));
-                if(f.name == "id" && !ids.Add(range))
+                if (f.name == "id" && !ids.Add(range))
                 {
-                   
+
                     currentId = range;
-                    Action box = () => 
+                    Action box = () =>
                     {
                         MessageBox.Show("重复的id " + currentId, "错误");
                         t.Abort();
@@ -85,9 +92,14 @@ namespace TableGenerater
                     fstr.Append("\"").Append(f.name).Append("\":");
                     fstr.Append(f.GetJsonValue(range));
                 }
-                fstr.Append("}\n");
+                fstr.Append("}");
+                if (!asArray)
+                    fstr.Append("\n");
                 row++;
+                len++;
             }
+            if (asArray)
+                fstr.Append("]");
             File.WriteAllText(Path.Combine( output, model.ClassName+".txt"), fstr.ToString());
             Action act = () =>
             {

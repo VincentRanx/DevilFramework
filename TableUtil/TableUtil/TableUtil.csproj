@@ -1,0 +1,174 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{230BAE3B-B6E3-45B5-AE94-D7128FFAF1E6}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>TableUtil</RootNamespace>
+    <AssemblyName>TableUtil</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Libs\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RTSVM\org.vr.rts.advance\AsyncL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.advance\AsyncR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.advance\RTSCmdL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.advance\RTSFuncListR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.advance\RTSFuncShortcutL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.advance\RTSInlineCompileR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.advance\RTSWaitForValue.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSCompiler.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSEngine.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSInnerFunction.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSPluginFunc.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSRegister.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSStack.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSTextReader.cs" />
+    <Compile Include="RTSVM\org.vr.rts.component\RTSThread.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSArithmeticL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSBinaryL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSBracketL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSCommaL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSCompareL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSDeleteL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSElseL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSEndingL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSEvaluateL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSExecL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSForL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSIfL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSLinker.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSLogicL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSNotL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSPropertyL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSQuestionL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSSelfRaiseL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSSquareL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSStackActL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSTypeL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.linker\RTSVariableL.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSBool.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSDouble.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSFloat.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSGeneral.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSInteger.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSLong.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSRegisterType.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSString.cs" />
+    <Compile Include="RTSVM\org.vr.rts.modify\RTSVoid.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSAndR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSArithmeticR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSBinaryR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSCastR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSCompareR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSDeleteR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSEvaluateR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSExecR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSForR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSFuncDefineR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSFuncR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSIfElseR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSInnerFuncR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSNotR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSOrR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSPluginFuncR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSSelfRaiseR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSSquareR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSStackActR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSVariableR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.runner\RTSXorR.cs" />
+    <Compile Include="RTSVM\org.vr.rts.unity\RTSUnityRuntime.cs" />
+    <Compile Include="RTSVM\org.vr.rts.util\RTSConverter.cs" />
+    <Compile Include="RTSVM\org.vr.rts.util\RTSList.cs" />
+    <Compile Include="RTSVM\org.vr.rts.util\RTSSortedMap.cs" />
+    <Compile Include="RTSVM\org.vr.rts.util\RTSUtil.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSDefine.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSEngine.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSFunction.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSLinker.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSLog.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSPlugin.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSRunner.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSRuntime.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSStack.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSThread.cs" />
+    <Compile Include="RTSVM\org.vr.rts\IRTSType.cs" />
+    <Compile Include="RTSVM\org.vr.rts\RTSCfg.cs" />
+    <Compile Include="TableModel\ClassModel.cs" />
+    <Compile Include="TableModel\ValueType.cs" />
+    <Compile Include="Util.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Libs\Newtonsoft.Json.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="Microsoft.Office.Core">
+      <Guid>{2DF8D04C-5BFA-101B-BDE5-00AA0044DE52}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>8</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="Microsoft.Office.Interop.Excel">
+      <Guid>{00020813-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>9</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="VBIDE">
+      <Guid>{0002E157-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>5</VersionMajor>
+      <VersionMinor>3</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

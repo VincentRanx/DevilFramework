@@ -19,12 +19,13 @@ D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\bin\De
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\bin\Debug\TableGenerater.exe
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\bin\Debug\TableGenerater.pdb
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\bin\Debug\Newtonsoft.Json.dll
-D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csprojResolveAssemblyReference.cache
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csproj.ResolveComReference.cache
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.GenerateProgress.resources
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.TableGenerater.resources
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.Properties.Resources.resources
-D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csproj.GenerateResource.Cache
+D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csproj.GenerateResource.cache
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csproj.CoreCompileInputs.cache
+D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csproj.CopyComplete
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.exe
 D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.pdb
+D:\Developer\GitRepositories\DevilFramework\TableGenerater\TableGenerater\obj\Debug\TableGenerater.csprojResolveAssemblyReference.cache

@@ -16,6 +16,9 @@ public class Test : MonoBehaviour {
     {
         mPath = new NavMeshPath();
         mAgent = GetComponent<NavMeshAgent>();
+
+        //WebCamTexture.devices; 
+        
     }
 
     private void Update()

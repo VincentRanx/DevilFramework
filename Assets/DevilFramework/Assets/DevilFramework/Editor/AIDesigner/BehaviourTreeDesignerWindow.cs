@@ -45,6 +45,7 @@ namespace DevilEditor
         public ENodeEditMode EditMode { get; private set; }
         public PaintElement EditTarget { get; private set; }
         BehaviourRootGUI mRootGUI;
+        public BTNodeBase BreakNode { get { return EditorApplication.isPaused && Runner != null ? Runner.BreakNode : null; } }
         bool mLockTarget;
         public bool LockTarget
         {
