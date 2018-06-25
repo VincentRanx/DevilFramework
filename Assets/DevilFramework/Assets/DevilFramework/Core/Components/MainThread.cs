@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Devil
 {
-
     public class MainThread : MonoBehaviour
     {
         private static MainThread sInstance;
@@ -28,7 +28,7 @@ namespace Devil
             {
                 lock (sInstance.mLock)
                 {
-                    TaskWithoutArg task = new TaskWithoutArg();
+                    TaskWithoutArg task = sInstance.GetTask();
                     task.mTask = action;
                     sTasks.Enqueue(task);
                 }
@@ -41,11 +41,23 @@ namespace Devil
             {
                 lock (sInstance.mLock)
                 {
-                    TaskWithArg<T> task = new TaskWithArg<T>();
+                    TaskWithArg<T> task = sInstance.GetTaskWithArg<T>();
                     task.mTask = action;
                     task.mArg = arg;
                     sTasks.Enqueue(task);
                 }
+            }
+        }
+
+        public static Coroutine RunCoroutine(IEnumerator cor)
+        {
+            if (sInitilized && cor != null)
+            {
+                return sInstance.StartCoroutine(cor);
+            }
+            else
+            {
+                return null;
             }
         }
 
@@ -76,6 +88,16 @@ namespace Devil
         }
 
         private object mLock = new object();
+
+        TaskWithArg<T> GetTaskWithArg<T>()
+        {
+            return new TaskWithArg<T>();
+        }
+
+        TaskWithoutArg GetTask()
+        {
+            return new TaskWithoutArg();
+        }
 
         private void Awake()
         {

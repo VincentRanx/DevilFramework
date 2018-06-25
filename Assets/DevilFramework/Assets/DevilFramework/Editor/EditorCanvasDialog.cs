@@ -16,7 +16,7 @@ namespace DevilEditor
                 mLastTip.mTick = JDateTime.NowMillies;
                 return mLastTip;
             }
-            EditorCanvasTip tip = mBuffer.AnyTarget;
+            EditorCanvasTip tip = mBuffer.GetAnyTarget();
             tip.mDuration = (long)(time * 1000);
             tip.mText = text;
             mLastTip = tip;

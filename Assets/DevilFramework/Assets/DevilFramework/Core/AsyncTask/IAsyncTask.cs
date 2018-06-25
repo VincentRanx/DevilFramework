@@ -2,6 +2,8 @@
 {
     public interface IAsyncTask : ITick
     {
+        void OnStart();
+
         // 加载进度
         float Progress { get; }
 
@@ -9,6 +11,6 @@
         bool IsDone { get; }
 
         // 中断
-        void Interrupt();
+        void OnInterrupt();
     }
 }

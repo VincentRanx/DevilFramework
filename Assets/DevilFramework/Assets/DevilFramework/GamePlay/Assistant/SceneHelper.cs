@@ -12,18 +12,24 @@ namespace Devil.GamePlay.Assistant
             AsyncOperation mLoading;
             float mRatio;
             float mTimeScale;
+            string mSceneName;
 
             public LoadSceneTask(string sceneName, float suspectTime = 2f)
             {
-                mLoading = SceneManager.LoadSceneAsync(sceneName);
+                mSceneName = sceneName;
                 mTimeScale = suspectTime > 0 ? (1 / suspectTime) : 1;
+            }
+
+            public void OnStart()
+            {
+                mLoading = SceneManager.LoadSceneAsync(mSceneName);
             }
 
             public float Progress { get { return Mathf.Max(mRatio, mLoading.progress); } }
 
-            public bool IsDone { get { return mLoading.isDone; } }
+            public bool IsDone { get { return mLoading != null && mLoading.isDone; } }
 
-            public void Interrupt()
+            public void OnInterrupt()
             {
             }
 
@@ -45,18 +51,24 @@ namespace Devil.GamePlay.Assistant
                 mTimeScale = time > 0 ? (1 / time) : 1;
             }
 
+            public void OnStart()
+            {
+
+            }
+
             public float Progress { get { return mRatio; } }
 
             public bool IsDone { get { return mRatio >= 1; } }
 
-            public void Interrupt()
+            public void OnInterrupt()
             {
                 mRatio = 1;
             }
 
             public void OnTick(float deltaTime)
             {
-                mRatio = Mathf.Clamp01(mRatio + deltaTime * mTimeScale);
+                if (mPreTask == null || mPreTask.IsDone)
+                    mRatio = Mathf.Clamp01(mRatio + deltaTime * mTimeScale);
             }
         }
 
@@ -70,11 +82,16 @@ namespace Devil.GamePlay.Assistant
                 mTimeScale = time > 0 ? (1 / time) : 1;
             }
 
+            public void OnStart()
+            {
+
+            }
+
             public float Progress { get { return mRatio; } }
 
             public bool IsDone { get { return mRatio >= 1; } }
 
-            public void Interrupt()
+            public void OnInterrupt()
             {
                 mRatio = 1;
             }
@@ -93,7 +110,7 @@ namespace Devil.GamePlay.Assistant
         string mLoadingScene;
         public float LoadProgress { get { return mLoader.Progress; } }
         public bool IsDone { get { return mLoader.IsDone; } }
-        public bool IsLoading { get { return mLoader.HasTask; } }
+        public bool IsLoading { get { return mLoading && mLoader.HasTask; } }
         System.Action mLoadEndCallback;
         public event System.Action<string> OnLoadBegin = (x) => { };
         public event System.Action<string> OnLoadEnd = (x) => { };
@@ -160,7 +177,6 @@ namespace Devil.GamePlay.Assistant
             mLoadingScene = sceneName;
             mLoader.Reset();
             mLoadEndCallback = complateCallback;
-            OnLoadBegin(mLoadingScene);
             mLoader.AddTask(new LoadSceneTask(mLoadingScene));
             if (displayTime > 0)
             {
@@ -170,6 +186,8 @@ namespace Devil.GamePlay.Assistant
             {
                 mLoader.AddTasks(additiveTask, additiveWeight);
             }
+            mLoader.OnStart();
+            OnLoadBegin(mLoadingScene);
             mLoading = true;
         }
 

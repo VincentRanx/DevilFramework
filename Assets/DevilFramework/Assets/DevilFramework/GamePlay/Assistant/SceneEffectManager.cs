@@ -46,7 +46,7 @@ namespace Devil.GamePlay.Assistant
                 return null;
             sActiveMgr.mTmpPos = pos;
             sActiveMgr.mTmpRot = rot;
-            Effect go = sActiveMgr.mEffectPool.AnyTarget(group);
+            Effect go = sActiveMgr.mEffectPool.GetAnyTarget(group);
             go.Gobject.transform.position = pos;
             go.Gobject.transform.rotation = rot;
             go.IsActive = true;

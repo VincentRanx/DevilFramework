@@ -3,9 +3,8 @@ using System.Collections.Generic;
 
 namespace Devil.AsyncTask
 {
-    public class AsyncLoader : ITick
+    public class AsyncLoader : IAsyncTask
     {
-
         private class Task
         {
             public IAsyncTask task;
@@ -22,6 +21,7 @@ namespace Devil.AsyncTask
         public float Progress { get; private set; }
         public bool IsDone { get; private set; }
         public bool HasTask { get { return mTasks.Count > 0; } }
+        bool mStarted;
 
         public AsyncLoader()
         {
@@ -41,13 +41,42 @@ namespace Devil.AsyncTask
                     {
                         Task task = mTasks[i];
                         if (!task.isDone && !task.task.IsDone)
-                            task.task.Interrupt();
+                            task.task.OnInterrupt();
                     }
                 }
                 mTasks.Clear();
                 IsDone = false;
                 Progress = 0;
                 mTotalWeight = 0;
+                mStarted = false;
+            }
+        }
+
+        public void OnStart()
+        {
+            mStarted = true;
+            for (int i = mTasks.Count - 1; i >= 0; i--)
+            {
+                Task task = mTasks[i];
+                task.task.OnStart();
+            }
+        }
+
+        public void OnInterrupt()
+        {
+            lock (mLock)
+            {
+                if (!IsDone)
+                {
+                    for (int i = mTasks.Count - 1; i >= 0; i--)
+                    {
+                        Task task = mTasks[i];
+                        if (!task.isDone && !task.task.IsDone)
+                            task.task.OnInterrupt();
+                    }
+                    IsDone = true;
+                    Progress = 1;
+                }
             }
         }
 
@@ -68,6 +97,8 @@ namespace Devil.AsyncTask
                 t.weight = weight;
                 mTotalWeight += weight;
                 mTasks.Add(t);
+                if(mStarted)
+                    task.OnStart();
                 return true;
             }
         }
@@ -96,6 +127,8 @@ namespace Devil.AsyncTask
                         t.weight = eweight;
                         mTotalWeight += eweight;
                         mTasks.Add(t);
+                        if(mStarted)
+                           task.OnStart();
                         len++;
                     }
                 }
@@ -110,7 +143,7 @@ namespace Devil.AsyncTask
         {
             lock (mLock)
             {
-                if (IsDone || mTotalWeight <= 0)
+                if (!mStarted || IsDone || mTotalWeight <= 0)
                     return;
                 float f = 0;
                 int doneNum = 0;

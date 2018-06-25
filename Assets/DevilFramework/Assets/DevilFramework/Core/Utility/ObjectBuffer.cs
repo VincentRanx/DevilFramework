@@ -44,26 +44,23 @@ namespace Devil.Utility
             }
         }
 
-        public T AnyTarget
+        public T GetAnyTarget()
         {
-            get
+            lock (mLock)
             {
-                lock (mLock)
+                if (mLen > 0)
                 {
-                    if (mLen > 0)
-                    {
-                        T tmp = mBuffer[--mLen];
-                        mBuffer[mLen] = null;
-                        return tmp;
-                    }
-                    if (Creater != null)
-                    {
-                        return Creater();
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    T tmp = mBuffer[--mLen];
+                    mBuffer[mLen] = null;
+                    return tmp;
+                }
+                if (Creater != null)
+                {
+                    return Creater();
+                }
+                else
+                {
+                    return null;
                 }
             }
         }
@@ -130,7 +127,7 @@ namespace Devil.Utility
             }
         }
 
-        public T AnyTarget(int group)
+        public T GetAnyTarget(int group)
         {
             lock (mLock)
             {
