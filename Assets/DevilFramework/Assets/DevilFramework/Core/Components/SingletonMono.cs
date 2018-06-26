@@ -10,6 +10,12 @@ namespace Devil
         {
             get
             {
+#if UNITY_EDITOR
+                if (sInstance == null)
+                {
+                    sInstance = FindObjectOfType<T>();
+                }
+#endif
                 return sInstance;
             }
         }
@@ -18,6 +24,17 @@ namespace Devil
         {
             if (!sInstance)
             {
+#if UNITY_EDITOR
+                if (!Application.isPlaying)
+                {
+                    T inst = FindObjectOfType<T>();
+                    if (inst != null)
+                    {
+                        sInstance = inst;
+                        return sInstance;
+                    }
+                }
+#endif
                 GameObject obj = new GameObject(string.Format("{0}[Singleton]", typeof(T).ToString()));
                 sInstance = obj.AddComponent<T>();
 #if UNITY_EDITOR

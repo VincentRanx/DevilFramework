@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Devil
 {
+    [ExecuteInEditMode]
     public class MainThread : MonoBehaviour
     {
         private static MainThread sInstance;

@@ -27,14 +27,14 @@ namespace DevilEditor
             MaskFieldAttribute maskattr = attribute as MaskFieldAttribute;
             if (property.propertyType == SerializedPropertyType.Enum)
             {
-                if (maskattr.IsMask)
-                {
-                   // int v = EditorGUI.MaskField(property.en)
-                }
-                else
-                {
+                //if (maskattr.IsMask)
+                //{
+                //   // int v = EditorGUI.MaskField(property.en)
+                //}
+                //else
+                //{
                     property.intValue = EditorGUI.MaskField(position, property.intValue, property.enumDisplayNames);
-                }
+                //}
             }
             else
             {

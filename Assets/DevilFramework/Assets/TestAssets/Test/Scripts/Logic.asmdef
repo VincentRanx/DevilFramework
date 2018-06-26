@@ -1,7 +1,8 @@
 {
     "name": "Logic",
     "references": [
-        "DevilAssembly-Core"
+        "DevilAssembly-Core",
+        "DevilAssembly-GamePlay"
     ],
     "includePlatforms": [],
     "excludePlatforms": []

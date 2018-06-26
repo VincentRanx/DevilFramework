@@ -106,6 +106,10 @@ namespace Devil.Utility
                 return null;
             }
         }
-        
+
+        public static T FindComponentInScene<T>() where T : Component
+        {
+            return Object.FindObjectOfType<T>();
+        }
     }
 }

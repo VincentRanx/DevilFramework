@@ -23,18 +23,21 @@ namespace Devil.GamePlay
 
     // ui panel
     [RequireComponent(typeof(Canvas))]
-    public abstract class Panel : MonoBehaviour
+    public abstract class Panel : UIBehaviour
     {
-        public int m_PrefabId;
-
+        [MaskField]
+        [SerializeField]
+        EPanelProperty m_Propoerties = EPanelProperty.SingleInstance | EPanelProperty.FullScreen;
+        public EPanelProperty Properties { get { return m_Propoerties; } }
+        
         Canvas mCanvas;
         public Canvas GetCanvas()
         {
             if (mCanvas == null)
-                mCanvas.GetComponent<Canvas>();
+                mCanvas = GetComponent<Canvas>();
             return mCanvas;
         }
-
+        
         /// <summary>
         /// 加载完成时回调
         /// </summary>

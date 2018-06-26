@@ -8,6 +8,10 @@ namespace Devil.Utility
 {
     public class StringUtil
     {
+
+        static ObjectBuffer<StringBuilder> mBuilders = new ObjectBuffer<StringBuilder>(5, () => new StringBuilder(128));
+        public static ObjectBuffer<StringBuilder> BuilderBuffer { get { return mBuilders; } }
+
         private const string INVALID_CHAR_SET = ",<.>/?;:'\"[{]}\\|`~!@#$%^&*()-=+ \r\n\t";
         // to全角
         public static string ToSBC(string text)
@@ -70,18 +74,34 @@ namespace Devil.Utility
             {
                 return null;
             }
-
+            StringBuilder buffer = BuilderBuffer.GetAnyTarget();
+            string ret = null;
             try
             {
                 MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
                 byte[] hashBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
-                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                buffer.Remove(0, buffer.Length);
+                buffer.Append(BitConverter.ToString(hashBytes));
+                int delta = 'A' - 'a';
+                for (int i = buffer.Length - 1; i >= 0; i--)
+                {
+                    char c = buffer[i];
+                    if (c == '-')
+                        buffer.Remove(i, 1);
+                    else if (c >= 'a' && c <= 'a')
+                        buffer[i] = (char)(c + delta);
+                }
+                ret = buffer.ToString();
             }
             catch (Exception e)
             {
                 Debug.LogException( e);
-                return null;
             }
+            finally
+            {
+                BuilderBuffer.SaveBuffer(buffer);
+            }
+            return ret;
         }
 
         public static int ToHash(string str)
@@ -129,12 +149,15 @@ namespace Devil.Utility
 
         public static string ParseDictionary(Dictionary<string, string> dic)
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = BuilderBuffer.GetAnyTarget();
+            builder.Remove(0, builder.Length);
             foreach (string key in dic.Keys)
             {
                 builder.Append(key).Append('=').Append(dic[key]).Append('\n');
             }
-            return builder.ToString();
+            string ret = builder.ToString();
+            BuilderBuffer.SaveBuffer(builder);
+            return ret;
         }
 
         public const string EMPTY = "\"\"";
@@ -148,6 +171,7 @@ namespace Devil.Utility
             sec = sec % 60;
             int hour = minute / 60;
             minute = minute % 60;
+            
             return string.Format(s, hour, minute, sec);
         }
 
