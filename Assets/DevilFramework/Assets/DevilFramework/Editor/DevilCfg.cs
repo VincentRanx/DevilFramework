@@ -43,40 +43,24 @@ namespace DevilEditor
 
         public static void LoadConfiguration()
         {
-            string[] assets = AssetDatabase.FindAssets("t:textasset DevilFramework-Cfg");
+            string path = DevilEditorUtility.FindFile("DevilFramework-Cfg.xml");
+            if (path == null)
+                path = DevilEditorUtility.FindFile("DevilFramework-Cfg-Default.xml");
+            //string[] assets = AssetDatabase.FindAssets("t:textasset DevilFramework-Cfg");
             string cfg = DEFAULT_CFG;
-            if (assets == null || assets.Length == 0)
-                assets = AssetDatabase.FindAssets("t:textasset DevilFramework-Cfg-Default");
-            if (assets == null || assets.Length == 0)
+            //if (assets == null || assets.Length == 0)
+            //    assets = AssetDatabase.FindAssets("t:textasset DevilFramework-Cfg-Default");
+            if (string.IsNullOrEmpty(path))
             {
                 EditorUtility.DisplayDialog("ERROR", "\"DevilFramework-Cfg.xml\" 文件丢失，将使用默认配置：\n" + cfg, "OK");
             }
             else
             {
-                string path = AssetDatabase.GUIDToAssetPath(assets[0]);
-                int num = 0;
-                for(int i = 0; i < assets.Length; i++)
-                {
-                    string p = AssetDatabase.GUIDToAssetPath(assets[i]);
-                    if(Path.GetFileName(p) == "DevilFramework-Cfg.xml")
-                    {
-                        num++;
-                        path = p;
-                    }
-                }
-                if(num == 0)
-                {
-                    EditorUtility.DisplayDialog("ERROR", "找不到配置文件 DevilFramework-Cfg.xml。", "OK");
-                }
-                else
-                {
-                    TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
-                    cfg = asset.text;
-                    if (num > 1)
-                    {
-                        EditorUtility.DisplayDialog("TIP", string.Format("检测到多个 DevilFramework-Cfg.xml, 将使用 {0} 作为配置文件。", path), "OK");
-                    }
-                }
+                //string path = AssetDatabase.GUIDToAssetPath(assets[0]);
+                Debug.Log("Devil Framewok Load Cfg: " + path);
+                StreamReader reader = File.OpenText(path);
+                cfg = reader.ReadToEnd();
+                reader.Close();
             }
             try
             {

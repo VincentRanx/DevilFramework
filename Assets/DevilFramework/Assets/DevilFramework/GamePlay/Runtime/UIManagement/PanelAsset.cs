@@ -1,6 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Collections;
-using System.Collections.Generic;
+﻿using Devil.Utility;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace Devil.GamePlay
@@ -10,10 +9,14 @@ namespace Devil.GamePlay
         public int Id { get; private set; } // id
         public string Name { get; private set; } // 名称
         public string AssetPath { get; private set; } // 资源路径
-        public Panel Asset { get; set; } // 资源
+        //public Panel Asset { get; set; } // 资源
         public bool IsUsable { get; private set; }
+        public EPanelMode Mode { get; private set; }
         public EPanelProperty Properties { get; private set; }
-        bool mIsBuiltInAsset;
+        Panel mBuiltinAsset;
+        bool mIsBuiltIn;
+
+        ObjectBuffer<Panel> mBuffer;
 
         public PanelAsset(JObject data)
         {
@@ -22,9 +25,13 @@ namespace Devil.GamePlay
                 Id = data.Value<int>("id");
                 Name = data.Value<string>("name");
                 AssetPath = data.Value<string>("assetPath");
+                Mode = (EPanelMode)data.Value<int>("mode");
                 Properties = (EPanelProperty)data.Value<int>("property");
                 IsUsable = !string.IsNullOrEmpty(AssetPath);
-                mIsBuiltInAsset = false;
+                mIsBuiltIn = false;
+                mBuffer = new ObjectBuffer<Panel>(IsSingleInstance ? 1 : 5);
+                mBuffer.Creater = LoadFromResources;
+                mBuffer.Destroier = UnloadResources;
             }
             else
             {
@@ -32,17 +39,37 @@ namespace Devil.GamePlay
             }
         }
 
+        public PanelAsset(int id, string name, string resPath, EPanelMode mode, EPanelProperty property)
+        {
+            Id = id;
+            Name = name;
+            AssetPath = resPath;
+            Mode = mode;
+            Properties = property;
+            IsUsable = !string.IsNullOrEmpty(AssetPath);
+            mIsBuiltIn = false;
+            mBuffer = new ObjectBuffer<Panel>(IsSingleInstance ? 1 : 5);
+            mBuffer.Creater = LoadFromResources;
+            mBuffer.Destroier = UnloadResources;
+        }
+
         public PanelAsset(Panel asset)
         {
             if (asset != null)
             {
-                Id = asset.GetInstanceID();
                 Name = asset.name;
+                Id = string.IsNullOrEmpty(Name) ? 0 : StringUtil.ToHash(Name);
                 AssetPath = null;
-                Asset = asset;
-                Properties = asset.Properties;
+                mBuiltinAsset = asset;
+                Mode = asset.m_Mode;
+                Properties = asset.m_Properties;
+                asset.gameObject.SetActive(false);
                 IsUsable = true;
-                mIsBuiltInAsset = true;
+                mIsBuiltIn = true;
+                mBuffer = new ObjectBuffer<Panel>(IsSingleInstance ? 1 : 5);
+                mBuffer.Creater = LoadFromBuiltin;
+                mBuffer.Destroier = UnloadResources;
+                mBuffer.SaveBuffer(mBuiltinAsset);
             }
             else
             {
@@ -52,34 +79,91 @@ namespace Devil.GamePlay
 
         public bool IsSingleInstance { get { return (Properties & EPanelProperty.SingleInstance) != 0; } }
 
+        public bool IsUseMask { get { return (Properties & EPanelProperty.DisableMask) == 0; } }
+
+        public void Release()
+        {
+            if (mBuffer != null)
+            {
+                mBuffer.Clear();
+            }
+        }
+
+        public void UnuseAsset(Panel panel)
+        {
+            if(mBuffer != null)
+            {
+                mBuffer.SaveBuffer(panel);
+            }
+        }
+
+        Panel LoadFromResources()
+        {
+            if (mBuiltinAsset != null)
+            {
+                GameObject go = Object.Instantiate(mBuiltinAsset.gameObject);
+                go.name = Name;
+                Panel panel = go.GetComponent<Panel>();
+                panel.m_Mode = Mode;
+                panel.m_Properties = Properties;
+                return panel;
+            }
+            else
+            {
+                GameObject go = AssetsManager.GetAsset<GameObject>(AssetPath);
+                if (go == null)
+                    return null;
+                GameObject inst = Object.Instantiate(go);
+                inst.name = Name;
+                mBuiltinAsset = inst.GetComponent<Panel>();
+                mBuiltinAsset.m_Mode = Mode;
+                mBuiltinAsset.m_Properties = Properties;
+                return mBuiltinAsset;
+            }
+        }
+
+        Panel LoadFromBuiltin()
+        {
+            GameObject go = Object.Instantiate(mBuiltinAsset.gameObject);
+            go.name = Name;
+            Panel panel = go.GetComponent<Panel>();
+            panel.m_Mode = Mode;
+            panel.m_Properties = Properties;
+            return panel;
+        }
+
+        bool UnloadResources(Panel panel)
+        {
+            bool eqb = panel == mBuiltinAsset;
+            if(!eqb || !mIsBuiltIn)
+            {
+                Object.Destroy(panel.gameObject);
+                if (eqb)
+                    mBuiltinAsset = null;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public Panel InstantiateAsset()
         {
             if (!IsUsable)
                 return null;
-            if(Asset != null)
+            if (IsSingleInstance && mBuiltinAsset != null)
             {
-                if(IsSingleInstance)
-                    return Asset;
-                GameObject go = Object.Instantiate(Asset.gameObject);
-                return go.GetComponent<Panel>();
+                return mBuiltinAsset;
             }
-            if (!mIsBuiltInAsset)
+            else if (mBuffer != null)
             {
-                GameObject go = AssetsManager.GetAsset<GameObject>(AssetPath);
-                if(go == null)
-                {
-                    IsUsable = false;
-                    return null;
-                }
-                GameObject inst = Object.Instantiate(go);
-                Asset = inst.GetComponent<Panel>();
-                if (Asset == null)
-                    IsUsable = false;
-                else
-                    Properties = Asset.Properties;
-                return Asset;
+                return mBuffer.GetAnyTarget();
             }
-            return null;
+            else
+            {
+                return null;
+            }
         }
     }
 }

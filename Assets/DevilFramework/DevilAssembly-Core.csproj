@@ -254,6 +254,9 @@
     <Reference Include="UnityEditor.Graphs">
       <HintPath>C:/Program Files/Unity2017.4.3/Editor/Data/Managed/UnityEditor.Graphs.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEditor.Android.Extensions">
+      <HintPath>C:/Program Files/Unity2017.4.3/Editor/Data/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEditor.WindowsStandalone.Extensions">
       <HintPath>C:/Program Files/Unity2017.4.3/Editor/Data/PlaybackEngines/windowsstandalonesupport/UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
     </Reference>
@@ -307,6 +310,8 @@
     <Compile Include="Assets\DevilFramework\Core\AIRepository\FiniteStateMachine\StateImpliment.cs" />
     <Compile Include="Assets\DevilFramework\Core\AsyncTask\AsyncLoader.cs" />
     <Compile Include="Assets\DevilFramework\Core\AsyncTask\IAsyncTask.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Attributes\MaskFieldAttribute.cs" />
+    <Compile Include="Assets\DevilFramework\Core\Attributes\SortingLayerFieldAttribute.cs" />
     <Compile Include="Assets\DevilFramework\Core\Command\RTSAssistant.cs" />
     <Compile Include="Assets\DevilFramework\Core\Command\RTSInterface.cs" />
     <Compile Include="Assets\DevilFramework\Core\Command\RTSRuntimeEditor.cs" />
@@ -425,7 +430,6 @@
     <Compile Include="Assets\DevilFramework\Core\Utility\GlobalUtil.cs" />
     <Compile Include="Assets\DevilFramework\Core\Utility\Graph.cs" />
     <Compile Include="Assets\DevilFramework\Core\Utility\InputReader.cs" />
-    <Compile Include="Assets\DevilFramework\Core\Utility\MaskFieldAttribute.cs" />
     <Compile Include="Assets\DevilFramework\Core\Utility\ObjectBinder.cs" />
     <Compile Include="Assets\DevilFramework\Core\Utility\ObjectBuffer.cs" />
     <Compile Include="Assets\DevilFramework\Core\Utility\Ref.cs" />

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Devil.GamePlay
 {
@@ -16,86 +17,113 @@ namespace Devil.GamePlay
     {
         SingleInstance = 1, // 单例
         AutoCloseOnLoadScene = 2, // 在加载场景时自动关闭
-        DontKeepTrace = 4, // 不保留启动记录
-        AlwaysRender = 8, // 始终渲染（被遮挡时保持Canvas渲染）
-        FullScreen = 16, // 全屏展示
+        DisableMask = 4, // 禁用遮罩
+    }
+
+    public interface IPanelMessager
+    {
+        /// <summary>
+        /// 请求id
+        /// </summary>
+        int RequestId { get; }
+
+        /// <summary>
+        /// 请求数据
+        /// </summary>
+        object RequestData { get; }
+
+        /// <summary>
+        /// 请求结果处理
+        /// </summary>
+        /// <param name="data"></param>
+        void HandleResult(object data);
     }
 
     // ui panel
     [RequireComponent(typeof(Canvas))]
-    public abstract class Panel : UIBehaviour
+    public class Panel : UIBehaviour
     {
+        public int m_CustomIdentifier;
+
+        public EPanelMode m_Mode;
+
         [MaskField]
+        public EPanelProperty m_Properties;
+
+        [Range(0, 1)]
         [SerializeField]
-        EPanelProperty m_Propoerties = EPanelProperty.SingleInstance | EPanelProperty.FullScreen;
-        public EPanelProperty Properties { get { return m_Propoerties; } }
-        
+        float m_MaskMultipier = 1;
+        public float MaskMultipier { get { return m_MaskMultipier; } }
+
         Canvas mCanvas;
         public Canvas GetCanvas()
         {
             if (mCanvas == null)
+            {
                 mCanvas = GetComponent<Canvas>();
+                mRaycaster = GetComponent<GraphicRaycaster>();
+            }
             return mCanvas;
         }
-        
-        /// <summary>
-        /// 加载完成时回调
-        /// </summary>
-        public abstract void OnPanelLoaded();
+
+        GraphicRaycaster mRaycaster;
+        public GraphicRaycaster GetRaycaster()
+        {
+            if (mCanvas == null)
+                GetCanvas();
+            return mRaycaster;
+        }
+
+        public bool RaycastEvent
+        {
+            get
+            {
+                GraphicRaycaster ray = GetRaycaster();
+                return ray != null && ray.enabled;
+            }
+            set
+            {
+                GraphicRaycaster ray = GetRaycaster();
+                if (ray != null && ray.enabled != value)
+                    ray.enabled = value;
+            }
+        }
 
         /// <summary>
         /// 开启窗口回调
         /// </summary>
         /// <returns>当可以打开时，返回 true，否则返回 false</returns>
-        public abstract bool OnPanelOpen();
+        public virtual bool OnPanelOpen()
+        {
+            gameObject.SetActive(true);
+            return true;
+        }
 
         /// <summary>
         /// 窗口接收消息
         /// </summary>
         /// <param name="request"></param>
         /// <param name="arg"></param>
-        public abstract void OnRequestForResult(int request, object arg);
+        public virtual bool OnPanelOpenForResult(IPanelMessager sender) { return true; }
 
-        /// <summary>
-        /// 窗口接受返回数据
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="result"></param>
-        public abstract void OnReceiveResult(int request, object result);
+        public virtual void OnPanelGainFoucs() { }
 
-        /// <summary>
-        /// 是否已完成开启
-        /// </summary>
-        public abstract bool IsPanelOpened { get; }
-
-        /// <summary>
-        /// 窗口开启时回调
-        /// </summary>
-        public abstract void OnPanelOpened();
-
-        public abstract void OnPanelGainFoucs();
-
-        public abstract void OnPanelLostFocus();
+        public virtual void OnPanelLostFocus() { }
 
         /// <summary>
         /// 关闭窗口回调
         /// </summary>
         /// <returns>当可以关闭时，返回 true，否则返回 false</returns>
-        public abstract bool OnPanelClose();
+        public virtual bool OnPanelClose()
+        {
+            gameObject.SetActive(false);
+            return true;
+        }
 
         /// <summary>
-        /// 窗口是否已完成关闭
+        /// 窗口是否正在关闭
         /// </summary>
-        public abstract bool IsPanelClosed { get; }
-
-        /// <summary>
-        /// 窗口关闭完成时回调
-        /// </summary>
-        public abstract void OnPanelClosed();
-
-        /// <summary>
-        /// 窗口准备卸载时回调
-        /// </summary>
-        public abstract void OnPanelUnloaded();
+        public virtual bool IsClosing() { return false; }
+        
     }
 }

@@ -39,7 +39,7 @@ namespace DevilEditor
                         break;
                     }
                     BlackboardAsset.KeyValue key = asset.m_Properties[i];
-                    GUILayout.Label(key.m_Key, GUILayout.Width(100));
+                    GUILayout.Label(key.m_Key, GUILayout.Width(140));
                     GUILayout.Label(key.m_Value, "textfield");
                     EditorGUILayout.EndHorizontal();
                 }
@@ -73,7 +73,7 @@ namespace DevilEditor
                         scroll = Vector2.up * asset.m_Properties.Length * 30;
                     }
                 }
-                newName = GUILayout.TextField(newName ?? "newVariable", GUILayout.Width(100));
+                newName = GUILayout.TextField(newName ?? "newVariable", GUILayout.Width(140));
                 dropIndex = EditorGUILayout.Popup(dropIndex, BehaviourModuleManager.GetOrNewInstance().SharedTypeNames);
                 EditorGUILayout.EndHorizontal();
                 QuickGUI.EndContents();

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,6 +9,16 @@ namespace DevilEditor
 
     public abstract class EditorCanvasWindow : EditorWindow
     {
+        public class DelayTask
+        {
+            public int Id { get; private set; }
+            public System.Action Act { get; set; }
+            public DelayTask(int id, System.Action act)
+            {
+                this.Id = id;
+                this.Act = act;
+            }
+        }
 
         string viewportName = "Viewport";
 
@@ -21,7 +32,7 @@ namespace DevilEditor
 
         EMouseAction mouseAction;
         EMouseButton mouseButton;
-        private string statInfo = "";
+        protected string statInfo = "";
 
         public EditorGUICanvas RootCanvas { get; private set; }
         public EditorGUICanvas GraphCanvas { get; private set; }
@@ -29,8 +40,12 @@ namespace DevilEditor
         public Vector2 GlobalMousePosition { get; private set; }
         protected float mMinScale = 0.1f;
         protected float mMaxScale = 5f;
-        
+        bool mInitOk;
+
         double mTickTime;
+        List<DelayTask> mPostTasks = new List<DelayTask>();
+        string mSerializeKey;
+        float mDeltaTime;
 
         protected virtual void UpdateStateInfo()
         {
@@ -41,6 +56,7 @@ namespace DevilEditor
         {
             double time = EditorApplication.timeSinceStartup;
             float t = EditorApplication.isPlayingOrWillChangePlaymode ? 0.05f : 0.025f;
+            mDeltaTime = t;
             if (time > mTickTime + t)
             {
                 mTickTime = time;
@@ -71,11 +87,15 @@ namespace DevilEditor
 
         public EditorCanvasWindow() : base()
         {
+            mSerializeKey = GetType() + ".sav";
             InitCanvas();
         }
 
+        public virtual bool IsInitOk() { return true; }
+
         protected virtual void OnEnable()
         {
+            mInitOk = false;
             ReadData();
             EditorApplication.update += OnEditorUpdate;
         }
@@ -88,7 +108,7 @@ namespace DevilEditor
 
         void ReadData()
         {
-            string str = EditorPrefs.GetString("can.sav");
+            string str = EditorPrefs.GetString(mSerializeKey);
             if (!string.IsNullOrEmpty(str))
             {
                 JObject obj = JsonConvert.DeserializeObject<JObject>(str);
@@ -97,50 +117,73 @@ namespace DevilEditor
                 rect.x = Mathf.Clamp(obj.Value<float>("x"), -20000, 20000);
                 rect.y = Mathf.Clamp(obj.Value<float>("y"), -20000, 20000);
                 GraphCanvas.LocalRect = rect;
+                OnReadCustomData(obj);
             }
         }
 
         void SaveData()
         {
             JObject obj = new JObject();
+            OnSaveCustomData(obj);
             obj["scale"] = ScaledCanvas.LocalScale;
             obj["x"] = GraphCanvas.LocalRect.x;
             obj["y"] = GraphCanvas.LocalRect.y;
-            EditorPrefs.SetString("can.sav", JsonConvert.SerializeObject(obj));
+            EditorPrefs.SetString(mSerializeKey, JsonConvert.SerializeObject(obj));
+        }
+
+        protected virtual void OnReadCustomData(JObject data) { }
+        protected virtual void OnSaveCustomData(JObject data) { }
+
+        protected virtual void OnCanvasStart()
+        {
+
         }
 
         protected virtual void OnGUI()
         {
-            ProcessMouseDeltaPos();
-
-            Input.imeCompositionMode = IMECompositionMode.On;
-
-            GUI.skin.label.richText = true;
-
-            Rect rect = EditorGUILayout.BeginHorizontal("TE toolbar");
-            OnTitleGUI();
-            EditorGUILayout.EndHorizontal();
-
-            if (rect.width > 1)
+            bool initOk = IsInitOk();
+            if (!mInitOk && initOk)
             {
-                cachedViewportRect = rect;
+                OnCanvasStart();
             }
+            mInitOk = initOk;
+            if (initOk)
+            {
+                ProcessMouseDeltaPos();
+                Input.imeCompositionMode = IMECompositionMode.On;
 
-            clipRect = new Rect(cachedViewportRect.xMin + 1, cachedViewportRect.yMax + 1, position.width - 2, position.height - cachedViewportRect.height - 2);
-            GUI.Label(clipRect, "", "CurveEditorBackground");
-            OnCanvasGUI();
-            GUI.Label(clipRect, statInfo);
-            ProcessEvent();
-            ProcessFocusCenter();
-            OnPostGUI();
-            //if (repaint || onFocus)
-            //{
-            //    Repaint();
-            //}
+                GUI.skin.label.richText = true;
+
+                Rect rect = EditorGUILayout.BeginHorizontal("TE toolbar");
+                OnTitleGUI();
+                EditorGUILayout.EndHorizontal();
+
+                if (rect.width > 1)
+                {
+                    cachedViewportRect = rect;
+                }
+
+                clipRect = new Rect(cachedViewportRect.xMin + 1, cachedViewportRect.yMax + 1, position.width - 2, position.height - cachedViewportRect.height - 2);
+                GUI.Label(clipRect, "", "CurveEditorBackground");
+                GUI.Label(clipRect, statInfo);
+                OnCanvasGUI();
+
+                ProcessEvent();
+                ProcessFocusCenter();
+
+                OnPostGUI();
+
+                for (int i = 0; i < mPostTasks.Count; i++)
+                {
+                    mPostTasks[i].Act();
+                }
+                mPostTasks.Clear();
+            }
         }
 
         protected virtual void OnTitleGUI()
         {
+            GUILayout.Label(" ");
         }
 
         protected virtual void OnPostGUI()
@@ -148,7 +191,13 @@ namespace DevilEditor
 
         }
 
-        protected void OnCanvasGUI()
+
+        protected virtual void OnResized()
+        {
+
+        }
+
+        protected virtual void OnCanvasGUI()
         {
             GUI.BeginClip(clipRect);
             GlobalMousePosition = Event.current.mousePosition;
@@ -156,6 +205,7 @@ namespace DevilEditor
             RootCanvas.LocalRect = r;
             ScaledCanvas.LocalRect = r;
             RootCanvas.CalculateGlobalRect(true);
+            OnResized();
             RootCanvas.OnGUI(r);
             GUI.EndClip();
         }
@@ -180,12 +230,17 @@ namespace DevilEditor
             }
         }
 
+        protected virtual Vector2 GetFocusDeltaPosition()
+        {
+            return ScaledCanvas.GlobalCentroid - GraphCanvas.GlobalCentroid;
+        }
+
         //聚焦状态图中心
         private void ProcessFocusCenter()
         {
             if (focusCenter)
             {
-                Vector2 delta = ScaledCanvas.GlobalCentroid - GraphCanvas.GlobalCentroid;
+                Vector2 delta = GetFocusDeltaPosition();
                 if (delta.sqrMagnitude > 1)
                 {
                     Rect rect = GraphCanvas.LocalRect;
@@ -233,7 +288,7 @@ namespace DevilEditor
 
         void OnKeyUp()
         {
-            if(RootCanvas.InteractKeyUp(Event.current.keyCode))
+            if (RootCanvas.InteractKeyUp(Event.current.keyCode))
             {
                 return;
             }
@@ -251,11 +306,11 @@ namespace DevilEditor
             {
                 return;
             }
-            if(Event.current.type == EventType.KeyDown)
+            if (Event.current.type == EventType.KeyDown)
             {
                 OnKeyDown();
             }
-            else if(Event.current.type == EventType.KeyUp)
+            else if (Event.current.type == EventType.KeyUp)
             {
                 OnKeyUp();
             }
@@ -286,6 +341,7 @@ namespace DevilEditor
                 }
                 mouseAction = EMouseAction.none;
             }
+
             if (Event.current.type == EventType.ScrollWheel)
             {
                 Vector2 cen = Vector2.zero;
@@ -299,14 +355,29 @@ namespace DevilEditor
                 ScaledCanvas.LocalScale = f;
                 if (!Event.current.control)
                 {
-                    Rect r = GraphCanvas.LocalRect;
                     Vector2 p = GraphCanvas.Parent.CalculateLocalPosition(GlobalMousePosition);
                     Vector2 delta = p - cen;
+                    Rect r = GraphCanvas.LocalRect;
                     r.position += delta;
                     GraphCanvas.LocalRect = r;
                 }
                 UpdateStateInfo();
             }
+        }
+
+        public void AddDelayTask(int id, System.Action act)
+        {
+            if (act == null)
+                return;
+            for (int i = 0; i < mPostTasks.Count; i++)
+            {
+                if (mPostTasks[i].Id == id)
+                {
+                    mPostTasks[i].Act = act;
+                    return;
+                }
+            }
+            mPostTasks.Add(new DelayTask(id, act));
         }
 
     }

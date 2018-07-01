@@ -58,6 +58,23 @@ namespace Devil.AI
             }
         }
 
+        public void SetAsset(BehaviourTreeAsset behaviourAsset)
+        {
+            if (behaviourAsset == mAsset)
+                return;
+            mAsset = behaviourAsset;
+            if (mAsset != null)
+            {
+                mRootNode = mAsset.CreateBehaviourTree(this);
+                mLooper = new BehaviourLooper(mRootNode);
+            }
+            else
+            {
+                mRootNode = null;
+                mLooper = null;
+            }
+        }
+
         protected virtual void Start()
         {
             mServiceDeltaTime = m_ServiceInterval;
@@ -67,11 +84,7 @@ namespace Devil.AI
                 Blackboard = new BTBlackboard(m_Blackboard);
             else
                 Blackboard = new BTBlackboard();
-
-            mAsset = m_BehaviourAsset;
-            if (mAsset != null)
-                mRootNode = mAsset.CreateBehaviourTree(this);
-            mLooper = new BehaviourLooper(mRootNode);
+            SetAsset(m_BehaviourAsset);
 #if UNITY_EDITOR
             if (m_BreakAtStart)
                 Debug.Break();
@@ -80,6 +93,8 @@ namespace Devil.AI
 
         protected virtual void FixedUpdate()
         {
+            if (mLooper == null)
+                return;
             if (mServiceTimer >= m_ServiceInterval)
             {
                 float t = mServiceTimer - mServiceDeltaTime;
@@ -100,6 +115,8 @@ namespace Devil.AI
 
         protected virtual void Update()
         {
+            if (mLooper == null)
+                return;
             if (mLooper.IsComplate)
             {
                 mLooper.Reset();
@@ -139,6 +156,13 @@ namespace Devil.AI
         }
 
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if(Application.isPlaying && mAsset != m_BehaviourAsset && mAsset != null)
+            {
+                SetAsset(m_BehaviourAsset);
+            }
+        }
         public event System.Action<BehaviourTreeRunner> OnBehaviourTreeFrame = (x) => { };
         public void NotifyBehaviourTreeFrame()
         {

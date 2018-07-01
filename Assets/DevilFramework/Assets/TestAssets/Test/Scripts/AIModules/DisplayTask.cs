@@ -17,13 +17,18 @@ public class DisplayTask : BTTaskBase
 
     public override void OnInitData(BehaviourTreeRunner btree, string jsonData)
     {
-        mText = GameObject.Find("FoundYouText").GetComponent<Text>();
+        GameObject go = GameObject.Find("FoundYouText");
+        if (go == null)
+            return;
+        mText = go.GetComponent<Text>();
         mText.gameObject.SetActive(false);
         mStartColor = mText.color;
     }
 
     public override EBTTaskState OnTaskStart(BehaviourTreeRunner btree)
     {
+        if (mText == null)
+            return EBTTaskState.faild;
         mText.gameObject.SetActive(true);
         return EBTTaskState.running;
     }

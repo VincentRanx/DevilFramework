@@ -1,26 +1,55 @@
-﻿using System;
+﻿using Devil.GamePlay;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Test2 : Text
+public class Test2 : MonoBehaviour
 {
-    readonly UIVertex[] mQuadVerts = new UIVertex[4];
-    
-    protected override void OnPopulateMesh(VertexHelper toFill)
+    private void Start()
     {
-        base.OnPopulateMesh(toFill);
-        TextGenerator gen = cachedTextGenerator;
-        int index = text.IndexOf("<quad />");
-        if(index >= 0)
+        PanelAsset asset = new PanelAsset(1, "PanelA", "PanelA", EPanelMode.Normal, EPanelProperty.SingleInstance);
+        PanelManager.Instance.AddPanelAsset(asset);
+        asset = new PanelAsset(2, "PanelB", "PanelB", EPanelMode.Dialog, 0);
+        PanelManager.Instance.AddPanelAsset(asset);
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.A))
         {
-            int off = index << 2;
-            mQuadVerts[0] = gen.verts[off];
-            mQuadVerts[1] = gen.verts[off + 1];
-            mQuadVerts[2] = gen.verts[off + 2];
-            mQuadVerts[3] = gen.verts[off + 3];
-            toFill.AddUIVertexQuad(mQuadVerts);
+            SwitchPanel("PanelA", 1, Input.GetKey(KeyCode.LeftShift));
+        }
+        if(Input.GetKeyDown(KeyCode.B))
+        {
+            SwitchPanel("PanelB", 2, Input.GetKey(KeyCode.LeftShift));
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            SwitchPanel("PanelC", 2, Input.GetKey(KeyCode.LeftShift));
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            PanelManager.ReleasePanels();
         }
     }
+
+    void SwitchPanel(string panelName, int identifier, bool open)
+    {
+        Panel panel;
+        if (open)
+        {
+            panel = PanelManager.OpenPanel(panelName);
+        }
+        else
+        {
+            panel = PanelManager.FindPanel((x) => x.m_CustomIdentifier == identifier);
+            PanelManager.ClosePanel(panel);
+        }
+        if (panel != null)
+            panel.m_CustomIdentifier = identifier;
+    }
+    
 }

@@ -235,17 +235,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="DevilAssembly-Core.csproj">
-      <Project>{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}</Project>
-      <Name>DevilAssembly-Core</Name>
+    <ProjectReference Include="DevilAssembly-GamePlay.csproj">
+      <Project>{508531BD-5776-F174-3A07-15151A020BEC}</Project>
+      <Name>DevilAssembly-GamePlay</Name>
     </ProjectReference>
     <ProjectReference Include="Logic.csproj">
       <Project>{40F7376A-EE29-ADB2-3923-18D4DEB6C5F4}</Project>
       <Name>Logic</Name>
     </ProjectReference>
-    <ProjectReference Include="DevilAssembly-GamePlay.csproj">
-      <Project>{508531BD-5776-F174-3A07-15151A020BEC}</Project>
-      <Name>DevilAssembly-GamePlay</Name>
+    <ProjectReference Include="DevilAssembly-Core.csproj">
+      <Project>{35EAEF59-9DF4-4290-2709-A4F3ACC0740B}</Project>
+      <Name>DevilAssembly-Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

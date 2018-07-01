@@ -39,6 +39,7 @@ namespace DevilEditor
                 GameObject cam = new GameObject("UICamera", typeof(Camera));
                 cam.transform.SetParent(mgr.transform, false);
                 uiCam = cam.GetComponent<Camera>();
+                cam.layer = uilayer;
             }
             uiCam.clearFlags = CameraClearFlags.Depth;
             uiCam.farClipPlane = 100;
@@ -54,6 +55,18 @@ namespace DevilEditor
             trans.localPosition = Vector3.zero;
             trans.localScale = Vector3.one;
             trans.localRotation = Quaternion.identity;
+        }
+
+        [InitializeOnLoadMethod]
+        static void OnUnityLoaded()
+        {
+            //SerializedObject tags = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset"));
+            //SerializedProperty iter = tags.GetIterator();
+            //while (iter.NextVisible(true))
+            //{
+            //    Debug.LogFormat("name:{0} type:{1}",iter.name, iter.type);
+            //}
+            
         }
     }  
 }

@@ -21,6 +21,7 @@ namespace Devil
         int mTexId;
         List<Emoji> mEmojies = new List<Emoji>();
 
+        Material mMatInst;
         readonly UIVertex[] m_TempVerts = new UIVertex[4];
 
         public override string text
@@ -53,8 +54,36 @@ namespace Devil
         {
             base.Awake();
             GetEmojies();
+            GetMaterials();
         }
 
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            if(mMatInst != null)
+            {
+#if UNITY_EDITOR
+                if (Application.isPlaying)
+#endif
+                    Destroy(mMatInst);
+
+#if UNITY_EDITOR
+                else
+                    DestroyImmediate(mMatInst);
+#endif
+                mMatInst = null;
+            }
+        }
+
+        void GetMaterials()
+        {
+            if (m_Material == null)
+            {
+                if(mMatInst == null)
+                    mMatInst = new Material(Shader.Find("DevilTeam/EmojiFont"));
+                m_Material = mMatInst;
+            }
+        }
 
         void GetEmojies()
         {
@@ -148,6 +177,7 @@ namespace Devil
         {
             base.OnValidate();
             GetEmojies();
+            GetMaterials();
         }
 #endif
 

@@ -10,7 +10,7 @@ namespace DevilEditor
 {
     public class Installizer
     {
-
+        public static bool IsInited { get; private set; }
         public static string InstallRoot { get; private set; }
 
         public static GUIStyle titleStyle = new GUIStyle();
@@ -58,11 +58,10 @@ public class BehaviourLib : BehaviourLibrary
         }
 
         [InitializeOnLoadMethod]
-        static void OnUnityLoaded()
+        public static void OnUnityLoaded()
         {
+            IsInited = false;
             DevilEditorUtility.ReleaseCache();
-            DevilCfg.LoadConfiguration();
-
             titleStyle.alignment = TextAnchor.MiddleCenter;
             titleStyle.richText = true;
             titleStyle.fontSize = 13;
@@ -100,7 +99,9 @@ public class BehaviourLib : BehaviourLibrary
                     Debug.Log("Devil Framework install at path: " + path);
                 }
             }
+            DevilCfg.LoadConfiguration();
             BehaviourModuleManager.GetOrNewInstance().Load();
+            IsInited = true;
             OnReloaded();
         }
     }

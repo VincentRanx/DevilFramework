@@ -6,6 +6,8 @@ namespace Devil.Utility
 {
     public delegate T ObjectGenerater<T>();
     public delegate T ObjectGenerater<K, T>(K selector);
+    public delegate bool ObjectCleaner<T>(T target);
+    public delegate bool ObjectCleaner<K, T>(K selector, T target);
 
     public class ObjectBuffer<T> where T : class
     {
@@ -13,9 +15,9 @@ namespace Devil.Utility
         int mLen;
         T[] mBuffer;
         public ObjectGenerater<T> Creater { get; set; }
-        public Action<T> Destroier { get; set; }
+        public ObjectCleaner<T> Destroier { get; set; }
 
-        public ObjectBuffer(int initCapacity = 10, ObjectGenerater<T> creater = null, Action<T> destroier = null)
+        public ObjectBuffer(int initCapacity = 10, ObjectGenerater<T> creater = null, ObjectCleaner<T> destroier = null)
         {
             mBuffer = new T[initCapacity];
             mLen = 0;
@@ -74,9 +76,8 @@ namespace Devil.Utility
             {
                 for (int i = 0; i < mLen; i++)
                 {
-                    if (Destroier != null)
-                        Destroier(mBuffer[i]);
-                    mBuffer[i] = null;
+                    if (Destroier != null && Destroier(mBuffer[i]))
+                        mBuffer[i] = null;
                 }
                 mLen = 0;
             }
@@ -89,9 +90,9 @@ namespace Devil.Utility
         int[] mLen;
         T[][] mBuffer;
         public ObjectGenerater<int, T> Creater { get; set; }
-        public Action<int, T> Destroier { get; set; }
+        public ObjectCleaner<int, T> Destroier { get; set; }
 
-        public ObjectPool(int groups, int initCapacity = 10, ObjectGenerater<int, T> creater = null, Action<int, T> destroier = null)
+        public ObjectPool(int groups, int initCapacity = 10, ObjectGenerater<int, T> creater = null, ObjectCleaner<int, T> destroier = null)
         {
             mBuffer = new T[groups][];
             mLen = new int[groups];
@@ -156,9 +157,8 @@ namespace Devil.Utility
             {
                 for (int i = 0; i < mLen[group]; i++)
                 {
-                    if (Destroier != null)
-                        Destroier(group, mBuffer[group][i]);
-                    mBuffer[group][i] = null;
+                    if (Destroier != null&& Destroier(group, mBuffer[group][i]))
+                        mBuffer[group][i] = null;
                 }
                 mLen[group] = 0;
             }

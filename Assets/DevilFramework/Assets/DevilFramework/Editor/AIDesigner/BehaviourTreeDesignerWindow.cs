@@ -62,7 +62,7 @@ namespace DevilEditor
         }
 
         public int GenerateId { get { return ++mIdCounter; } }
-        List<DelayTask> mPostTasks = new List<DelayTask>();
+        //List<DelayTask> mPostTasks = new List<DelayTask>();
 
         bool mBuildIndex;
         int mIdCounter;
@@ -135,20 +135,20 @@ namespace DevilEditor
             GraphCanvas.OnKeyUp = OnGraphKeyUp;
         }
 
-        public void AddDelayTask(int id, System.Action act)
-        {
-            if (act == null)
-                return;
-            for (int i = 0; i < mPostTasks.Count; i++)
-            {
-                if (mPostTasks[i].Id == id)
-                {
-                    mPostTasks[i].Act = act;
-                    return;
-                }
-            }
-            mPostTasks.Add(new DelayTask(id, act));
-        }
+        //public void AddDelayTask(int id, System.Action act)
+        //{
+        //    if (act == null)
+        //        return;
+        //    for (int i = 0; i < mPostTasks.Count; i++)
+        //    {
+        //        if (mPostTasks[i].Id == id)
+        //        {
+        //            mPostTasks[i].Act = act;
+        //            return;
+        //        }
+        //    }
+        //    mPostTasks.Add(new DelayTask(id, act));
+        //}
 
         void ResetIdCounter()
         {
@@ -450,6 +450,8 @@ namespace DevilEditor
         
         void LoadSelectedAsset()
         {
+            if (!Installizer.IsInited)
+                return;
             BehaviourTreeRunner r;
             GameObject obj = Selection.activeGameObject;
             r = obj == null ? null : obj.GetComponent<BehaviourTreeRunner>();
@@ -559,11 +561,12 @@ namespace DevilEditor
 
         protected override void OnPostGUI()
         {
-            for(int i = 0; i < mPostTasks.Count; i++)
-            {
-                mPostTasks[i].Act();
-            }
-            mPostTasks.Clear();
+            base.OnPostGUI();
+            //for(int i = 0; i < mPostTasks.Count; i++)
+            //{
+            //    mPostTasks[i].Act();
+            //}
+            //mPostTasks.Clear();
             if (mBuildIndex)
             {
                 mBuildIndex = false;

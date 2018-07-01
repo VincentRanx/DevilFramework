@@ -61,5 +61,33 @@ namespace DevilEditor
             m2DCache[path] = tex;
             return tex;
         }
+
+        public static string FindFile(string fileName)
+        {
+            DirectoryInfo root = new DirectoryInfo(Application.dataPath);
+            Stack<DirectoryInfo> subdics = new Stack<DirectoryInfo>();
+            subdics.Push(root);
+            while(subdics.Count > 0)
+            {
+                DirectoryInfo dic = subdics.Pop();
+                FileInfo[] files = dic.GetFiles();
+                int len = files == null ? 0 : files.Length;
+                for(int i = 0; i < len; i++)
+                {
+                    FileInfo f = files[i];
+                    if(f.Name == fileName)
+                    {
+                        return f.FullName;
+                    }
+                }
+                DirectoryInfo[] dics = dic.GetDirectories();
+                len = dics == null ? 0 : dics.Length;
+                for(int i = 0; i < dics.Length; i++)
+                {
+                    subdics.Push(dics[i]);
+                }
+            }
+            return null;
+        }
     }
 }

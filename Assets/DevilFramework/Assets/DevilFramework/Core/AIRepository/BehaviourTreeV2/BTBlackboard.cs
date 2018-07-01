@@ -64,7 +64,7 @@ namespace Devil.AI
 
         public void UnsetValue()
         {
-            mProperty.Value = null;
+            mProperty.Value = default(T);
             mProperty.IsSet = false;
         }
     }

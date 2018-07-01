@@ -109,10 +109,11 @@ namespace Devil.GamePlay.Assistant
             return new Effect(group, go);
         }
 
-        void DestroyEffect(int group, Effect effect)
+        bool DestroyEffect(int group, Effect effect)
         {
             if (effect != null)
                 Destroy(effect.Gobject);
+            return true;
         }
 
         private void Awake()

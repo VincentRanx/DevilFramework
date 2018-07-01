@@ -72,9 +72,10 @@ namespace DevilEditor
 
         public static void DrawBox(Rect rect, Color color, Color borderColor, float borderSize = 1, bool outlineBorder = false)
         {
+#if UNITY_2017
             if (!boxTex)
                 boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Editor/Icons/box.png"));
-            if(color.a > 0)
+            if (color.a > 0)
                 GUI.DrawTexture(rect, boxTex, ScaleMode.StretchToFill, true, 0, color, 0, 0);
             if (borderSize > 0 && borderColor.a > 0)
             {
@@ -87,6 +88,28 @@ namespace DevilEditor
                 }
                 GUI.DrawTexture(rect, boxTex, ScaleMode.StretchToFill, true, 0, borderColor, borderSize, borderSize);
             }
+#else
+            if (!boxTex)
+                boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Editor/Icons/box.png"));
+            if (color.a > 0)
+                GUI.DrawTexture(rect, boxTex, ScaleMode.StretchToFill, true);
+            bool border = borderSize > 0 && borderColor.a > 0;
+            bool r = color.r >= 0.5f;
+            bool g = color.g >= 0.5f;
+            bool b = color.b >= 0.5f;
+            if (r && !g && !b)
+                GUI.Label(rect, "", border ? "flow node 6 on" : "flow node 6");
+            else if(!r && g && !b)
+                GUI.Label(rect, "", border ? "flow node 3 on" : "flow node 3");
+            else if(!r && !g && b)
+                GUI.Label(rect, "", border ? "flow node 1 on" : "flow node 1");
+            else if(r && g && !b)
+                GUI.Label(rect, "", border ? "flow node 5 on" : "flow node 5");
+            else if(!r && g && b)
+                GUI.Label(rect, "", border ? "flow node 2 on" : "flow node 2");
+            else
+                GUI.Label(rect, "", border ? "flow node 0 on" : "flow node 0");
+#endif
             //GUI.DrawTexture(rect, )
         }
 
@@ -402,7 +425,7 @@ namespace DevilEditor
 
         static public bool DrawHeader(string text, string key, bool forceOn)
         {
-            bool state = EditorPrefs.GetBool(key, true);
+            bool state = string.IsNullOrEmpty(key) ? forceOn : EditorPrefs.GetBool(key, forceOn);
 
             GUILayout.Space(3f);
             if (!forceOn && !state) GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f);
@@ -420,7 +443,7 @@ namespace DevilEditor
             else text = "\u25BC " + text;
             if (!GUILayout.Toggle(true, text, "dragtab", GUILayout.MinWidth(20f))) state = !state;
 #endif
-            if (GUI.changed) EditorPrefs.SetBool(key, state);
+            if (GUI.changed && !string.IsNullOrEmpty(key)) EditorPrefs.SetBool(key, state);
 
             GUILayout.Space(2f);
             GUILayout.EndHorizontal();
@@ -453,11 +476,11 @@ namespace DevilEditor
             GUILayout.EndHorizontal();
             GUILayout.Space(3f);
         }
-        
-        static public void ReportView(ref Rect clipRect, Vector2 position, System.Action drawCallback, float height = 300, float grid = 50, string title = "Viewport" )
+
+        static public void ReportView(ref Rect clipRect, Vector2 position, System.Action drawCallback, float height = 300, float grid = 50, string title = "Viewport")
         {
             Rect rect = EditorGUILayout.BeginHorizontal("CurveEditorBackground", GUILayout.Height(height));
-            if(rect.width > 1)
+            if (rect.width > 1)
             {
                 cachedViewportRect = rect;
             }
