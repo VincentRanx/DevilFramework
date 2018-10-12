@@ -1,0 +1,39 @@
+﻿global GameObject = typeForName("GameObject");
+global Transform = typeForName("Transform");
+global SceneManager = typeForName("SceneManager");
+global IsChineseSupported = getProperty(runtime, "IsChineseSupported");
+global StringUtil = typeForName("Devil.Utility.StringUtil");
+
+// 获取登陆消息处理入口
+
+string getPacketData(packet)
+{
+	return strongInvoke(packet, "GetPacketString");
+};
+
+bool hock(msgId, packet)
+{
+	if (msgId == 3) then
+	{
+		pid = async 
+		{
+			script("login_hock");
+		};
+		variable(pid, "msgId", msgId);
+		variable(pid, "packet", packet);
+		return true;
+	};
+	return false;
+};
+
+void login(name, pwd)
+{
+	 data = json("nickname", name, "pwd", pwd);
+	 request(3, data);
+};
+
+void investment(shopid)
+{
+	data = json("shop_id", shopid);
+	request(5, data);
+};

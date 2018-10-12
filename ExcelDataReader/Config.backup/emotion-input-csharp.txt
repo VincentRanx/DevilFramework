@@ -1,0 +1,1 @@
+{name} = (GameDefine.EEmotion){input}.Value<int>("{name}");

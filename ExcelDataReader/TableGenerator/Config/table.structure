@@ -1,0 +1,11 @@
+﻿{
+	"Default":
+	{
+		"ID":"int",
+		"count":"int",
+		"num":"int",
+		"send":"string",
+		"type":"int",
+		"recv":"string"
+	}
+}

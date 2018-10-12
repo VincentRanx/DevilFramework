@@ -1,0 +1,10 @@
+{
+    "name": "DevilFramework.Editor",
+    "references": [
+        "DevilFramework.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

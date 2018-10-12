@@ -1,0 +1,1 @@
+{name} = (ECurrencyType){input}.Value<int>("{name}");

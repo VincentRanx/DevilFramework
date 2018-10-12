@@ -1,0 +1,8 @@
+{
+    "name": "DevilFramework.GamePlay",
+    "references": [
+        "DevilFramework.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

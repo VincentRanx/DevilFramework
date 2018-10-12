@@ -1,0 +1,1 @@
+{name} = (GameDefine.EDressProperty){input}.Value<int>("{name}");

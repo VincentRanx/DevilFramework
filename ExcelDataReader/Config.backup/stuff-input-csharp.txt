@@ -1,0 +1,1 @@
+{name} = (GameDefine.EStuff){input}.Value<int>("{name}");

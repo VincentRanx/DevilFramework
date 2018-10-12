@@ -1,0 +1,2 @@
+string _{name} = {input}.Value<string>("{name}");
+{name} = new BirthDate(_{name});

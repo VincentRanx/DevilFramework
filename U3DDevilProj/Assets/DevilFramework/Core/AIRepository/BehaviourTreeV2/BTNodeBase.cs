@@ -1,0 +1,279 @@
+﻿using UnityEngine;
+
+namespace Devil.AI
+{
+
+    public enum EBTLife
+    {
+        died,
+        alive,
+    }
+
+    public enum EBTTaskState
+    {
+        inactive,
+        success,
+        faild,
+        running,
+    }
+
+    public abstract class BTNodeBase
+    {
+        public int NodeId { get; private set; }
+        public int ChildLength { get; private set; }
+        BTNodeBase[] mChildren;
+        public int ConditionLength { get; private set; }
+        BTConditionBase[] mConditions;
+        public int ServiceLength { get; private set; }
+        BTServiceBase[] mServices;
+        private bool mVisited;
+        private uint mNotFlags;
+
+        private float mStartTime;
+        private float mEndTime;
+        public float NodeRuntime
+        {
+            get
+            {
+                if (State == EBTTaskState.inactive)
+                    return 0;
+                else if (State == EBTTaskState.running)
+                    return Time.time - mStartTime;
+                else
+                    return mEndTime - mStartTime;
+            }
+        }
+
+        public EBTTaskState State { get; protected set; }
+
+#if UNITY_EDITOR
+        public bool[] ConditionBuffer;
+#endif
+
+        public BTNodeBase(int id)
+        {
+            NodeId = id;
+        }
+
+        public virtual void InitDecoratorSize(int conditionLen, int childLen, int serviceLen)
+        {
+            ConditionLength = conditionLen;
+            ChildLength = childLen;
+            ServiceLength = serviceLen;
+            if (childLen > 0)
+            {
+                mChildren = new BTNodeBase[childLen];
+            }
+            if (serviceLen > 0)
+            {
+                mServices = new BTServiceBase[serviceLen];
+            }
+            if (conditionLen > 0)
+            {
+                mConditions = new BTConditionBase[conditionLen];
+            }
+#if UNITY_EDITOR
+            ConditionBuffer = new bool[conditionLen];
+#endif
+        }
+
+        public virtual void InitData(BehaviourTreeRunner btree, string jsonData)
+        {
+
+        }
+
+        public virtual void ClearData(BehaviourTreeRunner btree)
+        {
+
+        }
+
+        public BTNodeBase ParentNode { get; private set; }
+
+        public BTNodeBase ChildAt(int index)
+        {
+            return mChildren[index];
+        }
+
+        public virtual void SetChild(int index, BTNodeBase node)
+        {
+            if (node != null)
+            {
+                node.ParentNode = this;
+                mChildren[index] = node;
+            }
+        }
+
+        public BTConditionBase GetCondition(int index)
+        {
+            return mConditions[index];
+        }
+
+        public virtual void SetCondition(int index, BTConditionBase condition)
+        {
+            mConditions[index] = condition;
+        }
+
+        public BTServiceBase GetService(int index)
+        {
+            return mServices[index];
+        }
+
+        public virtual void SetService(int index, BTServiceBase service)
+        {
+            mServices[index] = service;
+        }
+
+        public void SetNotFlag(int conditionIndex, bool flag)
+        {
+            if (flag)
+                mNotFlags |= (1u << conditionIndex);
+            else
+                mNotFlags &= ~(1u << conditionIndex);
+        }
+
+        public bool GetNotFlag(int conditionIndex)
+        {
+            return (mNotFlags & (1u << conditionIndex)) != 0;
+        }
+
+        public bool IsRunnable(BehaviourTreeRunner runner)
+        {
+            for (int i = 0; i < ConditionLength; i++)
+            {
+                BTConditionBase decor = GetCondition(i);
+                if (decor != null && !(decor.IsTaskRunnable(runner) ^ GetNotFlag(i)))
+                {
+#if UNITY_EDITOR
+                    ConditionBuffer[i] = false;
+                    for (int k = i + 1; k < ConditionLength; k++)
+                    {
+                        decor = GetCondition(k);
+                        ConditionBuffer[k] = decor == null ? false : decor.IsTaskRunnable(runner);
+                    }
+#endif
+                    return false;
+                }
+#if UNITY_EDITOR
+                ConditionBuffer[i] = true;
+#endif
+            }
+
+            return true;
+        }
+
+        public bool IsOnCondition(BehaviourTreeRunner runner)
+        {
+            for (int i = 0; i < ConditionLength; i++)
+            {
+                BTConditionBase decor = GetCondition(i);
+                if (decor != null && !(decor.IsTaskOnCondition(runner) ^ GetNotFlag(i)))
+                {
+#if UNITY_EDITOR
+                    ConditionBuffer[i] = false;
+                    for (int k = i + 1; k < ConditionLength; k++)
+                    {
+                        decor = GetCondition(k);
+                        ConditionBuffer[k] = decor == null ? false : decor.IsTaskRunnable(runner);
+                    }
+#endif
+                    return false;
+                }
+#if UNITY_EDITOR
+                ConditionBuffer[i] = true;
+#endif
+            }
+            return true;
+        }
+        
+        public void Tick(BehaviourTreeRunner btree, float deltaTime)
+        {
+            if (!IsOnCondition(btree))
+            {
+                Abort(btree);
+            }
+            OnTick(btree, deltaTime);
+            if (State != EBTTaskState.running)
+                mEndTime = Time.time;
+        }
+
+        public void StartLoop(BehaviourTreeRunner btree)
+        {
+#if UNITY_EDITOR
+            if (StartRoundHandler != null)
+                StartRoundHandler(this);
+#endif
+            mStartTime = Time.time;
+            if (IsRunnable(btree))
+            {
+                for (int i = 0; i < ServiceLength; i++)
+                {
+                    BTServiceBase serv = mServices[i];
+                    if (serv != null)
+                        btree.StartService(serv);
+                }
+                mVisited = true;
+                OnStartLoop(btree);
+            }
+            else
+            {
+                State = EBTTaskState.faild;
+            }
+        }
+
+        public void StopLoop(BehaviourTreeRunner btree)
+        {
+#if UNITY_EDITOR
+            if (StopRoundHandler != null)
+                StopRoundHandler(this);
+#endif
+            if (mVisited)
+            {
+                mVisited = false;
+                mEndTime = Time.time;
+                for (int i = ServiceLength - 1; i >= 0; i--)
+                {
+                    BTServiceBase serv = mServices[i];
+                    if (serv != null)
+                        btree.StopService(serv);
+                }
+                OnStopLoop(btree);
+            }
+        }
+
+        public void Abort(BehaviourTreeRunner btree)
+        {
+            OnAbort(btree);
+        }
+
+        public void ReturnWithState(BehaviourTreeRunner btree, EBTTaskState state)
+        {
+            OnReturnWithState(btree, state);
+        }
+
+        public abstract BTNodeBase ChildForVisit { get; }
+
+        protected abstract void OnAbort(BehaviourTreeRunner btree);
+
+        protected abstract void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime);
+
+        protected abstract void OnStartLoop(BehaviourTreeRunner behaviourTree);
+
+        protected virtual void OnStopLoop(BehaviourTreeRunner btree) { }
+
+        protected abstract void OnReturnWithState(BehaviourTreeRunner btree, EBTTaskState state);
+
+#if UNITY_EDITOR
+
+        public System.Action<BTNodeBase> StartRoundHandler { get; set; }
+        public System.Action<BTNodeBase> StopRoundHandler { get; set; }
+        public void ResetState()
+        {
+            State = EBTTaskState.inactive;
+        }
+        public override string ToString()
+        {
+            return string.Format("{0}({1})", GetType().Name, NodeId);
+        }
+#endif
+    }
+}

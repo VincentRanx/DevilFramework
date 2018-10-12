@@ -1,0 +1,11 @@
+{
+    "name": "DevilFramework.GamePlay.Editor",
+    "references": [
+        "DevilFramework.Core",
+        "DevilFramework.GamePlay"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

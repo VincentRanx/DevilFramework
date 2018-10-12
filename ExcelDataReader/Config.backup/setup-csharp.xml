@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<setup>
+  <namespace name="Game.ContentProvider">
+    <using>Devil.ContentProvider</using>
+    <using>Newtonsoft.Json</using>
+    <using>Newtonsoft.Json.Linq</using>
+  </namespace>
+  <types>
+    <mask default="" name="int" formater="TableCore.Plugin.MaskDataFormater">^[a-z]*$</mask>
+    <float default="0" name="float" >^(\-|\+)?\d+(\.\d+)?$</float>
+    <uint default="0" name="int">^\+?\d+$</uint>
+    <int default="0" name="int" >^(\-|\+)?\d+$</int>
+	<array default="" name="int[]">^((\-|\+)?\d+,?)*$</array>
+    <long default="0" name="long" >^(\-|\+)?\d+$</long>
+    <text default="" name="TextRef" formater="TableCore.Plugin.ExportTextFormater" file="../TextExport.xlsx" sheet="TextExport_cn">[\w\W]*</text>
+    <decimal default="0" name="HugeNumber" formater="TableCore.Plugin.DecimalDataFormater">^(\-|\+)?\d+(.)?\d*(E\+\d+)?$</decimal>
+    <bool default="false" name="bool" formater="TableCore.Plugin.CsharpBoolFormater">^(true|false)$</bool>
+    <string default="" name="string">[\w\W]*</string>
+	<ui_mode default="Normal" name="int" formater="TableCore.Plugin.EnumDataFormater" enums="Normal,Dialog,Status,TopStatus"></ui_mode>
+	<ui_property default="Singleton,AutoClose" name="int" formater="TableCore.Plugin.EnumMaskFormater" enums="None,Singleton,AutoClose,NoMask">^(none|singleton|autoclose|nomask|,)*$</ui_property>
+	<date default="1-1" name="BirthDate">^\d{1,2}\-\d{1,2}$</date>
+	<sex default="Female" name="GameDefine.ESex" formater="TableCore.Plugin.EnumDataFormater" enums="Unknown,Male,Female"></sex>
+	<currency default="Cash" name="ECurrencyType" formater="TableCore.Plugin.EnumDataFormater" enums="Unknown,Cash,Famous,Diamond,RMB,Doller"></currency>
+	<range default="Self" name="GameDefine.EImpactRange" formater="TableCore.Plugin.EnumDataFormater" enums="None,Self,All"></range>
+	<stuff default="Unknown" name="GameDefine.EStuff" formater="TableCore.Plugin.EnumDataFormater" enums="Unknown,Dress,Piece,Supplies"></stuff>
+	<reward default="Stuff" name="GameDefine.EReward" formater="TableCore.Plugin.EnumDataFormater" enums="None,Cash,Famous,Diamond,Package,Idol,Dress,Stuff,Achievement,Favor"></reward>
+	<emotion default="Normal" name="GameDefine.EEmotion" formater="TableCore.Plugin.EnumDataFormater" enums="Normal,Happy,Upset,Anger"></emotion>
+	<time default="2018-08-01 00:00:00" name="string">^20[1234][0-9]-[01][0-9]-[0123][0-9] [012][0-9]:[0-5][0-9]:[0-5][0-9]$</time>
+	<date_action default="Text" name="GameDefine.EDateAction" formater="TableCore.Plugin.EnumDataFormater" enums="Text,NewDate"></date_action>
+	<character_type default="Npc" name="GameDefine.ECharacter" formater="TableCore.Plugin.EnumDataFormater" enums="Unknown,Idol,Npc"></character_type>
+  </types>
+  <output>
+    <dic-ext>txt</dic-ext>
+    <data-ext>txt.bytes</data-ext>
+	<formaters>
+	    <company_upg formater="TableCore.GameFormater.CompanyForServer" sheet="Company_Upgrade2" />
+	</formaters>
+  </output>
+</setup>
