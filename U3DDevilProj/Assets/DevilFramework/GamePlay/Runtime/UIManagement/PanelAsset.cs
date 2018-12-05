@@ -9,14 +9,14 @@ namespace Devil.GamePlay
         public int Id { get; private set; } // id
         public string Name { get; private set; } // 名称
         public string AssetPath { get; private set; } // 资源路径
-        //public Panel Asset { get; set; } // 资源
         public bool IsUsable { get; private set; }
         public EPanelMode Mode { get; private set; }
         public EPanelProperty Properties { get; private set; }
         Panel mBuiltinAsset;
         bool mIsBuiltIn;
+        Panel mSingleInstance; // 单例
 
-        ObjectBuffer<Panel> mBuffer;
+        ObjectPool<Panel> mPool;
 
         public PanelAsset(int id, string name, string resPath, EPanelMode mode, EPanelProperty property)
         {
@@ -27,9 +27,12 @@ namespace Devil.GamePlay
             Properties = property;
             IsUsable = !string.IsNullOrEmpty(AssetPath);
             mIsBuiltIn = false;
-            mBuffer = new ObjectBuffer<Panel>(IsSingleInstance ? 1 : 5);
-            mBuffer.Creater = LoadFromResources;
-            mBuffer.Destroier = UnloadResources;
+            if (!IsSingleInstance)
+            {
+                mPool = new ObjectPool<Panel>(16);
+                mPool.Creator = InstantiatePanel;
+                mPool.Cleaner = DestroyPanel;
+            }
         }
 
         public PanelAsset(Panel asset)
@@ -41,14 +44,20 @@ namespace Devil.GamePlay
                 AssetPath = null;
                 mBuiltinAsset = asset;
                 Mode = asset.m_Mode;
-                Properties = asset.m_Properties;
-                //asset.gameObject.SetActive(false);
+                Properties = asset.Properties;
                 IsUsable = true;
                 mIsBuiltIn = true;
-                mBuffer = new ObjectBuffer<Panel>(IsSingleInstance ? 1 : 5);
-                mBuffer.Creater = LoadFromBuiltin;
-                mBuffer.Destroier = UnloadResources;
-                mBuffer.SaveBuffer(mBuiltinAsset);
+                if (!IsSingleInstance)
+                {
+                    mPool = new ObjectPool<Panel>(16);
+                    mPool.Creator = InstantiatePanel;
+                    mPool.Cleaner = DestroyPanel;
+                    mPool.Add(mBuiltinAsset);
+                }
+                else
+                {
+                    mSingleInstance = mBuiltinAsset;
+                }
             }
             else
             {
@@ -64,23 +73,28 @@ namespace Devil.GamePlay
 
         public void Release()
         {
-            if (mBuffer != null)
+            if (mPool != null)
             {
-                mBuffer.Clear();
+                mPool.Clear();
+                if (mBuiltinAsset != null)
+                    mPool.Add(mBuiltinAsset);
+            }
+            if (mSingleInstance != null)
+            {
+                DestroyPanel(mSingleInstance);
+                mSingleInstance = null;
             }
         }
 
         public void UnuseAsset(Panel panel)
         {
-            if(mBuffer != null && panel != null)
+            if (mPool != null && panel != null)
             {
-                //if (panel.gameObject.activeSelf)
-                //    panel.gameObject.SetActive(false);
-                mBuffer.SaveBuffer(panel);
-            }
+                mPool.Add(panel);
+            } 
         }
 
-        Panel LoadFromResources()
+        Panel InstantiatePanel()
         {
             if (mBuiltinAsset != null)
             {
@@ -88,7 +102,7 @@ namespace Devil.GamePlay
                 go.name = Name;
                 Panel panel = go.GetComponent<Panel>();
                 panel.m_Mode = Mode;
-                panel.m_Properties = Properties;
+                panel.Properties = Properties;
                 return panel;
             }
             else
@@ -98,36 +112,20 @@ namespace Devil.GamePlay
                     return null;
                 GameObject inst = Object.Instantiate(go, PanelManager.Instance.transform);
                 inst.name = Name;
-                mBuiltinAsset = inst.GetComponent<Panel>();
-                mBuiltinAsset.m_Mode = Mode;
-                mBuiltinAsset.m_Properties = Properties;
-                return mBuiltinAsset;
+                var panel = inst.GetComponent<Panel>();
+                panel.m_Mode = Mode;
+                panel.Properties = Properties;
+                return panel;
             }
         }
 
-        Panel LoadFromBuiltin()
+        void DestroyPanel(Panel panel)
         {
-            GameObject go = Object.Instantiate(mBuiltinAsset.gameObject,mBuiltinAsset.transform.parent);
-            go.name = Name;
-            Panel panel = go.GetComponent<Panel>();
-            panel.m_Mode = Mode;
-            panel.m_Properties = Properties;
-            return panel;
-        }
-
-        bool UnloadResources(Panel panel)
-        {
-            bool eqb = panel == mBuiltinAsset;
-            if(!eqb || !mIsBuiltIn)
+            if(panel != null && panel != mBuiltinAsset)
             {
+                if (mSingleInstance == panel)
+                    mSingleInstance = null;
                 Object.Destroy(panel.gameObject);
-                if (eqb)
-                    mBuiltinAsset = null;
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
 
@@ -135,18 +133,20 @@ namespace Devil.GamePlay
         {
             if (!IsUsable)
                 return null;
-            if (IsSingleInstance && mBuiltinAsset != null)
+            Panel ret;
+            if (IsSingleInstance)
             {
-                return mBuiltinAsset;
-            }
-            else if (mBuffer != null)
-            {
-                return mBuffer.GetAnyTarget();
+                if (mSingleInstance == null)
+                    mSingleInstance = InstantiatePanel();
+                ret = mSingleInstance;
             }
             else
             {
-                return null;
+                ret = mPool.Get();
             }
+            if (ret == null)
+                IsUsable = false;
+            return ret;
         }
     }
 }

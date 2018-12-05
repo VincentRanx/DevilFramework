@@ -1,5 +1,4 @@
 ﻿using Devil.Utility;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -27,7 +26,6 @@ namespace DevilEditor
     public abstract class PaintElement
     {
         static int sIdNum;
-
         public float LocalScale { get; set; }
         public float GlobalScale { get; private set; }
         public Vector2 Pivot { get; set; }
@@ -39,6 +37,9 @@ namespace DevilEditor
 
         public bool DontClip { get; set; }
         public bool Visible { get; set; }
+
+        // 每一帧的裁剪状态
+        public bool cliped { get; private set; }
 
         public Rect GlobalRect;// 变换后的 rect
         public Vector2 GlobalCentroid
@@ -60,8 +61,13 @@ namespace DevilEditor
 
         public virtual void OnRemoved() { }
 
-        public virtual void CalculateGlobalRect(bool recursive)
+        public virtual void OnCalculateGlobalRect(bool recursive, Rect clipRect)
         {
+            if(!Visible)
+            {
+                cliped = true;
+                return;
+            }
             GlobalScale = 1;
             PaintElement p = Parent;
             while (p != null)
@@ -78,6 +84,7 @@ namespace DevilEditor
             {
                 GlobalRect.position = LocalRect.position * GlobalScale + Parent.GlobalCentroid;
             }
+            cliped = !(DontClip || GlobalRect.Overlaps(clipRect));
         }
 
         public Vector2 CalculateGlobalPosition(Vector2 localPos)
@@ -152,7 +159,7 @@ namespace DevilEditor
 
         public void RemoveElement(PaintElement ele)
         {
-            if(ele.Parent == this)
+            if (ele.Parent == this)
             {
                 ele.Parent = null;
                 ele.IsActive = false;
@@ -162,12 +169,17 @@ namespace DevilEditor
 
         public int ElementCount { get { return Elements.Count; } }
 
-        public T GetElement<T>(int index) where T: PaintElement
+        public T GetElement<T>(int index) where T : PaintElement
         {
             T t = Elements[index] as T;
             if (t != null && t.Parent != this)
                 t = null;
             return t;
+        }
+
+        public PaintElement ElementAt(int index)
+        {
+            return Elements[index];
         }
 
         public void ClearElements()
@@ -250,15 +262,14 @@ namespace DevilEditor
             }
         }
 
-        public override void CalculateGlobalRect(bool recursive)
+        public override void OnCalculateGlobalRect(bool recursive, Rect clipRect)
         {
-            base.CalculateGlobalRect(false);
+            base.OnCalculateGlobalRect(false, clipRect);
             if (recursive)
             {
                 for (int i = 0; i < Elements.Count; i++)
                 {
-                    if(Elements[i].Visible)
-                        Elements[i].CalculateGlobalRect(recursive);
+                    Elements[i].OnCalculateGlobalRect(recursive, clipRect);
                 }
             }
         }
@@ -271,17 +282,16 @@ namespace DevilEditor
                 OnDrawGridLine(clipRect, gsize);
             }
             bool clean = false;
-            if(LocalScale > 0)
+            if (LocalScale > 0)
             {
                 for (int i = 0; i < Elements.Count; i++)
                 {
                     PaintElement ele = Elements[i];
-                    if (!ele.Visible)
-                        continue;
-                    if (ele.DontClip || clipRect.Overlaps(ele.GlobalRect))
-                        ele.OnGUI(clipRect);
                     if (ele.Parent != this)
                         clean = true;
+                    if (ele.cliped)
+                        continue;
+                    ele.OnGUI(clipRect);
                 }
             }
             if (clean)
@@ -386,7 +396,7 @@ namespace DevilEditor
 
         public override void OnGUI(Rect clipRect)
         {
-            GUI.Label(GlobalRect, "", "SelectionRect");
+            GUI.Label(GlobalRect, DevilEditorUtility.EmptyContent, "SelectionRect");
         }
     }
 }

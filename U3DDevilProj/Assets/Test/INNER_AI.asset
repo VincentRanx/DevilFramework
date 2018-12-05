@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 103884db07ec0b043ab7a1bd73dc1a44, type: 3}
+  m_Name: INNER_AI
+  m_EditorClassIdentifier: 
+  m_RootId: 4
+  m_BTNodes:
+  - id: 1
+    moduleName: BTWaitTask
+    parentId: 2
+    children: 
+    position: {x: 17.0183, y: 541.0692}
+    asset: {fileID: 114348597546985762}
+  - id: 2
+    moduleName: BTSequence
+    parentId: 4
+    children: 0100000003000000
+    position: {x: 155.63788, y: 335.9494}
+    asset: {fileID: 114020380086376934}
+  - id: 3
+    moduleName: BTWaitTask
+    parentId: 2
+    children: 
+    position: {x: 334.04984, y: 541.94244}
+    asset: {fileID: 114653948948812070}
+  - id: 4
+    moduleName: BTSelector
+    parentId: 0
+    children: 0500000002000000
+    position: {x: 0.19303131, y: 149.35829}
+    asset: {fileID: 114760628243944124}
+  - id: 5
+    moduleName: BTWaitTask
+    parentId: 4
+    children: 
+    position: {x: -197.23604, y: 331.13458}
+    asset: {fileID: 114787743191394386}
+  - id: 6
+    moduleName: BTGateway
+    parentId: 0
+    children: 
+    position: {x: -187.49683, y: 375.162}
+    asset: {fileID: 114798765584233676}
+  - id: 7
+    moduleName: TestService
+    parentId: 0
+    children: 
+    position: {x: 321.237, y: 209.20738}
+    asset: {fileID: 114451777759118980}
+  m_RootPosition: {x: 6.7311554, y: -15.285259}
+  m_Sorted: 1
+--- !u!114 &114020380086376934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 863edc5c901074242b8ec770d569b84e, type: 3}
+  m_Name: BTSequence_2
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+--- !u!114 &114348597546985762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49740a72fcf6aa046b78a4eebe18f66f, type: 3}
+  m_Name: BTWaitTask_1
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+  m_MinTime: 1
+  m_MaxTime: 2
+--- !u!114 &114451777759118980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c63fbc7e62f62f84f9b0261e2d35e1f1, type: 3}
+  m_Name: TestService_7
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+--- !u!114 &114653948948812070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49740a72fcf6aa046b78a4eebe18f66f, type: 3}
+  m_Name: BTWaitTask_3
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: "\u7B49\u5F85\u5B8C\u6210 32 \u79D2"
+  m_ConditionIds: 
+  m_MinTime: 1
+  m_MaxTime: 2
+--- !u!114 &114760628243944124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 332e0d3e29f24f043b1422b27274a916, type: 3}
+  m_Name: BTSelector_4
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+--- !u!114 &114787743191394386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49740a72fcf6aa046b78a4eebe18f66f, type: 3}
+  m_Name: BTWaitTask_5
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 06000000
+  m_MinTime: 1
+  m_MaxTime: 2
+--- !u!114 &114798765584233676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0debe8434e8902d4f8ce0137cd4ebcb1, type: 3}
+  m_Name: BTGateway_6
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_UseBlackboard: 
+  m_IsTrue: 0

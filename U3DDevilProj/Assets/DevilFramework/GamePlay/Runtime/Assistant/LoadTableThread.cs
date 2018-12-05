@@ -1,32 +1,37 @@
-﻿using Devil.ContentProvider;
+﻿using Devil.AsyncTask;
+using Devil.ContentProvider;
 using Devil.Utility;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using UnityEngine;
 
 namespace Devil.GamePlay.Assistant
 {
-    public class LoadTableThread
+    public class LoadTableThread : IAsyncTask
     {
-        interface ITableLoader : IIdentified
+        public interface ITableLoader : IIdentified
         {
             bool IsReady { get; }
+            void StartLoad();
             void LoadAsTable();
         }
 
         public class TableLoader<T> : ITableLoader where T : TableBase, new()
         {
             public int Identify { get; private set; }
+            TableSet<T> mTable;
             string mData;
             string mFile;
             bool mMerge;
-            public TableLoader(string file, bool merge)
+
+            public TableLoader(int id, string file, bool merge, TableSet<T> table, string folder, string extension)
             {
                 mFile = file;
-                Identify = TableSet<T>.HashTable(file);
-                AssetPath = string.Format("Assets/AB/Tables/{0}.txt.bytes", file);
                 mMerge = merge;
+                mTable = table == null ? TableSet<T>.Instance : table;
+                Identify = id;// TableSet<T>.HashTable(file);
+                AssetPath = StringUtil.Concat(folder, file, extension);
+                mTable.WaitForLoading();
             }
 
             public bool IsReady { get; private set; }
@@ -36,12 +41,20 @@ namespace Devil.GamePlay.Assistant
                 if (!string.IsNullOrEmpty(mData))
                 {
                     if (mMerge)
-                        TableSet<T>.Merge(mFile, mData);
+                    {
+                        TableSet<T>.MergeTo(TableSet<T>.LoadAsNew(mFile, mData), mTable);
+                    }
                     else
-                        TableSet<T>.Load(mFile, mData);
+                    {
+                        TableSet<T>.LoadTo(mFile, mData, mTable);
+                    }
 #if UNITY_EDITOR
                     RTLog.LogFormat(LogCat.Table, "{0} Table<{1}> @ {2}", mMerge ? "Merge" : "Load", typeof(T).Name, AssetPath);
 #endif
+                }
+                else
+                {
+                    TableSet<T>.LoadComplete(mTable, mMerge);
                 }
             }
 
@@ -54,7 +67,7 @@ namespace Devil.GamePlay.Assistant
 
             private void HandleAsset(TextAsset asset)
             {
-                mData = Encoding.UTF8.GetString(asset.bytes);
+                mData = asset.text;// Encoding.UTF8.GetString(asset.bytes);
                 IsReady = true;
             }
 
@@ -65,46 +78,61 @@ namespace Devil.GamePlay.Assistant
                 RTLog.LogErrorFormat(LogCat.Table, "Load Asset:{0} error:{1}", AssetPath, error);
 #endif
             }
-
         }
 
-        Thread mThread;
+        string mTableFolder;
+        string mTableExtension;
+        ThreadPoolState mThreadState;
         object mLock = new object();
         Queue<ITableLoader> mLoaders = new Queue<ITableLoader>();
         HashSet<int> mTaskQueue = new HashSet<int>();
         public bool IsLoading { get; private set; }
+        public event System.Action OnComplete;
 
-        public bool IsFileLoaded<T>(string file) where T : TableBase, new()
+        public LoadTableThread(string tableFolder = "Assets/Tables/", string tableExtension = ".txt", string name= "default table loader")
+        {
+            mTableFolder = tableFolder;
+            mTableExtension = tableExtension;
+            mThreadState = new ThreadPoolState();
+            mThreadState.name = name;
+        }
+
+        public bool IsTableLoaded<T>(string file) where T : TableBase, new()
         {
             int id = TableSet<T>.HashTable(file);
-            if (mTaskQueue.Contains(id) || TableSet<T>.Instance.Contains(id))
+            if (mTaskQueue.Contains(id) || TableSet<T>.Instance.ContainsTable(id))
                 return true;
             return false;
         }
 
-        public void LoadTable<T>(string file, bool merge = true) where T : TableBase, new()
+        public bool LoadTable<T>(string file, bool merge, TableSet<T> table = null) where T : TableBase, new()
         {
             lock (mLock)
             {
+                int id = TableSet<T>.HashTable(file);
+                if (!mTaskQueue.Add(id))
+                    return false;
+                TableLoader<T> loader = new TableLoader<T>(id, file, merge, table, mTableFolder, mTableExtension);
                 IsLoading = true;
-                TableLoader<T> loader = new TableLoader<T>(file, merge);
-                if (mTaskQueue.Contains(loader.Identify))
-                    return;
                 mLoaders.Enqueue(loader);
-                loader.StartLoad();
-                if (mThread == null)
-                {
-                    mThread = new Thread(OnTableThread);
-                    mThread.Start();
-                }
+                return true;
             }
         }
 
-        void OnTableThread()
+        void NotifyComplete()
         {
+            if (OnComplete != null)
+                OnComplete();
+        }
+
+        void OnTableThread(object state)
+        {
+#if UNITY_EDITOR
+            RTLog.LogFormat(LogCat.Table, "Begin Thread[{0}]", mThreadState.name);
+#endif
             try
             {
-                while (true)
+                while (mThreadState.isAlive)
                 {
                     ITableLoader loader = null;
                     lock (mLock)
@@ -112,17 +140,26 @@ namespace Devil.GamePlay.Assistant
                         IsLoading = mLoaders.Count > 0;
                         if (!IsLoading)
                         {
-                            mThread = null;
+                            //mThread = null;
+                            mThreadState.isAlive = false;
                             break;
                         }
                         loader = mLoaders.Dequeue();
                         mTaskQueue.Remove(loader.Identify);
                     }
-                    while (!loader.IsReady)
+                    if(mThreadState.isAlive)
+                        MainThread.RunOnMainThread(loader.StartLoad);
+                    while (mThreadState.isAlive && !loader.IsReady)
                     {
+#if UNITY_EDITOR
+                        if (!MainThread.IsInitilized)
+                            mThreadState.isAlive = false;
+                        MainThread.RunOnMainThread((x) => { if (!Application.isPlaying) x.isAlive = false; }, mThreadState);
+#endif
                         Thread.Sleep(200);
                     }
-                    loader.LoadAsTable();
+                    if(mThreadState.isAlive)
+                        loader.LoadAsTable();
                 }
             }
             catch (System.Exception e)
@@ -131,11 +168,11 @@ namespace Devil.GamePlay.Assistant
             }
             finally
             {
-                lock (mLock)
-                {
-                    mThread = null;
-                    IsLoading = false;
-                }
+                Abort();
+                MainThread.RunOnMainThread(NotifyComplete);
+#if UNITY_EDITOR
+                RTLog.LogFormat(LogCat.Table, "End Thread[{0}]", mThreadState.name);
+#endif
             }
         }
 
@@ -145,13 +182,38 @@ namespace Devil.GamePlay.Assistant
             {
                 mLoaders.Clear();
                 mTaskQueue.Clear();
+                mThreadState.isAlive = false;
+                IsLoading = false;
             }
-            if (mThread != null)
-            {
-                mThread.Abort();
-                mThread = null;
-            }
-            IsLoading = false;
         }
+
+        #region async task implemention
+        public bool IsDone { get { return !IsLoading; } }
+        public float Progress { get; private set; }
+        public void Start()
+        {
+            //if (mThread == null && mTaskQueue.Count > 0)
+            //{
+            //    mThread = new Thread(OnTableThread);
+            //    mThread.Start();
+            //}
+            if (!MainThread.IsInitilized)
+            {
+                RTLog.LogErrorFormat(LogCat.Table, "Can't start Table Loader \"{0}\" becaouse of no MainThread installized.", mThreadState.name);
+                return;
+            }
+            if (!mThreadState.isAlive && mTaskQueue.Count > 0)
+            {
+                if (ThreadPool.QueueUserWorkItem(OnTableThread, mThreadState))
+                    mThreadState.isAlive = true;
+            }
+        }
+        public void OnTick(float deltaTime)
+        {
+            Progress += deltaTime;
+            if (IsLoading && Progress > 0.9f)
+                Progress = 0.9f;
+        }
+        #endregion
     }
 }

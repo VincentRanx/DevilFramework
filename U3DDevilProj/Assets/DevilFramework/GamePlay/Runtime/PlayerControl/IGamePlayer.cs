@@ -1,24 +1,31 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Devil.GamePlay
 {
-    public interface IGamePlayer
+    public interface IGamePlayer : INamed
     {
-        int PlayerId { get; }
-        string PlayerName { get; }
-        Vector3 PlayerPositoin { get; set; }
-        Quaternion PlayerRotation { get; set; }
-        Vector3 PlayerVelocity { get; }
+        Vector3 position { get; set; }
+        Vector3 velocity { get; set; }
+        Quaternion rotation { get; set; }
 
-        IMovement CurrentBaseMovement { get; }
-        IMovement CurrentAdditiveMovement { get; }
-        IMovement CurrentDecoratorMovement { get; }
+        bool isGrounded { get; }
+        bool isStoped { get; }
+        bool isAlive { get; }
+        Vector3 forward { get; }
+        Vector3 up { get; }
+        Vector3 right { get; }
 
-        void AddInput(InputMask mask, bool isPress, bool isRelease);
+        Animator AttachedAnimator { get; }
+        CharacterController AttachedController { get; }
+        Rigidbody AttachedRigidbody { get; }
+        T GetComponent<T>();
 
-        void AddMove(Vector3 moveDir);
+        IPlayerMotion CurrentBaseMotion { get; }
+        IPlayerMotion CurrentAdditiveMotion { get; }
+        IPlayerMotion FindMotion(int motionId);
+        IPlayerMotion FindMotion(string motionName);
 
+        void AddInput(int flag, object data);
+        
     }
 }

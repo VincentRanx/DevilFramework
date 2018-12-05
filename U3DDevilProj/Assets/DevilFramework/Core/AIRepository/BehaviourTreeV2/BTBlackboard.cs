@@ -163,5 +163,8 @@ namespace Devil.AI
             }
             return null;
         }
+#if UNITY_EDITOR
+        public BTBlackboarProperty[] EditorVariables { get { return mVariables; } }
+#endif
     }
 }

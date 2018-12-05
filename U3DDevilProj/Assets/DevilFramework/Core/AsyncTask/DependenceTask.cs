@@ -15,7 +15,7 @@
             IsDone = true;
         }
 
-        public void Start()
+        public virtual void Start()
         {
             IsDone = false;
             Progress = 0;

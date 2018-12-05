@@ -14,7 +14,6 @@ namespace DevilEditor
         int mDropIndex;
         EmojiAnims mTarget;
         Vector2 mPos;
-        List<string> mFrames = new List<string>();
         bool mDirty;
 
         private void OnEnable()

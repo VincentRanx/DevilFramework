@@ -10,6 +10,7 @@ namespace Devil.Utility
     public delegate bool ObjectCleaner<T>(T target);
     public delegate bool ObjectCleaner<K, T>(K selector, T target);
 
+    [Obsolete("This class will not modify or fix bugs any more, you'd better use \"ObjectPool\" instead of \"ObjectBuffer\" ", false)]
     public class ObjectBuffer<T> where T : class
     {
         object mLock;

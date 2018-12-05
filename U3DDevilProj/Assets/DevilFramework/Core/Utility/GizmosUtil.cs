@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Devil.Utility
 {
@@ -17,28 +16,147 @@ namespace Devil.Utility
             Gizmos.DrawWireCube(center, size);
         }
 
-        public static void DrawWireOvalSphere2D(Vector3 pos, Vector3 forward, Vector3 up, Vector2 size, bool showCross = false, int samples = 40)
+        public static float LodArc(Vector3 pos)
         {
-            Matrix4x4 def = Gizmos.matrix;
-            Gizmos.matrix = def * Matrix4x4.TRS(pos, Quaternion.LookRotation(forward, up), size);
-            if (showCross)
+#if UNITY_EDITOR
+            if(UnityEditor.SceneView.currentDrawingSceneView != null)
             {
-                Gizmos.DrawLine(Vector3.left, Vector3.right);
-                Gizmos.DrawLine(Vector3.down, Vector3.up);
+                var cam = UnityEditor.SceneView.currentDrawingSceneView.camera;
+                var dis = Vector3.SqrMagnitude(cam.transform.position - pos);
+                return Mathf.Clamp(dis * 0.03f, 1, 3);
             }
-            int len = Math.Max(10, samples);
-            float ang = 360f / len;
-            Vector3 p0 = Vector3.right * 0.5f;
-            Vector3 a, b;
-            a = p0;
-            for (int i = 0; i < len;)
+#endif
+            return 1;
+        }
+
+        public static void DrawArc(Vector3 center, Vector3 direction, Vector3 normal, float angle, float deltaAngle = 10f, bool drawSide = true)
+        {
+            if (angle < 1 || direction.sqrMagnitude <= 0.00001f)
             {
-                Quaternion rot = Quaternion.AngleAxis(ang * ++i, Vector3.forward);
-                b = rot * p0;
-                Gizmos.DrawLine(a, b);
-                a = b;
+                Gizmos.DrawRay(center, direction);
+                return;
             }
-            Gizmos.matrix = def;
+            float sides = Mathf.Ceil(angle / (LodArc(Gizmos.matrix.MultiplyPoint(center)) * deltaAngle));
+            deltaAngle = angle / sides;
+            Quaternion rot = Quaternion.AngleAxis(-angle * 0.5f, normal);
+            Vector3 p0 = rot * direction;
+            if (drawSide)
+                Gizmos.DrawRay(center, p0);
+            rot = Quaternion.AngleAxis(deltaAngle, normal);
+            Vector3 p1 = p0;
+            for (int i = 0; i < sides; i++)
+            {
+                p1 = rot * p0;
+                Gizmos.DrawLine(center + p0, center + p1);
+                p0 = p1;
+            }
+            if(drawSide)
+                Gizmos.DrawRay(center, p1);
+        }
+
+        public static void DrawArc(Vector3 center, Vector3 start, Vector3 end, Vector3 normal, float deltaAngle = 10f, bool drawSide = true)
+        {
+            Vector3 dir1 = start - center;
+            Vector3 dir2 = end - center;
+            if(drawSide)
+            {
+                Gizmos.DrawLine(center, start);
+                Gizmos.DrawLine(center, end);
+            }
+            float degree = Vector3.Angle(dir1, dir2);
+            if (degree < 1)
+                return;
+            float len1 = dir1.magnitude;
+            dir1 = dir1.normalized;
+            float len2 = dir2.magnitude;
+            dir2 = dir2.normalized;
+            float sides = Mathf.Ceil(degree / (LodArc(Gizmos.matrix.MultiplyPoint(center)) * deltaAngle));
+            deltaAngle = degree / sides;
+            Quaternion rot;
+            Vector3 p0 = start;
+            Vector3 p1 = p0;
+            Vector3 dir;
+            for(int i= 0; i < sides; i++)
+            {
+                rot = Quaternion.AngleAxis(i * deltaAngle, normal);
+                dir = rot * dir1;
+                dir *= Mathf.Lerp(len1, len2, i * deltaAngle / degree);
+                p1 = center + dir;
+                Gizmos.DrawLine(p0, p1);
+                p0 = p1;
+            }
+        }
+
+        public static void DrawCapsuleCollider(CapsuleCollider cap)
+        {
+            float cylen = cap.height - cap.radius * 2;
+            Vector3 p0, p1, p2, p3;
+            switch(cap.direction)
+            {
+                case 0:
+                    p0 = cap.center - Vector3.right * cylen * 0.5f + Vector3.up * cap.radius;
+                    p1 = p0 + cylen * Vector3.right;
+                    p2 = p0 + Vector3.down * cap.radius * 2;
+                    p3 = p2 + cylen * Vector3.right;
+                    Gizmos.DrawLine(p0, p1);
+                    Gizmos.DrawLine(p2, p3);
+                    DrawArc(p0 + Vector3.down * cap.radius, p0, p2, Vector3.forward, 5, false);
+                    DrawArc(p1 + Vector3.down * cap.radius, p1, p3, Vector3.back, 5, false);
+
+                    p0 = cap.center - Vector3.right * cylen * 0.5f + Vector3.forward * cap.radius;
+                    p1 = p0 + cylen * Vector3.right;
+                    p2 = p0 + Vector3.back * cap.radius * 2;
+                    p3 = p2 + cylen * Vector3.right;
+                    Gizmos.DrawLine(p0, p1);
+                    Gizmos.DrawLine(p2, p3);
+                    DrawArc(p0 + Vector3.back * cap.radius, p0, p2, Vector3.down, 5, false);
+                    DrawArc(p1 + Vector3.back * cap.radius, p1, p3, Vector3.up, 5, false);
+                    break;
+                case 1:
+                    p0 = cap.center + Vector3.down * cylen * 0.5f + Vector3.left * cap.radius;
+                    p1 = p0 + cylen * Vector3.up;
+
+                    p2 = p0 + Vector3.right * cap.radius * 2;
+                    p3 = p2 + cylen * Vector3.up;
+                    Gizmos.DrawLine(p0, p1);
+                    Gizmos.DrawLine(p2, p3);
+                    DrawArc(p0 + Vector3.right * cap.radius, p0, p2, Vector3.forward, 5, false);
+                    DrawArc(p1 + Vector3.right * cap.radius, p1, p3, Vector3.back, 5, false);
+
+                    p0 = cap.center + Vector3.down * cylen * 0.5f + Vector3.back * cap.radius;
+                    p1 = p0 + cylen * Vector3.up;
+
+                    p2 = p0 + Vector3.forward * cap.radius * 2;
+                    p3 = p2 + cylen * Vector3.up;
+                    Gizmos.DrawLine(p0, p1);
+                    Gizmos.DrawLine(p2, p3);
+                    DrawArc(p0 + Vector3.forward * cap.radius, p0, p2, Vector3.left, 5, false);
+                    DrawArc(p1 + Vector3.forward * cap.radius, p1, p3, Vector3.right, 5, false);
+                    break;
+                case 2:
+                    p0 = cap.center + Vector3.back * cylen * 0.5f + Vector3.left * cap.radius;
+                    p1 = p0 + cylen * Vector3.forward;
+
+                    p2 = p0 + Vector3.right * cap.radius * 2;
+                    p3 = p2 + cylen * Vector3.forward;
+                    Gizmos.DrawLine(p0, p1);
+                    Gizmos.DrawLine(p2, p3);
+                    DrawArc(p0 + Vector3.right * cap.radius, p0, p2, Vector3.down, 5, false);
+                    DrawArc(p1 + Vector3.right * cap.radius, p1, p3, Vector3.up, 5, false);
+
+                    p0 = cap.center + Vector3.back * cylen * 0.5f + Vector3.down * cap.radius;
+                    p1 = p0 + cylen * Vector3.forward;
+
+                    p2 = p0 + Vector3.up * cap.radius * 2;
+                    p3 = p2 + cylen * Vector3.forward;
+                    Gizmos.DrawLine(p0, p1);
+                    Gizmos.DrawLine(p2, p3);
+                    DrawArc(p0 + Vector3.up * cap.radius, p0, p2, Vector3.right, 5, false);
+                    DrawArc(p1 + Vector3.up * cap.radius, p1, p3, Vector3.left, 5, false);
+                    break;
+                default:
+                    break;
+            }
         }
 
         public static void MarkTransform(Transform trans, float size)
@@ -77,7 +195,14 @@ namespace Devil.Utility
 #endif
         }
 
-        public static void MarkInScene(Vector3 worldPos, float pixel, float rad)
+        public static void DebugInScene(Vector3 worldPos, float size = 2, float duration = 1)
+        {
+            Debug.DrawRay(worldPos - Vector3.right * size * 0.5f, Vector3.right * size, Color.red, duration);
+            Debug.DrawRay(worldPos - Vector3.up * size * 0.5f, Vector3.up * size, Color.green, duration);
+            Debug.DrawRay(worldPos - Vector3.forward * size * 0.5f, Vector3.forward * size, Color.blue, duration);
+        }
+
+        public static void MarkInScene(Vector3 worldPos, float pixel = 10, float rad = 0)
         {
 #if UNITY_EDITOR
             UnityEditor.SceneView scene = UnityEditor.SceneView.currentDrawingSceneView;
@@ -108,6 +233,16 @@ namespace Devil.Utility
             Gizmos.DrawLine(p1, p2);
             Gizmos.matrix = defM;
 #endif
+        }
+
+        public static void MarkAxisSystem(float size)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(Vector3.zero, Vector3.right * size);
+            Gizmos.color = Color.green;
+            Gizmos.DrawRay(Vector3.zero, Vector3.up * size);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawRay(Vector3.zero, Vector3.forward * size);
         }
 
         //屏幕像素大小与本地单位大小比值

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Devil.Utility
 {
@@ -13,10 +14,9 @@ namespace Devil.Utility
         AI = 0x20,
         Persistent = 0x40,
         Native = 0x80,
-
-        Date = 0x100,
-        Shop = 0x200,
-        Npc = 0x400,
+        UI = 0x100,
+        
+        Task = 0x200,
     }
 
     // 打印日志
@@ -30,6 +30,7 @@ namespace Devil.Utility
         LogCat m_Categories = (LogCat)(-1);
 
 #if UNITY_EDITOR
+        const string stackAt = "RTLog.cs:line ";
         LogWriter mLogWriter;
 #endif
 
@@ -79,7 +80,12 @@ namespace Devil.Utility
         static void WriteLog(string lv, LogCat cat, string content)
         {
             if (sInstance != null && sInstance.mLogWriter != null)
-                sInstance.mLogWriter.Append(lv, cat, content);
+            {
+                var stack = Environment.StackTrace;
+                var index = stack.LastIndexOf(stackAt);
+                index = stack.IndexOf('\n', index + 1) + 1;
+                sInstance.mLogWriter.Append(lv, cat, StringUtil.Concat(content, '\n', stack.Substring(index), '\n'));
+            }
         }
 #endif
 
@@ -138,8 +144,7 @@ namespace Devil.Utility
 #if UNITY_EDITOR
             WriteLog("E", cat, string.Format(format, args));
 #endif
-            if (UseCategory(cat))
-                Debug.LogError(Format(cat, format, args));
+            Debug.LogError(Format(cat, format, args));
         }
     }
 }

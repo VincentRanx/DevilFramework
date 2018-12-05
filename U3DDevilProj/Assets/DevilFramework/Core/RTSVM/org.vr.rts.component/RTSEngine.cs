@@ -34,6 +34,7 @@ namespace org.vr.rts.component
 
             lin = new RTSEndingL(IRTSDefine.Linker.SEMICOLON);
             mLinkers.Add(";", lin);
+            mLinkers.Add("\n", lin);
             //
             lin = new RTSExecL(IRTSDefine.Linker.BRACKET_FLOWER, IRTSDefine.Linker.BRACKET_FLOWER2);
             mLinkers.Add("{", lin);

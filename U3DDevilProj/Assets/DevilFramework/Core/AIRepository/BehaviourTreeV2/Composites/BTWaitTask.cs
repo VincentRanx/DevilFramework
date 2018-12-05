@@ -1,56 +1,53 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Devil.Utility;
 using UnityEngine;
 
 namespace Devil.AI
 {
-    [BTComposite(Title = "等待", Detail = "等待{timeForWait}~{maxTime}秒钟\n始终返回成功：{alwaysSuccess}", HideProperty = true)]
-    public class BTWaitTask : BTTaskBase
+    [BTComposite(Title = "等待 (W)", HotKey = KeyCode.W)]
+    public class BTWaitTask : BTTaskAsset
     {
-        [BTVariable(Name = "timeForWait", DefaultVallue = "1")]
-        float mWaitTime = 1;
-        [BTVariable(Name = "maxTime", DefaultVallue = "0")]
-        float mMaxWaitTime = 1;
-        [BTVariable(Name = "alwaysSuccess", DefaultVallue = "false")]
-        bool mAlwaysSucces;
+        public float m_MinTime = 1;
+        public float m_MaxTime = 2;
 
-        bool mAbort;
         float mTime;
 
-        public BTWaitTask(int id) : base(id) { }
-
-        public override void OnAbort(BehaviourTreeRunner btree)
+        public override string DisplayContent
         {
-            mAbort = true;
+            get
+            {
+                if (m_MinTime < 0)
+                    m_MinTime = 0;
+                if (m_MaxTime < m_MinTime)
+                    m_MaxTime = m_MinTime;
+                if (m_MinTime <= m_MaxTime - 0.1f)
+                    return StringUtil.Concat("等待 ", m_MinTime, "~", m_MaxTime, " 秒钟");
+                else
+                    return StringUtil.Concat("等待 ", m_MinTime, " 秒钟");
+            }
         }
 
-        public override void OnInitData(BehaviourTreeRunner btree, string jsonData)
+        public override EBTState OnAbort()
         {
-            JObject obj = JsonConvert.DeserializeObject<JObject>(jsonData);
-            mWaitTime = obj.Value<float>("timeForWait");
-            mMaxWaitTime = obj.Value<float>("maxTime");
-            mAlwaysSucces = obj.Value<bool>("alwaysSuccess");
+            return EBTState.failed;
         }
 
-        public override void OnClearData(BehaviourTreeRunner btree)
+        public override EBTState OnStart()
         {
-        }
-
-        public override EBTTaskState OnTaskStart(BehaviourTreeRunner btree)
-        {
-            mAbort = false;
-            if(mMaxWaitTime > mWaitTime)
-                mTime = Random.Range(mWaitTime, mMaxWaitTime);
+            if (m_MaxTime >= m_MinTime + 0.1f)
+                mTime = Random.Range(m_MinTime, m_MaxTime);
             else
-                mTime = mWaitTime;
-            return EBTTaskState.running;
+                mTime = m_MinTime;
+            return EBTState.running;
         }
 
-        public override EBTTaskState OnTaskTick(BehaviourTreeRunner btree, float deltaTime)
+        public override void OnStop()
         {
-            if (mAbort)
-                return mAlwaysSucces ? EBTTaskState.success : EBTTaskState.faild;
-            return btree.TaskTime >= mTime ? EBTTaskState.success : EBTTaskState.running;
+        }
+
+        public override EBTState OnUpdate(float deltaTime)
+        {
+            mTime -= deltaTime;
+            return mTime <= 0 ? EBTState.success : EBTState.running;
         }
     }
 }

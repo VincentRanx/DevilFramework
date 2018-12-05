@@ -1,14 +1,16 @@
-﻿using System.Collections;
+﻿using Devil.Utility;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Devil
 {
     [ExecuteInEditMode]
+    [DefaultExecutionOrder(-1000)]
     public class MainThread : MonoBehaviour
     {
         public delegate bool LooperDelegate(float deltatime);
-
+        
         public enum ETaskType
         {
             task,
@@ -62,6 +64,8 @@ namespace Devil
                 }
             }
 
+            public TaskWithoutArg() { }
+
             public TaskWithoutArg(int id)
             {
                 Identify = id;
@@ -92,6 +96,8 @@ namespace Devil
             }
             public int Identify { get; set; }
 
+            public TaskWithArg() { }
+
             public TaskWithArg(int id)
             {
                 Identify = id;
@@ -121,6 +127,7 @@ namespace Devil
                 }
             }
             public int Identify { get; set; }
+            public TaskWithArg2() { }
 
             public TaskWithArg2(int id)
             {
@@ -135,10 +142,11 @@ namespace Devil
 
         private static MainThread sInstance;
         private static bool sInitilized;
+        public static bool IsInitilized { get { return sInitilized; } }
 
         public static void Install()
         {
-            if (!sInstance)
+            if (null == sInstance)
             {
                 GameObject obj = new GameObject("[MainThread]");
                 sInstance = obj.AddComponent<MainThread>();
@@ -147,11 +155,21 @@ namespace Devil
             }
         }
 
-        public static void AddLooper(LooperDelegate looper)
+        public static ILooper AddLooper(LooperDelegate looper)
         {
             if (sInitilized && looper != null)
             {
-                sInstance.mLoopers.AddLast(new Looper(looper));
+                var loop = new Looper(looper);
+                sInstance.mLoopers.AddLast(loop);
+                return loop;
+            }
+            else
+            {
+#if UNITY_EDITOR
+                if (!sInitilized)
+                    RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
+                return null;
             }
         }
 
@@ -164,6 +182,10 @@ namespace Devil
                     sInstance.mLoopers.AddLast(looper);
                 }
             }
+#if UNITY_EDITOR
+            else if (!sInitilized)
+                RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
         }
 
         public static void RemoveLooper(ILooper looper)
@@ -172,6 +194,10 @@ namespace Devil
             {
                 sInstance.mLoopers.Remove(looper);
             }
+#if UNITY_EDITOR
+            else if (!sInitilized)
+                RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
         }
 
         public static bool QueryTask(int id, ETaskType type = ETaskType.task)
@@ -197,6 +223,10 @@ namespace Devil
                     }
                 }
             }
+#if UNITY_EDITOR
+            else if (!sInitilized)
+                RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
             return false;
         }
 
@@ -214,6 +244,10 @@ namespace Devil
                         sInstance.mLateTasks.Enqueue(task);
                 }
             }
+#if UNITY_EDITOR
+            else if (!sInitilized)
+                RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
         }
         
         public static void RunOnMainThread<T>(System.Action<T> action, T arg, ETaskType type = ETaskType.task, int id = 0)
@@ -231,6 +265,10 @@ namespace Devil
                         sInstance.mLateTasks.Enqueue(task);
                 }
             }
+#if UNITY_EDITOR
+            else if (!sInitilized)
+                RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
         }
 
         public static void RunOnMainThread<T1, T2> (System.Action<T1, T2> action , T1 arg1, T2 arg2, ETaskType type = ETaskType.task, int id = 0)
@@ -249,8 +287,12 @@ namespace Devil
                         sInstance.mLateTasks.Enqueue(task);
                 }
             }
+#if UNITY_EDITOR
+            else if (!sInitilized)
+                RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
         }
-        
+
         public static Coroutine RunCoroutine(IEnumerator cor)
         {
             if (sInitilized && cor != null)
@@ -259,6 +301,10 @@ namespace Devil
             }
             else
             {
+#if UNITY_EDITOR
+                if (!sInitilized)
+                    RTLog.LogError(LogCat.Game, "MainThread not initialized.");
+#endif
                 return null;
             }
         }
@@ -267,6 +313,7 @@ namespace Devil
         private Queue<ITask> mTasks = new Queue<ITask>(64);
         private Queue<ITask> mLateTasks = new Queue<ITask>(16);
         private LinkedList<ILooper> mLoopers = new LinkedList<ILooper>();
+        private ObjectPool<TaskWithoutArg> mTaskPool = new ObjectPool<TaskWithoutArg>(256, () => new TaskWithoutArg());
 
         TaskWithArg<T> GetTaskWithArg<T>(int id)
         {
@@ -275,7 +322,9 @@ namespace Devil
 
         TaskWithoutArg GetTask(int id)
         {
-            return new TaskWithoutArg(id);
+            var task = mTaskPool.Get();
+            task.Identify = id;
+            return task;
         }
 
         TaskWithArg2<T1, T2> GetTaskWithArg2<T1, T2>(int id)
@@ -285,7 +334,7 @@ namespace Devil
 
         private void Awake()
         {
-            if (!sInstance)
+            if (null == sInstance)
             {
                 sInstance = this;
                 if (mTasks == null)

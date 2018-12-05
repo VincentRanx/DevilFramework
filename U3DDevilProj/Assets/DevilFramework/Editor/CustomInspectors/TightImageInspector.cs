@@ -9,7 +9,6 @@ namespace DevilEditor
     public class TightImageInspector : GraphicEditor
     {
         SerializedProperty m_Sprite;
-        SerializedProperty m_ImageEffectMaterial;
         SerializedProperty m_BlurStep;
         SerializedProperty m_BlurIters;
 
@@ -21,7 +20,6 @@ namespace DevilEditor
 
             m_SpriteContent = new GUIContent("Source Image");
             m_Sprite = serializedObject.FindProperty("m_Sprite");
-            m_ImageEffectMaterial = serializedObject.FindProperty("m_ImageEffectMaterial");
             m_BlurStep = serializedObject.FindProperty("m_BlurStep");
             m_BlurIters = serializedObject.FindProperty("m_BlurIters");
         }
@@ -44,7 +42,6 @@ namespace DevilEditor
             if(m_BlurIters.intValue > 0)
             {
                 EditorGUILayout.PropertyField(m_BlurStep);
-                EditorGUILayout.PropertyField(m_ImageEffectMaterial);
             }
         }
 

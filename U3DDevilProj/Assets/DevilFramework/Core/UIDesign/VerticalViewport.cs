@@ -10,7 +10,7 @@ namespace Devil.UI
     using LayoutInfo = LayoutData.LayoutInfo;
     public delegate int DataComparesion(object a, object b);
 
-    public class VerticalViewport : UIBehaviour, IDataListBinder, ILayoutSelfController
+    public class VerticalViewport : UIBehaviour, List, ILayoutSelfController
     {
         public enum Align
         {
@@ -122,28 +122,14 @@ namespace Devil.UI
                         var rect = _2DUtil.CalculateRelativeRect(viewport.transform, viewport.m_ClipRect);
                         var p = dataEntity.transform.localPosition;
                         float l = Mathf.Abs(p.x - rect.xMin);
-                        float r = Mathf.Abs( p.x - rect.xMax);
-                        float u = Mathf.Abs(p.y - rect.yMax);
-                        float d = Mathf.Abs(p.y - rect.yMin);
-                        float dx = Mathf.Min(l, r);
-                        float dy = Mathf.Min(u, d);
-                        // left
-                        if(dx <= dy)
-                        {
-                            if (l < r)
-                                p.x = rect.xMin - rect.width;
-                            else
-                                p.x = rect.xMax + rect.width;
-                        }
+                        float r = Mathf.Abs(p.x - rect.xMax);
+
+                        if (l < r)
+                            p.x = rect.xMin - rect.width;
                         else
-                        {
-                            if (u < d)
-                                p.y = rect.yMax + rect.height;
-                            else
-                                p.y = rect.yMin - rect.height;
-                        }
+                            p.x = rect.xMax + rect.width;
                         dataEntity.transform.localPosition = p;
-                        
+
                     }
                     else if (dataEntity.gameObject.activeSelf)
                     {
@@ -277,8 +263,7 @@ namespace Devil.UI
         // 试图区域扩充范围
         public Vector2 m_ViewportExpend;
         public Vector2 m_Space = new Vector2(5, 5);
-        [Range(10, 200)]
-        public int m_InitCacheSize = 10;
+        public int m_InitCacheSize = 32;
         public bool m_FillEmptyData; // 使用空数据填充
 
         [HideInInspector]

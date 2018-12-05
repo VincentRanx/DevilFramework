@@ -64,8 +64,17 @@ namespace Devil.UI
 
         void InitSize()
         {
-            float[] arr;
-            if (!string.IsNullOrEmpty(m_InitSize) && StringUtil.ParseFloatArray(m_InitSize, out arr, '\0', '\0', ';'))
+            if(string.IsNullOrEmpty(m_InitSize))
+            {
+                mLength = new float[m_Sides];
+                for (int i = 0; i < m_Sides; i++)
+                {
+                    mLength[i] = 1;
+                }
+                return;
+            }
+            float[] arr = StringUtil.ParseFloatArray(m_InitSize, ';');
+            if(arr != null)
             {
                 float[] len = new float[m_Sides];
                 float v = 1;

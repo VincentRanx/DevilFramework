@@ -7,7 +7,6 @@ namespace Devil.Utility
     public class LogWriter
     {
         object mLock = new object();
-        Thread mThread;
         Queue<string> mLogs; // 日志
         string mFile;
         string mFolder;
@@ -27,19 +26,16 @@ namespace Devil.Utility
         {
             lock (mLock)
             {
-                if (!mRunThread && mThread == null)
+                if (!mRunThread && ThreadPool.QueueUserWorkItem(OnThreadWrite))
                 {
+                    mRunThread = true;
+                    mIsDirty = false;
                     UnityEngine.Debug.LogFormat("Write log file to \"{0}\"", mFile);
                     if (!Directory.Exists(mFolder))
                         Directory.CreateDirectory(mFolder);
                     var tmp = mFile + ".tmp";
                     var textwriter = File.AppendText(tmp);
                     mWriter = textwriter;
-
-                    mIsDirty = false;
-                    mRunThread = true;
-                    mThread = new Thread(OnThreadWrite);
-                    mThread.Start();
                 }
             }
         }
@@ -61,6 +57,8 @@ namespace Devil.Utility
                     mWriter = null;
                 }
                 var tmp = mFile + ".tmp";
+                if (File.Exists(mFile))
+                    File.Delete(mFile);
                 if (mIsDirty)
                     File.Move(tmp, mFile);
                 else if (File.Exists(tmp))
@@ -77,7 +75,7 @@ namespace Devil.Utility
             }
         }
 
-        void OnThreadWrite()
+        void OnThreadWrite(object state)
         {
             while (mRunThread)
             {
@@ -95,7 +93,6 @@ namespace Devil.Utility
                     Thread.Sleep(10);
                 }
             }
-            mThread = null;
         }
     }
 }

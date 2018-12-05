@@ -15,7 +15,7 @@ namespace DevilEditor
         string GetPanelInfo(Panel panel)
         {
             mBuilder.Remove(0, mBuilder.Length);
-            mBuilder.Append("Mode:{").Append((int)panel.m_Mode).Append("} Property:{").Append((int)panel.m_Properties).Append("}");
+            mBuilder.Append("Mode:{").Append((int)panel.m_Mode).Append("} Property:{").Append((int)panel.Properties).Append("}");
             return mBuilder.ToString();
         }
 

@@ -6,19 +6,25 @@ namespace DevilEditor
     public class BehaviourHelpGUI : PaintElement
     {
 
-        string help = @"<color=#808080><size=13>
-【鼠标2】 编辑/添加组件
+        string help = @"<b><color=#a0a0a0>
+<size=30>AI Designer</size>
 
-【C】 添加注释块
+<size=13>【鼠标2】 编辑/添加组件
 
-【CTRL+点击】 多选
+【SHIFT+点击】 多选
 
-【CTRL+D】 重做(复制)选中组件
+【CTRL+点击】 反选
+
+【ALT+点击】 删除连线
 
 【滚轮】 鼠标位置缩放
 
 【CTRL+滚轮】 中心缩放
-</size></color>";
+
+【1/2/3/4】 呼出 控制节点/任务/条件/服务 列表
+
+【快捷键】 呼出对应节点列表
+</size></color></b>";
 
         public BehaviourHelpGUI()
         {

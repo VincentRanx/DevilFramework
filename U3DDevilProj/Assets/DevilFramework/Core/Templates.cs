@@ -6,12 +6,6 @@ namespace Devil
 
     public delegate T PassDelegate<T>(T target);
 
-    public delegate int ComparableDelegate<T>(T a, T b);
-
-    public delegate int SerializerDelegate<T>(T target);
-
-    public delegate float FactorDelegate<T>(T target);
-
     public delegate void TickDelegate(float deltaTime);
 
     public delegate T ValueDelegate<T>();
@@ -19,8 +13,8 @@ namespace Devil
     public delegate V GetterDelegate<T, V>(T target);
 
     public delegate void SetterDelegate<T, V>(T target, V value);
-
-    public delegate void EditDelegate<T>(T target);
+    
+    public delegate int IdentifierDelegate<T>(T target);
 
     public enum EExecuteMode
     {
@@ -61,10 +55,21 @@ namespace Devil
         int Identify { get; }
     }
 
-    public interface IXmlSerializable
+    // 比较类型
+    public enum EComparision
     {
-        XmlElement Serialize(XmlDocument doc);
+        Equal = 0,
+        NotEqual = 1,
+        Greater = 2,
+        Less = 3,
+        GEqual = 4,
+        LEqual = 5,
+    }
 
-        bool Deserialize(XmlElement element);
+    // 条件接口
+    public interface ICondition
+    {
+        int Mask { get; }
+        bool IsSuccess { get; }
     }
 }

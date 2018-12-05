@@ -2,20 +2,26 @@
 using UnityEditor;
 using Devil.AI;
 using System.Text;
-using System.Collections.Generic;
 
 namespace DevilEditor
 {
     [CustomEditor(typeof(FStateMachineMono), true)]
-    public class FStateMachineInspector : UnityEditor.Editor
+    public class FStateMachineInspector : Editor
     {
-        //static bool reloaded;
 
-        //[InitializeOnLoadMethod]
-        //private static void OnInstallize()
-        //{
-        //    reloaded = true;
-        //}
+        [MenuItem("GameObject/Utils/Update FSM", priority = -1)]
+        public static void UpdateFSM()
+        {
+            var go = Selection.activeGameObject;
+            if (go == null)
+                return;
+            var fsms = go.GetComponentsInChildren<FStateMachineMono>(true);
+            foreach(var fsm in fsms)
+            {
+                fsm.GenerateStateMachine();
+                Debug.Log("Update FSM: " + fsm, fsm);
+            }
+        }
 
         public void Reposition(FStateMachineMono fsm)
         {
@@ -384,6 +390,7 @@ namespace DevilEditor
                     style = inter ? "flow node 1 on" : "flow node 1";
                 GUI.Label(rect, "", style);
                 Installizer.contentContent.text = state.m_StateName;
+                Installizer.contentStyle.normal.textColor = Color.white;
                 Installizer.contentStyle.fontSize = (int)((rect.height - 10) * cellScale);
                 Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
                 GUI.Label(rect, Installizer.contentContent, Installizer.contentStyle);

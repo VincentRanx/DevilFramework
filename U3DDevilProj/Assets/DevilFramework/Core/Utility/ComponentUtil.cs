@@ -1,12 +1,11 @@
 ﻿using UnityEngine;
-using UnityEngine.U2D;
 
 namespace Devil.Utility
 {
     public static class ComponentUtil
     {
 
-        public const string TAG_MAIN_CAMERA = "Main";
+        public const string TAG_MAIN_CAMERA = "MainCamera";
 
         public static Camera ActiveCameraForLayer(int layer)
         {
@@ -129,5 +128,25 @@ namespace Devil.Utility
             return Object.FindObjectOfType<T>();
         }
         
+        public static void ResetTransform(Transform trans)
+        {
+            trans.localPosition = Vector3.zero;
+            trans.localRotation = Quaternion.identity;
+            trans.localScale = Vector3.one;
+        }
+
+        public static bool IsActiveSelection(this GameObject go)
+        {
+#if UNITY_EDITOR
+            var sel = UnityEditor.Selection.activeGameObject;
+            if (sel == go)
+                return true;
+            if (go != null && sel != null && sel.transform.IsChildOf(go.transform))
+                return true;
+            return false;
+#else
+            return false;
+#endif
+        }
     }
 }

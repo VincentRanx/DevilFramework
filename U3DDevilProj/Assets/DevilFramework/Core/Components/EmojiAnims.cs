@@ -2,7 +2,7 @@
 
 namespace Devil
 {
-    [CreateAssetMenu(fileName = "EmojiAnims", menuName = "Emoji Animation")]
+    [CreateAssetMenu(fileName = "EmojiAnims", menuName = "Game/Emoji Animation")]
     public class EmojiAnims : ScriptableObject
     {
 

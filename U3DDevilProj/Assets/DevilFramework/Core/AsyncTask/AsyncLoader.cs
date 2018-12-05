@@ -167,6 +167,7 @@ namespace Devil.AsyncTask
                 {
                     Progress = 1;
                     IsDone = true;
+                    mTasks.Clear();
                     OnAllTaskComplish();
                 }
                 else if (f > Progress)

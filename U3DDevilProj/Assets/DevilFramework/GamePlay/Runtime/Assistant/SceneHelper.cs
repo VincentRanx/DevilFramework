@@ -5,21 +5,31 @@ using UnityEngine.SceneManagement;
 
 namespace Devil.GamePlay.Assistant
 {
-    public class SceneHelper : SingletonMono<SceneHelper>
+    public class SceneHelper : MonoBehaviour
     {
+        public static SceneHelper Instance { get; private set; }
+
         public class LoadSceneTask : DependenceTask
         {
             AsyncOperation mLoading;
             float mRatio;
             float mTimeScale;
             string mSceneName;
+            float mSuspectWeight;
 
-            public LoadSceneTask(string sceneName, float suspectTime = 2f)
+            public LoadSceneTask(string sceneName, float suspectTime = 2f, float suspectWeight = 0.5f)
             {
                 mSceneName = sceneName;
                 mTimeScale = suspectTime > 0 ? (1 / suspectTime) : 0;
+                mSuspectWeight = Mathf.Clamp01(suspectWeight);
             }
-            
+
+            public override void Start()
+            {
+                base.Start();
+                mRatio = 0;
+            }
+
             protected override void OnTaskStart()
             {
                 SceneHelper inst = Instance;
@@ -30,18 +40,16 @@ namespace Devil.GamePlay.Assistant
 
             protected override float TickAndGetTaskProgress(float deltaTime)
             {
-                float progress;
+                bool isDone = mLoading == null ? true : mLoading.isDone;
+                float progress = mLoading == null ? 1 : mLoading.progress;
                 if (mTimeScale > 0)
                 {
-                    mRatio = Mathf.Min(mRatio + deltaTime * mTimeScale);
-                    progress = mLoading == null ? mRatio : Mathf.Min(mRatio, mLoading.progress);
-                }
-                else
-                {
-                    progress = mLoading == null ? 1 : mLoading.progress;
+                    float max = isDone ? 1 : Mathf.Max(0.9f, progress);
+                    mRatio = Mathf.Min(mRatio + deltaTime * mTimeScale, max);
+                    progress = mRatio * mSuspectWeight + progress * (1 - mSuspectWeight);
                 }
                 SceneHelper inst = Instance;
-                if (inst != null && mLoading != null && mLoading.isDone)
+                if (inst != null && isDone)
                     inst.NotifySceneLoaded(mSceneName);
                 return progress;
             }
@@ -78,8 +86,11 @@ namespace Devil.GamePlay.Assistant
             }
         }
         
-        [Range(0,50f)]
-        public float m_WaitForTimeWeight = 10; 
+        [Range(0, 1)]
+        public float m_WaitForTimeWeight = 0.5f;
+
+        [SerializeField]
+        private bool m_DontDestroyOnLoad = true;
 
         AsyncLoader mLoader;
         bool mLoading;
@@ -98,16 +109,24 @@ namespace Devil.GamePlay.Assistant
             get { return SceneManager.GetActiveScene(); }
         }
 
-        protected override void Awake()
+        private void Awake()
         {
-            base.Awake();
-            mLoader = new AsyncLoader();
+            if (Instance == null)
+            {
+                Instance = this;
+                mLoader = new AsyncLoader();
+                if (m_DontDestroyOnLoad)
+                    DontDestroyOnLoad(gameObject);
+            }
         }
 
-        protected override void OnDestroy()
+        private void OnDestroy()
         {
-            mLoader.Reset();
-            base.OnDestroy();
+            if (Instance == this)
+            {
+                Instance = null;
+                mLoader.Reset();
+            }
         }
 
         public void NotifySceneWillLoad(string scene)
@@ -158,20 +177,12 @@ namespace Devil.GamePlay.Assistant
                     mLoadEndCallback += complateCallback;
                 return;
             }
-//            Scene scene = SceneManager.GetSceneByName(sceneName);
-//            if (scene.isLoaded)
-//            {
-//#if UNITY_EDITOR
-//                Debug.LogWarning(string.Format("Scene:{0} was loaded, don't need to load it agin.", scene.name));
-//#endif
-//                return;
-//            }
             mLoadingScene = sceneName;
             mLoader.Reset();
             mLoadEndCallback = complateCallback;
             mLoading = true;
             OnLoadBegin(mLoadingScene);
-            LoadSceneTask task = new LoadSceneTask(mLoadingScene, displayTime);
+            LoadSceneTask task = new LoadSceneTask(mLoadingScene, displayTime, m_WaitForTimeWeight);
             task.PresetTask = new WaitTask(() => !PanelManager.HasAnyPanelClosing);
             SceneTask = task;
             mLoader.AddTask(SceneTask);

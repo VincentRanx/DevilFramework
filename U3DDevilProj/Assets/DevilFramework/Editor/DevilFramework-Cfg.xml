@@ -34,6 +34,9 @@
       <color>#8e578d</color>
     </Condition>
 
+    <GameManager>
+      <color>#8e00ae</color>
+    </GameManager>
   </behaviour-category>
 
 </configuration>

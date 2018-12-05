@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -22,7 +20,7 @@ namespace Devil.GamePlay
         FullScreen = 8, // 全屏
     }
 
-    public interface IPanelMessager
+    public interface IPanelIntent
     {
         /// <summary>
         /// 请求id
@@ -33,7 +31,7 @@ namespace Devil.GamePlay
         /// 请求数据
         /// </summary>
         object RequestData { get; }
-        
+
         /// <summary>
         /// 请求结果处理
         /// </summary>
@@ -55,7 +53,7 @@ namespace Devil.GamePlay
         /// </summary>
         /// <param name="request"></param>
         /// <param name="arg"></param>
-        bool OpenPanelForResult(IPanelMessager sender);
+        bool OpenPanelForResult(IPanelIntent sender);
 
         /// <summary>
         /// 关闭窗口回调
@@ -115,13 +113,20 @@ namespace Devil.GamePlay
         public int m_CustomIdentifier;
 
         public EPanelMode m_Mode;
+        public Selectable m_DefaultSelectable;
+        public bool m_AutoSelectDefault;
 
         [SerializeField]
         int m_Group;
         public int Group { get { return m_Group; } }
 
+        [SerializeField]
+        protected bool m_ResponseCancelButton = true;
+
         [MaskField]
-        public EPanelProperty m_Properties = EPanelProperty.SingleInstance | EPanelProperty.AutoCloseOnLoadScene;
+        [SerializeField]
+        EPanelProperty m_Properties = EPanelProperty.SingleInstance | EPanelProperty.AutoCloseOnLoadScene;
+        public EPanelProperty Properties { get { return m_Properties; } set { m_Properties = value; } }
 
         [Range(0, 1)]
         [SerializeField]
@@ -137,6 +142,15 @@ namespace Devil.GamePlay
                 mRaycaster = GetComponent<GraphicRaycaster>();
             }
             return mCanvas;
+        }
+
+        public Camera GetRenderCamera()
+        {
+            var can = GetCanvas();
+            if (can == null || can.renderMode == RenderMode.ScreenSpaceOverlay)
+                return null;
+            else
+                return can.worldCamera;
         }
 
         GraphicRaycaster mRaycaster;
@@ -161,8 +175,7 @@ namespace Devil.GamePlay
                     ray.enabled = value;
             }
         }
-        // 重置活动状态
-        protected bool mInteractActiveSetter;
+
         System.Action mOpenedHandler;
         System.Action mFocusHandler;
         System.Action mLostFocusHandler;
@@ -170,8 +183,8 @@ namespace Devil.GamePlay
         System.Action mLostAssetHandler;
         bool mGetHandles;
 
-        public IPanelMessager PresentMsg { get; private set; }
-        
+        public IPanelIntent PresentMsg { get; protected set; }
+
         public bool HasAnyProperty(EPanelProperty prorety)
         {
             return (m_Properties & prorety) != 0;
@@ -182,37 +195,44 @@ namespace Devil.GamePlay
             return (m_Properties & property) == property;
         }
 
-        void GetEventHandlers()
+        protected void GetEventHandlers()
         {
             if (mGetHandles)
                 return;
             mGetHandles = true;
             var handlers = GetComponents<IPanelEventHandler>();
             int len = handlers == null ? 0 : handlers.Length;
-            for(int i = 0; i < len; i++)
+            for (int i = 0; i < len; i++)
             {
                 var hand = handlers[i];
-                if(hand is IPanelOpenHandler)
+                if (hand is IPanelOpenHandler)
                 {
                     IPanelOpenHandler oh = (IPanelOpenHandler)hand;
                     mOpenedHandler += oh.OnPanelOpened;
                 }
-                if(hand is IPanelCloseHandler)
+                if (hand is IPanelCloseHandler)
                 {
                     IPanelCloseHandler ch = (IPanelCloseHandler)hand;
                     mClosedHandler += ch.OnPanelClosed;
                 }
-                if(hand is IPanelFocusHandler)
+                if (hand is IPanelFocusHandler)
                 {
                     IPanelFocusHandler fh = (IPanelFocusHandler)hand;
                     mFocusHandler += fh.OnPanelGetFocus;
                     mLostFocusHandler += fh.OnPanelLostFocus;
                 }
-                if(hand is IPanelLostAssetHandler)
+                if (hand is IPanelLostAssetHandler)
                 {
                     mLostAssetHandler += ((IPanelLostAssetHandler)hand).OnPanelLostAsset;
                 }
             }
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            if (m_DefaultSelectable == null)
+                m_DefaultSelectable = GetComponentInChildren<Selectable>();
         }
 
         /// <summary>
@@ -222,8 +242,7 @@ namespace Devil.GamePlay
         public virtual bool OpenPanel()
         {
             GetEventHandlers();
-            if (!mInteractActiveSetter)
-                PanelManager.SetPanelActive(this, true);
+            PanelManager.SetPanelActive(this, true);
             return true;
         }
 
@@ -232,12 +251,11 @@ namespace Devil.GamePlay
         /// </summary>
         /// <param name="request"></param>
         /// <param name="arg"></param>
-        public virtual bool OpenPanelForResult(IPanelMessager sender)
+        public virtual bool OpenPanelForResult(IPanelIntent sender)
         {
             GetEventHandlers();
             PresentMsg = sender;
-            if (!mInteractActiveSetter)
-                PanelManager.SetPanelActive(this, true);
+            PanelManager.SetPanelActive(this, true);
             return true;
         }
 
@@ -247,8 +265,6 @@ namespace Devil.GamePlay
         /// <returns>当可以关闭时，返回 true，否则返回 false</returns>
         public virtual bool ClosePanel()
         {
-            if (!mInteractActiveSetter)
-                PanelManager.SetPanelActive(this, false);
             return true;
         }
 
@@ -256,7 +272,7 @@ namespace Devil.GamePlay
         /// 窗口是否正在关闭
         /// </summary>
         public virtual bool IsClosing() { return false; }
-        
+
         public virtual void OnPanelOpened()
         {
             if (mOpenedHandler != null)
@@ -275,9 +291,10 @@ namespace Devil.GamePlay
             if (mLostFocusHandler != null)
                 mLostFocusHandler();
         }
-        
+
         public virtual void OnPanelClosed()
         {
+            PanelManager.SetPanelActive(this, false);
             if (mClosedHandler != null)
                 mClosedHandler();
         }
@@ -295,6 +312,34 @@ namespace Devil.GamePlay
         /// 截获返回按键操作
         /// </summary>
         /// <returns></returns>
-        public virtual bool InteractEscape() { return true; }
+        public virtual bool InteractCancel()
+        {
+            if (m_ResponseCancelButton)
+                PanelManager.ClosePanel(this);
+            return true;
+        }
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            if(m_DefaultSelectable == null)
+            {
+                m_DefaultSelectable = GetComponentInChildren<Selectable>();
+            }
+        }
+
+        [ContextMenu("Bind Targets")]
+        protected void BindTargets()
+        {
+            Utility.ObjectBinder.BindPropertyiesByName(this);
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+        [ContextMenu("Rename Targets' Name")]
+        protected void RenameTargets()
+        {
+            Utility.ObjectBinder.RenameBindableProperties(this);
+        }
+#endif
     }
 }

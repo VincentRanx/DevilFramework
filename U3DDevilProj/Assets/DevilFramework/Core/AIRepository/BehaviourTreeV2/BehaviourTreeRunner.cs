@@ -1,69 +1,252 @@
-﻿using System.Collections.Generic;
+﻿using Devil.Utility;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Devil.AI
 {
     public class BehaviourTreeRunner : MonoBehaviour
     {
+        public const int MAX_SUB_TREE_DEEP = 4;
 
+        public enum EResetMode
+        {
+            NeverReset,
+            ResetWhenLoopEnd,
+            AlwaysReset,
+        }
+
+        // ai binder
+        public class AssetBinder : System.IDisposable
+        {
+            EResetMode mLoopMode;
+            BehaviourTreeAsset mSource;
+            BehaviourTreeAsset mRuntime;
+            BehaviourTreeRunner mRunner;
+            BehaviourLooper mLooper;
+            AssetBinder mParent;
+            List<AssetBinder> mSubAssets;
+            bool mServiceStarted;
+            int mAssetDeep; // 树深度
+            string mName;
+            string mAssetName;
+            public string Name
+            {
+                get
+                {
+                    if (!string.IsNullOrEmpty(mName))
+                        return mName;
+                    if (!string.IsNullOrEmpty(mAssetName))
+                        return mAssetName;
+                    return "BehaviourAsset Binder";
+                }
+                set
+                {
+                    mName = value;
+                }
+            }
+            public BehaviourTreeRunner Runner { get { return mRunner; } }
+            public BehaviourLooper Looper { get { return mLooper; } }
+            public BehaviourTreeAsset RuntimeTree { get { return mRuntime; } }
+            public BehaviourTreeAsset Source { get { return mSource; } }
+            public AssetBinder Parent { get { return mParent; } }
+            public int DeepAsSubTree { get { return mAssetDeep; } }
+            public int SubAssetCount { get { return mSubAssets.Count; } }
+            public AssetBinder SubAssetAt(int index)
+            {
+                return mSubAssets[index];
+            }
+
+            public static AssetBinder GetBinder(BehaviourTreeRunner runner)
+            {
+                if(runner == null)
+                    return null;
+                if(runner.mAssetBinder == null)
+                {
+                    var asset = new AssetBinder(runner);
+                    runner.mAssetBinder = asset;
+                }
+                return runner.mAssetBinder;
+            }
+            
+            public static AssetBinder NewSubBinder(AssetBinder binder)
+            {
+                if (binder == null || binder.mRunner == null)
+                    return null;
+                if(binder.DeepAsSubTree >= MAX_SUB_TREE_DEEP)
+                {
+                    var error = string.Format("在创建子行为树是超过了支持的最大深度值：{0}", MAX_SUB_TREE_DEEP);
+#if UNITY_EDITOR
+                    UnityEditor.EditorUtility.DisplayDialog("Error", error, "OK");
+#endif
+                    RTLog.LogError(LogCat.AI, error);
+                    return null;
+                }
+                var subbind = new AssetBinder(binder);
+                subbind.mParent = binder;
+                binder.mSubAssets.Add(subbind);
+                return subbind;
+            }
+
+            private AssetBinder(BehaviourTreeRunner runner)
+            {
+                mRunner = runner;
+                mAssetDeep = 1;
+                mLooper = new BehaviourLooper(runner);
+                mSubAssets = new List<AssetBinder>();
+            }
+
+            private AssetBinder(AssetBinder parent)
+            {
+                mRunner = parent.mRunner;
+                mAssetDeep = parent.mAssetDeep + 1;
+                mLooper = new BehaviourLooper(mRunner);
+                mSubAssets = new List<AssetBinder>();
+            }
+
+            public void BindAsset(BehaviourTreeAsset asset, EResetMode loopMode)
+            {
+                if (mRunner == null)
+                    return;
+                if (asset == null)
+                {
+                    mAssetName = null;
+                    Cleanup();
+                    return;
+                }
+                mLoopMode = loopMode;
+                if (asset == mSource)
+                    return;
+                Cleanup();
+                mAssetName = asset.name;
+                mSource = asset;
+                mRuntime = asset.Clone();
+                mRuntime.Prepare(this);
+                mLooper.SetBehaviuor(mRuntime.Root);
+            }
+
+            public void UpdateService(float deltaTime)
+            {
+                if (!mServiceStarted)
+                {
+                    mServiceStarted = true;
+                    for (int i = 0; i < mRuntime.Services.Count; i++)
+                    {
+                        mRuntime.Services[i].OnStart();
+                    }
+                }
+                for (int i = 0; i < mRuntime.Services.Count; i++)
+                {
+                    mRuntime.Services[i].OnUpdate(deltaTime);
+                }
+            }
+
+            public void UpdateLooper(float deltaTime)
+            {
+                if (mLoopMode != EResetMode.NeverReset && mLooper.IsComplate)
+                {
+                    mLooper.Reset();
+                }
+                mLooper.Update(deltaTime);
+            }
+
+            void Cleanup()
+            {
+                if (mRuntime != null)
+                {
+                    if (mServiceStarted)
+                    {
+                        mServiceStarted = false;
+                        for (int i = mRuntime.Services.Count - 1; i >= 0; i--)
+                        {
+                            mRuntime.Services[i].OnStop();
+                        }
+                    }
+                    mRuntime.Services.Clear();
+                    BehaviourTreeAsset.DestroyAsset(mRuntime);
+                    mRuntime = null;
+                }
+            }
+
+            public void Dispose()
+            {
+                Cleanup();
+                var tmp = mSubAssets;
+                mSubAssets = null;
+                for (int i = 0; i < tmp.Count; i++)
+                {
+                    tmp[i].mParent = null;
+                }
+                if (mParent != null && mParent.mSubAssets != null)
+                {
+                    mParent.mSubAssets.Remove(this);
+                    mParent = null;
+                }
+                if (mLooper != null)
+                {
+                    mLooper.Dispose();
+                }
+                mLooper = null;
+                mRunner = null;
+            }
+        }
+        [SerializeField]
+        EResetMode m_LoopMode = EResetMode.ResetWhenLoopEnd;
         [SerializeField]
         BehaviourTreeAsset m_BehaviourAsset = null;
         public BehaviourTreeAsset SourceAsset { get { return m_BehaviourAsset; } }
 
         [SerializeField]
         BlackboardAsset m_Blackboard;
-
-        //[SerializeField]
-        //[Range(0.01f, 1f)]
-        //float m_ServiceInterval = 0.1f;
-
-        LinkedList<BTServiceBase> mServices = new LinkedList<BTServiceBase>();
-        LinkedList<BTServiceBase> mStopServices = new LinkedList<BTServiceBase>();
-        BehaviourLooper mLooper;
-        private BTNodeBase mRootNode;
-        BehaviourTreeAsset mAsset;
+        public BlackboardAsset BlackboardAsset { get { return m_Blackboard; } }
+        
         public BTBlackboard Blackboard { get; private set; }
-        public BehaviourTreeAsset BehaviourAsset { get { return mAsset ?? m_BehaviourAsset; } }
-        public float TaskTime { get { return mLooper.NodeRuntime; } }
+
         public float BehaviourTime { get; private set; }
 
-        public void StartService(BTServiceBase service)
+        AssetBinder mAssetBinder;
+        Stack<AssetBinder> mSearchStack = new Stack<AssetBinder>();
+
+        public AssetBinder GetBinder(BehaviourTreeAsset asset)
         {
-            if (service != null)
+            if (asset == null || mAssetBinder == null)
+                return null;
+            mSearchStack.Push(mAssetBinder);
+            while(mSearchStack.Count > 0)
             {
-                mServices.AddLast(service);
+                var bind = mSearchStack.Pop();
+                if (bind.Source == asset || bind.RuntimeTree == asset)
+                    return bind;
+                for(int i= 0; i < bind.SubAssetCount; i++)
+                {
+                    mSearchStack.Push(bind.SubAssetAt(i));
+                }
             }
+            return null;
         }
 
-        public void StopService(BTServiceBase service)
+        public void GetBinders(BehaviourTreeAsset asset, ICollection<AssetBinder> binders)
         {
-            if (service != null)
+            if (asset == null || mAssetBinder == null || binders == null)
+                return;
+            mSearchStack.Push(mAssetBinder);
+            while (mSearchStack.Count > 0)
             {
-                mStopServices.AddLast(service);
+                var bind = mSearchStack.Pop();
+                if (bind.Source == asset || bind.RuntimeTree == asset)
+                    binders.Add(bind);
+                for (int i = 0; i < bind.SubAssetCount; i++)
+                {
+                    mSearchStack.Push(bind.SubAssetAt(i));
+                }
             }
         }
 
         public void SetAsset(BehaviourTreeAsset behaviourAsset)
         {
-            if (behaviourAsset == mAsset)
-                return;
-            if(mAsset != null)
-            {
-                mAsset.ClearBehaviourTree(this, mRootNode);
-            }
-            mAsset = behaviourAsset;
-            if (mAsset != null)
-            {
-                mRootNode = mAsset.CreateBehaviourTree(this);
-                mLooper = new BehaviourLooper(mRootNode);
-            }
-            else
-            {
-                mRootNode = null;
-                mLooper = null;
-            }
+            var bind = AssetBinder.GetBinder(this);
+            bind.BindAsset(behaviourAsset, m_LoopMode);
         }
-
+        
         protected virtual void Awake()
         {
             if (m_Blackboard != null)
@@ -75,108 +258,41 @@ namespace Devil.AI
         protected virtual void Start()
         {
             SetAsset(m_BehaviourAsset);
-#if UNITY_EDITOR
-            OnMonoStart(this);
-#endif
-        }
-
-        void LoopService(float deltaTime)
-        {
-            LinkedListNode<BTServiceBase> serv = mServices.First;
-            while (serv != null)
-            {
-                serv.Value.OnServiceTick(this, deltaTime);
-                serv = serv.Next;
-            }
-        }
-
-        void CleanService()
-        {
-            var node = mStopServices.Last;
-            while(node != null)
-            {
-                mServices.Remove(node.Value);
-                node = node.Previous;
-            }
-            mStopServices.Clear();
-        }
-        
-        void LoopTask(float deltaTime)
-        {
-            if (mLooper.IsComplate)
-            {
-                mLooper.Reset();
-            }
-            mLooper.Update(this, deltaTime);
-            BehaviourTime += deltaTime;
         }
 
         protected virtual void Update()
         {
-            if (mLooper == null)
-                return;
-            LoopTask(Time.deltaTime);
-            LoopService(Time.unscaledDeltaTime);
-            CleanService();
-#if UNITY_EDITOR
-            OnBehaviourTreeFrame(this);
-#endif
+            if(mAssetBinder != null && mAssetBinder.RuntimeTree != null)
+            {
+                var t = Time.deltaTime;
+                mAssetBinder.UpdateLooper(t);
+                mAssetBinder.UpdateService(t);
+                BehaviourTime += t;
+            }
         }
 
         protected virtual void OnDestroy()
         {
-            if(mAsset != null)
+            if(mAssetBinder != null)
             {
-                mAsset.ClearBehaviourTree(this, mRootNode);
-                mAsset = null;
-                mRootNode = null;
+                mAssetBinder.Dispose();
+                mAssetBinder = null;
             }
-        }
-
-        public BTNodeBase FindRuntimeNode(int nodeId)
-        {
-            return FindNodeRecursize(nodeId, mRootNode);
-        }
-
-        private BTNodeBase FindNodeRecursize(int nodeId, BTNodeBase root)
-        {
-            if (root == null || root.NodeId == nodeId)
-                return root;
-            for (int i = 0; i < root.ChildLength; i++)
-            {
-                BTNodeBase node = FindNodeRecursize(nodeId, root.ChildAt(i));
-                if (node != null)
-                    return node;
-            }
-            return null;
-        }
-
-        public bool IsServiceActive(int servId)
-        {
-            LinkedListNode<BTServiceBase> serv = mServices.First;
-            while (serv != null)
-            {
-                if (serv.Value.Id == servId)
-                    return true;
-                serv = serv.Next;
-            }
-            return false;
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if(Application.isPlaying && mAsset != m_BehaviourAsset && mAsset != null)
+            if (Application.isPlaying)
             {
-                SetAsset(m_BehaviourAsset);
+                if (m_BehaviourAsset != null  && mAssetBinder != null)
+                {
+                    mAssetBinder.BindAsset(m_BehaviourAsset, m_LoopMode);
+                }
             }
         }
-        public event System.Action<BehaviourTreeRunner> OnMonoStart = (x) => { };
-        public event System.Action<BehaviourTreeRunner> OnBehaviourTreeFrame = (x) => { };
-        public BTNodeBase RootNode { get { return mRootNode; } }
-        public BTNodeBase RuntimeNode { get { return mLooper.RuntimeNode; } }
+     
 #endif
-
     }
 
 }

@@ -1,68 +1,38 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Devil.AI
 {
-    [BTComposite(Title = "序列", Detail = "SEQUENCE", IconPath = "Assets/DevilFramework/Editor/Icons/sequence.png")]
-    public class BTSequence : BTNodeBase
+    [BTComposite(Title = "序列 (SEQUENCE)",Detail = "依次执行子节点，\n直到任何一个任务执行失败", IconPath = "Assets/DevilFramework/Gizmos/AI Icons/sequence.png", HotKey = KeyCode.S)]
+    public class BTSequence : BTControllerAsset
     {
-        int mVisitIndex;
-        bool mAbort;
+        int mIndex;
 
-        public BTSequence(int id) : base(id)
+        public override IBTNode GetNextChildTask()
         {
-
+            return mChildren[mIndex];
         }
 
-        public override BTNodeBase ChildForVisit
+        public override EBTState OnAbort()
         {
-            get
-            {
-                if (!mAbort && State == EBTTaskState.running && mVisitIndex < ChildLength)
-                {
-                    return ChildAt(mVisitIndex);
-                }
-                else
-                {
-                    return null;
-                }
-            }
+            return EBTState.failed;
         }
 
-        protected override void OnReturnWithState(BehaviourTreeRunner btree, EBTTaskState state)
+        public override EBTState OnReturn(EBTState state)
         {
-            mVisitIndex++;
-            if (mVisitIndex >= ChildLength)
-                this.State = state;
-            else if (!IsOnCondition(btree))
-                this.State = EBTTaskState.faild;
-        }
-
-        protected override void OnStartLoop(BehaviourTreeRunner behaviourTree)
-        {
-            mVisitIndex = 0;
-            mAbort = false;
-            this.State = mVisitIndex < ChildLength ? EBTTaskState.running : EBTTaskState.success;
-        }
-
-        protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
-        {
-            if (mAbort)
-            {
-                State = EBTTaskState.faild;
-            }
+            if (state == EBTState.failed)
+                return EBTState.failed;
+            mIndex++;
+            if (mIndex < mChildren.Length)
+                return EBTState.running;
             else
-            {
-                mVisitIndex++;
-                if (mVisitIndex >= ChildLength)
-                    this.State = EBTTaskState.success;
-            }
+                return EBTState.success;
         }
 
-        protected override void OnAbort(BehaviourTreeRunner btree)
+        public override EBTState OnStart()
         {
-            mAbort = true;
+            mIndex = 0;
+            return mIndex < mChildren.Length ? EBTState.running : EBTState.success;
         }
+        
     }
 }

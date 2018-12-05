@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using System;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,100 +8,62 @@ namespace DevilEditor
 {
     public class GameSimulation
     {
-        public static string SceneBeforePlay { get; private set; }
-        public static bool IsSimulating { get; private set; }
-        public static bool IsReadyForSimulation { get; private set; }
+        static bool IsSimulating;
+        static bool IsReadyForSimulation;
 
         [InitializeOnLoadMethod]
         private static void OnInstallize()
         {
             IsReadyForSimulation = true;
-            SceneBeforePlay = EditorSceneManager.GetActiveScene().path;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        [MenuItem("Devil Framework/Simulation/Play", true)]
+        [MenuItem("Devil Framework/Simulation Play", true)]
         private static bool CanSimulatePlay()
         {
             return IsReadyForSimulation && !IsSimulating && !EditorApplication.isPlaying;
         }
 
-        [MenuItem("Devil Framework/Simulation/Play")]
+        [MenuItem("Devil Framework/Simulation Play")]
         public static void SimulatePlay()
         {
             if (IsSimulating || EditorApplication.isPlaying)
                 return;
             EditorBuildSettingsScene[] scene = EditorBuildSettings.scenes;
-            if(scene == null || scene.Length == 0)
+            if (scene == null || scene.Length == 0)
             {
                 EditorUtility.DisplayDialog("Simulation Error", "无法模拟运行，请确保已经将场景加入到打包列表", "确定");
                 return;
             }
             IsSimulating = true;
+            EditorPrefs.SetBool("simulate", true);
             IsReadyForSimulation = false;
-            SceneBeforePlay = EditorSceneManager.GetActiveScene().path;
+            var current = EditorSceneManager.GetActiveScene().path;
             Debug.Log("Simulate Scene " + scene[0].path);
-            if(scene[0].path == SceneBeforePlay)
-            {
-                EditorApplication.isPlaying = true;
-                EditorApplication.update += Update;
-            }
-            else
-            {
-                EditorSceneManager.sceneOpened += OnOpenSceneAndPlay;
-                EditorSceneManager.OpenScene(scene[0].path);
-            }
-        }
-
-        [MenuItem("Devil Framework/Simulation/Stop", true)]
-        public static bool CanStopPlay()
-        {
-            return EditorApplication.isPlaying;
-        }
-
-        [MenuItem("Devil Framework/Simulation/Stop")]
-        public static void StopPlay()
-        {
-            if (EditorApplication.isPlaying)
-                EditorApplication.isPlaying = false;
-        }
-
-        static void Update()
-        {
-            if (!EditorApplication.isPlaying)
-            {
-                EditorApplication.update -= Update;
-                OnStopSimulation();
-            }
-        }
-
-        static void OnOpenSceneAndPlay(Scene scene, OpenSceneMode mode)
-        {
             EditorApplication.isPlaying = true;
-            EditorApplication.update += Update;
-            EditorSceneManager.sceneOpened -= OnOpenSceneAndPlay;
         }
-
-        static void OnOpenSceneAndStopPlay(Scene scene, OpenSceneMode mode)
+        
+        private static void OnPlayModeStateChanged(PlayModeStateChange obj)
         {
-            EditorSceneManager.sceneOpened -= OnOpenSceneAndStopPlay;
-            IsReadyForSimulation = true;
-        }
-
-        static void OnStopSimulation()
-        {
-            if (IsSimulating)
+            if (obj == PlayModeStateChange.EnteredPlayMode)
             {
-                IsSimulating = false;
-                if (EditorSceneManager.GetActiveScene().path != SceneBeforePlay)
+                if (EditorPrefs.GetBool("simulate"))
                 {
-                    EditorSceneManager.sceneOpened += OnOpenSceneAndStopPlay;
-                    EditorSceneManager.OpenScene(SceneBeforePlay);
-                }
-                else
-                {
-                    IsReadyForSimulation = true;
+                    IsSimulating = true;
+                    var current = SceneManager.GetActiveScene();
+                    var scene = EditorBuildSettings.scenes[0];
+                    if (scene.path != current.path)
+                    {
+                        SceneManager.LoadScene(0);
+                    }
                 }
             }
+            else if (obj == PlayModeStateChange.EnteredEditMode)
+            {
+                EditorPrefs.SetBool("simulate", false);
+                IsSimulating = false;
+            }
         }
+
     }
 }

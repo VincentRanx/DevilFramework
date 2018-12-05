@@ -10,7 +10,12 @@ namespace Devil
 {
     public class RichText : Text
     {
-        static ObjectBuffer<EmojiButton> btnPool = new ObjectBuffer<EmojiButton>(32, () => new EmojiButton());
+        static readonly ObjectPool<EmojiButton> btnPool = new ObjectPool<EmojiButton>(32, () => new EmojiButton());
+        static readonly string prop_rotate = "rotate=";
+        static readonly string prop_dx = "dx=";
+        static readonly string prop_dy = "dy=";
+        static readonly string prop_click = "click=";
+        static readonly string emojiPattern = @"<quad=[a-zA-Z0-9_]+[ a-z0-9\-=]*( /)?>";
 
         public struct Emoji
         {
@@ -58,7 +63,6 @@ namespace Devil
 
         Material mMatInst;
         readonly UIVertex[] m_TempVerts = new UIVertex[4];
-        readonly string mEmojiPattern = @"<quad=[a-zA-Z0-9_]+[ a-z0-9\-=]*( /)?>";
         List<string> mEmojiProperties = new List<string>();
 
         List<EmojiButton> mEmojiBtns = new List<EmojiButton>();
@@ -73,7 +77,7 @@ namespace Devil
             for (int i = 0; i < mEmojiBtns.Count; i++)
             {
                 var btn = mEmojiBtns[i];
-                btnPool.SaveBuffer(btn);
+                btnPool.Add(btn);
             }
             mEmojiBtns.Clear();
         }
@@ -107,7 +111,7 @@ namespace Devil
         bool ParseEmoji(Match mat, out Emoji emoji)
         {
             mEmojiProperties.Clear();
-            if (!StringUtil.ParseArray(mat.Value, mEmojiProperties, '<', '>', ' ') || mEmojiProperties.Count < 1)
+            if (!StringUtil.ParseArray(mat.Value, mEmojiProperties, ' ', '<', '>') || mEmojiProperties.Count < 1)
             {
                 emoji = default(Emoji);
                 return false;
@@ -133,13 +137,13 @@ namespace Devil
                 var pro = mEmojiProperties[i];
                 if (string.IsNullOrEmpty(pro))
                     continue;
-                if (pro.StartsWith("rotate=") && float.TryParse(pro.Substring(7), out f))
+                if (pro.StartsWith(prop_rotate) && float.TryParse(pro.Substring(7), out f))
                     tmp.rotate = f;
-                else if (pro.StartsWith("dx=") && float.TryParse(pro.Substring(3), out f))
+                else if (pro.StartsWith(prop_dx) && float.TryParse(pro.Substring(3), out f))
                     offset.x = f;
-                else if (pro.StartsWith("dy=") && float.TryParse(pro.Substring(3), out f))
+                else if (pro.StartsWith(prop_dy) && float.TryParse(pro.Substring(3), out f))
                     offset.y = f;
-                else if (pro.StartsWith("click=") && int.TryParse(pro.Substring(6), out n))
+                else if (pro.StartsWith(prop_click) && int.TryParse(pro.Substring(6), out n))
                     tmp.btnId = n;
             }
             tmp.offset = offset;
@@ -156,7 +160,7 @@ namespace Devil
             if (!supportRichText || !m_SupportEmoji || m_Atlas == null)
                 return;
             mTexId = Shader.PropertyToID("_EmojiTex");
-            MatchCollection matchs = Regex.Matches(m_Text, mEmojiPattern);
+            MatchCollection matchs = Regex.Matches(m_Text, emojiPattern);
             for (int i = 0; i < matchs.Count; i++)
             {
                 Match mat = matchs[i];
@@ -165,7 +169,7 @@ namespace Devil
                     continue;
                 if (emoji.btnId != 0)
                 {
-                    var btn = btnPool.GetAnyTarget();
+                    var btn = btnPool.Get();
                     btn.rect = default(Rect);
                     btn.emojiIndex = mEmojies.Count;
                     btn.clickId = emoji.btnId;
@@ -230,7 +234,7 @@ namespace Devil
             if (m_Material == null)
             {
                 if (mMatInst == null)
-                    mMatInst = new Material(Shader.Find("DevilTeam/EmojiFont"));
+                    mMatInst = new Material(Resources.Load<Shader>("Shaders/UI-EmojiFont"));// Shader.Find("DevilTeam/EmojiFont"));
                 m_Material = mMatInst;
             }
         }

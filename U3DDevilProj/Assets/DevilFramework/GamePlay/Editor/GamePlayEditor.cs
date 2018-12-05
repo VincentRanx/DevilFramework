@@ -14,7 +14,12 @@ namespace DevilEditor
         public static void CreateUIRoot()
         {
             int uilayer = LayerMask.NameToLayer("UI");
-            PanelManager mgr = PanelManager.GetOrNewInstance();
+            PanelManager mgr = PanelManager.Instance;
+            if(mgr == null)
+            {
+                var go = new GameObject();
+                mgr = go.AddComponent<PanelManager>();
+            }
             mgr.gameObject.layer = uilayer;
             mgr.gameObject.name = "PanelManager";
             ResetTransform(mgr.transform);

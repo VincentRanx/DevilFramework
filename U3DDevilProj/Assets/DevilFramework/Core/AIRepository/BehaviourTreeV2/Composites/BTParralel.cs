@@ -1,100 +1,88 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using UnityEngine;
 
 namespace Devil.AI
 {
-    [BTComposite(Title = "并行", Detail = "PARRALEL", IconPath = "Assets/DevilFramework/Editor/Icons/parralel.png")]
-    public class BTParralel: BTNodeBase
+    [BTComposite(Title = "并行任务 (P)", Detail = "同时执行子任务，并且选择\n第一个任务作为任务结果", color = "#8e4c06",
+        HotKey = KeyCode.P, IconPath = "Assets/DevilFramework/Gizmos/AI Icons/parralel.png")]
+    public class BTParralel : BTTaskAsset
     {
-        [BTVariable(Name = "mainTaskIndex", DefaultVallue = "0")]
-        int mMainTaskIndex;
+        public BehaviourTreeRunner.EResetMode m_LoopMode = BehaviourTreeRunner.EResetMode.ResetWhenLoopEnd;
         BehaviourLooper[] mLoopers;
-        BehaviourLooper mMainLooper;
 
-        public BTParralel(int id) : base(id)
-        {
-        }
+        public override bool EnableChild { get { return true; } }
 
-        public override BTNodeBase ChildForVisit
+        public override void OnPrepare(BehaviourTreeRunner.AssetBinder binder, BTNode node)
         {
-            get
+            base.OnPrepare(binder, node);
+            mLoopers = new BehaviourLooper[node.ChildrenCount];
+            for (int i = 0; i < mLoopers.Length; i++)
             {
-                return null;
+                mLoopers[i] = binder.Looper.CreateSubLooper();
+                mLoopers[i].SetBehaviuor(node.ChildAt(i).Asset as IBTNode);
             }
         }
 
-        public override void InitData(BehaviourTreeRunner btree, string jsonData)
+        public override EBTState OnAbort()
         {
-            JObject obj = JsonConvert.DeserializeObject<JObject>(jsonData);
-            mMainTaskIndex = obj.Value<int>("mainTaskIndex");
-        }
-
-        public override void InitDecoratorSize(int conditionLen, int childLen, int serviceLen)
-        {
-            base.InitDecoratorSize(conditionLen, childLen, serviceLen);
-            mLoopers = new BehaviourLooper[childLen];
-        }
-
-        public override void SetChild(int index, BTNodeBase node)
-        {
-            base.SetChild(index, node);
-            if(node != null)
-                mLoopers[index] = new BehaviourLooper(node);
-        }
-
-        //public override void Reset()
-        //{
-        //    base.Reset();
-        //    for (int i = 0; i < mLoopers.Length; i++)
-        //    {
-        //        mLoopers[i].Reset();
-        //    }
-        //}
-
-        protected override void OnReturnWithState(BehaviourTreeRunner btree, EBTTaskState state)
-        {
-
-        }
-
-        protected override void OnStartLoop(BehaviourTreeRunner behaviourTree)
-        {
-            State = ChildLength > 0 ? EBTTaskState.running : EBTTaskState.success;
+            if (mLoopers.Length == 0)
+                return EBTState.failed;
+            //if (m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
+            //{
             for (int i = 0; i < mLoopers.Length; i++)
             {
-                if (mLoopers[i] != null)
+                if (mLoopers[i].State == EBTState.running)
+                    mLoopers[i].Abort();
+            }
+            //}
+            return mLoopers[0].State;
+        }
+
+        public override EBTState OnStart()
+        {
+            if (mLoopers.Length == 0)
+                return EBTState.failed;
+            if (m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
+            {
+                for (int i = 0; i < mLoopers.Length; i++)
+                {
                     mLoopers[i].Reset();
+                }
             }
-            if (mMainTaskIndex < mLoopers.Length && mMainTaskIndex >= 0)
-                mMainLooper = mLoopers[mMainTaskIndex];
+            return EBTState.running;
         }
 
-        protected override void OnTick(BehaviourTreeRunner behaviourTree, float deltaTime)
+        public override void OnStop()
         {
-            int num = 0;
-            for(int i = 0; i < mLoopers.Length; i++)
+            if (m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
             {
-                if (mLoopers[i] == null || mLoopers[i].IsComplate)
-                    continue;
-                mLoopers[i].Update(behaviourTree, deltaTime);
-                num++;
-            }
-            if (mMainLooper != null)
-            {
-                State = mMainLooper.State;
-            }
-            else
-            {
-                State = (num == 0) ? EBTTaskState.success : EBTTaskState.running;
+                for (int i = 1; i < mLoopers.Length; i++)
+                {
+                    if (mLoopers[i].State == EBTState.running)
+                        mLoopers[i].Abort();
+                }
             }
         }
 
-        protected override void OnAbort(BehaviourTreeRunner btree)
+        public override EBTState OnUpdate(float deltaTime)
         {
             for (int i = 0; i < mLoopers.Length; i++)
             {
-                if (mLoopers[i] == null || mLoopers[i].IsComplate)
-                    continue;
-                mLoopers[i].Abort(btree);
+                if (m_LoopMode != BehaviourTreeRunner.EResetMode.NeverReset && mLoopers[i].IsComplate)
+                    mLoopers[i].Reset();
+                mLoopers[i].Update(deltaTime);
+            }
+            return mLoopers[0].State;
+        }
+
+        private void OnDisable()
+        {
+            if(mLoopers != null)
+            {
+                for(int i= 0; i < mLoopers.Length; i++)
+                {
+                    mLoopers[i].Dispose();
+                }
+                mLoopers = null;
             }
         }
     }

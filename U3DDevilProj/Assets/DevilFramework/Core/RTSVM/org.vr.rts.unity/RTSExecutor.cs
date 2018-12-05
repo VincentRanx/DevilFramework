@@ -48,8 +48,9 @@ namespace org.vr.rts.unity
         bool mYield;
         protected bool mExecUpdate;
 
-        public RTSExecutor(int maxthread = 20, int ticks = 100, IRTSLog logger = null)
+        public RTSExecutor(bool supportChinese,  int maxthread = 20, int ticks = 100, IRTSLog logger = null)
         {
+            m_SupportChinese = supportChinese;
             m_MaxThread = maxthread > 2 ? maxthread : 2;
             this.ticks = ticks > 100 ? ticks : 100;
 

@@ -1,8 +1,4 @@
-﻿using Devil.AI;
-using Devil.Utility;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -29,22 +25,7 @@ namespace DevilEditor
         {
             return Path.Combine(DataPath, relativePath);
         }
-
-//        static string libTemplate = 
-//@"%namespace%
-//public class BehaviourLib : BehaviourLibrary
-//{
-//    public BehaviourLib() : base()
-//    {
-
-//    }
-
-//    protected override void OnInit()
-//    {
-//%pattern%
-//    }
-//}";
-
+        
         public static Vector2 SizeOfTitle(string text)
         {
             titleContent.text = text ?? "";
@@ -106,10 +87,11 @@ namespace DevilEditor
                     Debug.Log("Devil Framework install at path: " + path);
                 }
             }
-            DevilCfg.LoadConfiguration();
-            BehaviourModuleManager.GetOrNewInstance().Load();
+            AIModules.LoadModules();
+            //BehaviourModuleManager.GetOrNewInstance().Load();
             IsInited = true;
-            //OnReloaded();
         }
+        
     }
+    
 }

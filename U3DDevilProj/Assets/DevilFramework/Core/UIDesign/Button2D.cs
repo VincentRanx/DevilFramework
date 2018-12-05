@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
-using System.Collections;
 using UnityEngine.UI;
 
 namespace Devil.UI
@@ -44,18 +43,14 @@ namespace Devil.UI
         private float m_DelayTime = 0f;//完成点击后的持续时间
 
         public Color m_NormalColor = Color.white;
-        private Sprite m_NormalSprite;
         public Color m_PressColor = Color.gray;
-        public Sprite m_PressSprite;
 
         public Color m_HoldColor = Color.gray;
-        public Sprite m_HoldSprite;
         public Color m_DisableColor = Color.gray;
-        public Sprite m_DisableSprite;
 
-        public ButtonEvent OnClick { get; set; }
-        public HoldEvent OnHoldBegin { get; set; }
-        public HoldEvent OnHoldEnd { get; set; }
+        public event ButtonEvent OnClick;
+        public event HoldEvent OnHoldBegin;
+        public event HoldEvent OnHoldEnd;
         [SerializeField]
         private Button.ButtonClickedEvent _onClick = new Button.ButtonClickedEvent();
         public Button.ButtonClickedEvent onClick
@@ -79,14 +74,15 @@ namespace Devil.UI
 
         private float mReleaseTime;//点击或者按住结束时间
         private bool mReleased;
-
+        readonly float mColorTransitionTime = 0.2f;
         #endregion
 
         #region Events Handler
 
         void ISubmitHandler.OnSubmit(BaseEventData eventData)
         {
-
+            mClickCount = 0;
+            OnBtnClick();
         }
 
         void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
@@ -168,14 +164,7 @@ namespace Devil.UI
             if (!m_TargetGraphic)
                 m_TargetGraphic = GetComponent<Graphic>();
             if (m_TargetGraphic)
-                m_TargetGraphic.color = m_NormalColor;
-            if(!(m_TargetGraphic is Image))
-            {
-                m_NormalSprite = null;
-                m_PressSprite = null;
-                m_HoldSprite = null;
-                m_DisableSprite = null;
-            }
+                m_TargetGraphic.CrossFadeColor(m_NormalColor, mColorTransitionTime, true, true);
         }
 #endif
         #endregion
@@ -186,10 +175,6 @@ namespace Devil.UI
             if (!m_TargetGraphic)
                 m_TargetGraphic = GetComponent<Graphic>();
             m_TargetImg = m_TargetGraphic as Image;
-            if (m_TargetImg)
-            {
-                m_NormalSprite = m_TargetImg.sprite;
-            }
         }
 
         protected virtual void Update()
@@ -200,6 +185,7 @@ namespace Devil.UI
                 if (t - mDownTime > m_HoldStartTime)
                 {
                     mHolding = true;
+                    m_TargetGraphic.CrossFadeColor(m_HoldColor, mColorTransitionTime, true, true);
                     NotifyHoldBegin();
                 }
             }
@@ -219,9 +205,7 @@ namespace Devil.UI
         protected virtual void OnEnable()
         {
             if (m_TargetGraphic)
-                m_TargetGraphic.color = m_NormalColor;
-            if (m_TargetImg && m_NormalSprite)
-                m_TargetImg.sprite = m_NormalSprite;
+                m_TargetGraphic.CrossFadeColor(m_NormalColor, mColorTransitionTime, true, true);
         }
 
         protected virtual void OnDisable()
@@ -229,9 +213,13 @@ namespace Devil.UI
             ((IPointerExitHandler)this).OnPointerExit(null);
             ReleaseSyncLock();
             if (m_TargetGraphic)
-                m_TargetGraphic.color = m_DisableColor;
-            if (m_TargetImg && m_DisableSprite)
-                m_TargetImg.sprite = m_DisableSprite;
+                m_TargetGraphic.CrossFadeColor(m_DisableColor, mColorTransitionTime, true, true);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            if (m_TargetGraphic)
+                m_TargetGraphic.CrossFadeColor(Color.white, 0, true, true);
         }
 
         private bool RefusedForSync { get { return m_SyncButton && sSyncId != 0 && GetInstanceID() != sSyncId; } }
@@ -259,49 +247,17 @@ namespace Devil.UI
 
         private void SetColorFromPressToHold()
         {
-            StopAllCoroutines();
             if (m_TargetGraphic)
             {
-                m_TargetGraphic.color = m_PressColor;
-                if (m_TargetImg && m_PressSprite)
-                    m_TargetImg.sprite = m_PressSprite;
-                if (m_HoldStartTime > 0)
-                {
-                    StartCoroutine(ChangeColor(m_HoldColor, m_HoldStartTime, m_HoldSprite));
-                }
+                m_TargetGraphic.CrossFadeColor(m_PressColor, m_HoldStartTime * 0.5f, true, true);
             }
         }
 
         private void SetNormalColor()
         {
-            StopAllCoroutines();
-            StartCoroutine(ChangeColor(enabled ? m_NormalColor : m_DisableColor, Mathf.Max(0.1f, m_DoubleClickTime * 0.6f), enabled ? m_NormalSprite : m_DisableSprite));
+            m_TargetGraphic.CrossFadeColor(enabled ? m_NormalColor : m_DisableColor, Mathf.Max(0.1f, m_DoubleClickTime * 0.6f), true, true);
         }
-
-        private IEnumerator ChangeColor(Color color, float delay, Sprite spr)
-        {
-            float t = 0;
-            if (!m_TargetGraphic)
-                yield break;
-            if (delay <= 0)
-            {
-                m_TargetGraphic.color = color;
-                yield break;
-            }
-            Color c0 = m_TargetGraphic.color;
-            while (t < delay)
-            {
-                yield return null;
-                if (!m_TargetGraphic)
-                    break;
-                t += Time.unscaledDeltaTime;
-                Color c = Color.Lerp(c0, color, Mathf.Clamp01(t / delay));
-                m_TargetGraphic.color = c;
-            }
-            if (m_TargetImg && spr)
-                m_TargetImg.sprite = spr;
-        }
-
+        
         #endregion
 
         #region Button Events
@@ -317,8 +273,6 @@ namespace Devil.UI
             }
             else
             {
-                //else
-                //    AudioManager.instance.PlayClickAudioSource();
                 NotifyClick(1);
             }
         }

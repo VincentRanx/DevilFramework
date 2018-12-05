@@ -50,6 +50,8 @@ namespace Devil.GamePlay.Assistant
             public string path { get; private set; }
             public ABAssetsUtil util { get; private set; }
             public AssetBundle assetBundle { get; private set; }
+            // 被引用的ab列表
+            private HashSet<int> references;
 
             public AbMeta(ABAssetsUtil util, string name, string path)
             {
@@ -57,6 +59,43 @@ namespace Devil.GamePlay.Assistant
                 Identify = HashAssetID(name);
                 this.name = name;
                 this.path = path;
+            }
+            
+            public void AddReferenceTo(int id)
+            {
+                if (references == null)
+                    references = new HashSet<int>();
+                references.Add(id);
+            }
+
+            public bool IsReferenceTo(int id)
+            {
+                return references != null && references.Contains(id);
+            }
+
+            public void Unload()
+            {
+                if(assetBundle != null)
+                {
+                    foreach(var meta in util.mAssets.Values)
+                    {
+                        if(meta.abData == this)
+                        {
+#if UNITY_EDITOR
+                            if(meta.assetInstence != null)
+                            {
+                                RTLog.LogFormat(LogCat.Asset, "Unload asset: \"{0}\"", meta.assetPath);
+                            }
+#endif
+                            meta.assetInstence = null;
+                        }
+                    }
+                    assetBundle.Unload(true);
+                    assetBundle = null;
+#if UNITY_EDITOR
+                    RTLog.LogFormat(LogCat.Asset, "Unload ab: \"{0}\"", name);
+#endif
+                }
             }
 
             public void SetAssetBundle(AssetBundle asset)
@@ -83,7 +122,7 @@ namespace Devil.GamePlay.Assistant
             public string assetPath { get; private set; }
             public bool useAb;
             public AbMeta abData;
-            public bool isBad; // 不可用
+            //public bool isBad; // 不可用
             public Object assetInstence; // 资源实例
 
             public AssetMeta(string assetpath)
@@ -93,20 +132,30 @@ namespace Devil.GamePlay.Assistant
                 this.Identify = HashAssetID(assetpath);
             }
         }
-
-        //private AssetSetting mABSetting;
+        
         // ab manifest
         private AssetBundleManifest mManifest;
         // 资源表
         private Dictionary<int, AssetMeta> mAssets;
         // ab 列表
-        AbMeta[] mAbs;
-        LinkedList<IAssetHandler> mHandlers;
+        private AbMeta[] mAbs;
+        private LinkedList<IAssetHandler> mHandlers;
+        public string[] AbList
+        {
+            get
+            {
+                var lst = new string[mAbs.Length];
+                for(int i = 0; i < lst.Length; i++)
+                {
+                    lst[i] = mAbs[i].name;
+                }
+                return lst;
+            }
+        }
 
         public ABAssetsUtil(AssetSetting set) : base()
         {
             mHandlers = new LinkedList<IAssetHandler>();
-            //mABSetting = set;
             mAssets = new Dictionary<int, AssetMeta>(set.initCapacity);
             var ab = AssetBundle.LoadFromFile(Path.Combine(set.abFolder, set.manifestName));
             if (ab != null)
@@ -125,6 +174,18 @@ namespace Devil.GamePlay.Assistant
                     mAbs[i] = new AbMeta(this, abs[i], Path.Combine(set.abFolder, abs[i]));
                 }
                 GlobalUtil.Sort(mAbs, (x, y) => x.Identify <= y.Identify ? -1 : 1);
+                for(int i = 0; i < mAbs.Length; i++)
+                {
+                    var dependencies = mManifest.GetAllDependencies(mAbs[i].name);
+                    if (dependencies == null || dependencies.Length == 0)
+                        continue;
+                    for (int j = 0; j < dependencies.Length; j++)
+                    {
+                        var meta = GlobalUtil.Binsearch(mAbs, HashAssetID(dependencies[j]));
+                        if (meta != null)
+                            meta.AddReferenceTo(mAbs[i].Identify);
+                    }
+                }
             }
         }
 
@@ -132,9 +193,9 @@ namespace Devil.GamePlay.Assistant
         int mLoaders;
         // 以完成的加载任务
         int mCompleteLoaders;
-        protected override bool IsDone { get { return mHandlers.Count == 0; } }
+        public override bool IsDone { get { return mHandlers.Count == 0; } }
 
-        protected override float Progress
+        public override float Progress
         {
             get
             {
@@ -192,6 +253,15 @@ namespace Devil.GamePlay.Assistant
             return null;
         }
 
+        private AssetMeta GetMeta(int id)
+        {
+            AssetMeta meta;
+            if (mAssets.TryGetValue(id, out meta))
+                return meta;
+            else
+                return null;
+        }
+
         private AssetMeta GetOrNewMeta(string asset)
         {
             var id = HashAssetID(asset);
@@ -204,11 +274,58 @@ namespace Devil.GamePlay.Assistant
             return meta;
         }
 
+        protected override void UnloadAsset(string assetPath)
+        {
+            var id = HashAssetID(assetPath);
+            var ab = GlobalUtil.Binsearch(mAbs, id);
+            if (ab != null)
+            {
+                ab.Unload();
+            }
+            else
+            {
+                var meta = GetMeta(id);
+                if(meta != null && meta.assetInstence != null)
+                {
+                    if (!meta.useAb)
+                        Resources.UnloadAsset(meta.assetInstence);
+                    meta.assetInstence = null;
+#if UNITY_EDITOR
+                    RTLog.LogFormat(LogCat.Asset, "Unload asset: \"{0}\"", assetPath);
+#endif
+                }
+            }
+        }
+
+        protected override void OnDestroy()
+        {
+            foreach(var asset in mAssets.Values)
+            {
+                if(!asset.useAb && asset.assetInstence != null)
+                {
+                    Resources.UnloadAsset(asset.assetInstence);
+                }
+                asset.assetInstence = null;
+            }
+            mAssets.Clear();
+            foreach (var ab in mAbs)
+            {
+                if (ab.assetBundle != null)
+                {
+                    ab.assetBundle.Unload(true);
+                    ab.SetAssetBundle(null);
+                }
+            }
+#if UNITY_EDITOR
+            RTLog.Log(LogCat.Asset, "All Assets Unloaded.");
+#endif
+        }
+
         protected override T LoadAsset<T>(string assetPath)
         {
             if (typeof(T) == typeof(AssetBundle))
             {
-                var ab = mAbs.Binsearch(HashAssetID(assetPath));
+                var ab = GlobalUtil.Binsearch(mAbs, HashAssetID(assetPath));
 #if UNITY_EDITOR
                 if (ab == null || ab.assetBundle == null)
                     RTLog.LogErrorFormat(LogCat.Asset, "Faild to load AssetBundle[{0}], sync load ab only support for cached assets.", assetPath);
@@ -247,7 +364,7 @@ namespace Devil.GamePlay.Assistant
             if (typeof(T) == typeof(AssetBundle))
             {
                 var id = HashAssetID(assetPath);
-                var ab = mAbs.Binsearch(id);
+                var ab = GlobalUtil.Binsearch(mAbs, id);
                 load = LoadAB(assetPath, ab, handler, errorhandler);
             }
             else
@@ -260,7 +377,7 @@ namespace Devil.GamePlay.Assistant
         }
 
         // 加载 AB
-        private bool LoadAB<T>(string name, AbMeta ab, AssetHandler<T> handler, ErrorHandler errorhandler) where T: Object
+        private bool LoadAB<T>(string name, AbMeta ab, AssetHandler<T> handler, ErrorHandler errorhandler, bool loadDependencies = true) where T: Object
         {
             if(ab == null)
             {
@@ -280,14 +397,17 @@ namespace Devil.GamePlay.Assistant
             }
             bool load = false;
             // 加载依赖包
-            var dependencies = mManifest.GetDirectDependencies(ab.name);
-            if (dependencies != null)
+            if (loadDependencies)
             {
-                for (int i = 0; i < dependencies.Length; i++)
+                var dependencies = mManifest.GetAllDependencies(ab.name);
+                if (dependencies != null)
                 {
-                    var id = HashAssetID(dependencies[i]);
-                    var dab = mAbs.Binsearch(id);
-                    load |= LoadAB<AssetBundle>(dependencies[i], dab, null, null);
+                    for (int i = 0; i < dependencies.Length; i++)
+                    {
+                        var id = HashAssetID(dependencies[i]);
+                        var dab = GlobalUtil.Binsearch(mAbs, id);
+                        load |= LoadAB<AssetBundle>(dependencies[i], dab, null, null, false);
+                    }
                 }
             }
             // 加载 ab
@@ -334,7 +454,7 @@ namespace Devil.GamePlay.Assistant
                 assethandler.RegistErrorHandler(errorhandler);
             return load;
         }
-
+        
         protected override void AbortAsyncTask<T>(string assetPath, AssetHandler<T> handler, ErrorHandler errorhandler)
         {
             if(handler == null && errorhandler == null)
@@ -355,6 +475,23 @@ namespace Devil.GamePlay.Assistant
             }
         }
 
+        protected override void LoadAllAssets<T>(string abname, AssetHandler<T> handler, ErrorHandler errorHandler)
+        {
+            GetAssetAsync<AssetBundle>(abname, (x) => {
+                var assets = x.GetAllAssetNames();
+                foreach(var asset in assets)
+                {
+                    GetAssetAsync<T>(asset, handler, errorHandler);
+                }
+            }, errorHandler);
+        }
+
+        // 创建异步加载 AssetBundle 请求，默认从文件系统加载， 可通过继承来覆盖此方法
+        protected virtual AssetBundleCreateRequest RequestAB(string path)
+        {
+            return AssetBundle.LoadFromFileAsync(path);
+        }
+        
         #region handler implement
         private class ABObtain : IAssetHandler
         {
@@ -412,7 +549,7 @@ namespace Devil.GamePlay.Assistant
             {
                 if (isLoading)
                     return;
-                var req = AssetBundle.LoadFromFileAsync(mMeta.path);
+                var req = mMeta.util.RequestAB(mMeta.path);
                 mReq = req;
                 if(req == null)
                 {

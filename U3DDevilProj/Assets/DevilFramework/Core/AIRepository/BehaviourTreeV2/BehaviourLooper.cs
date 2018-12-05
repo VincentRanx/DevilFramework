@@ -1,115 +1,168 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
 
 namespace Devil.AI
 {
-    public class BehaviourLooper
+    public class BehaviourLooper : System.IDisposable
     {
-        BTNodeBase mRoot;
-        public float NodeRuntime { get { return RuntimeNode == null ? 0 : RuntimeNode.NodeRuntime; } }
+        public BehaviourLooper Parent { get; private set; }
         public bool IsComplate { get; private set; }
-        public BTNodeBase RuntimeNode { get; private set; }
-        public EBTTaskState State { get; private set; }
-
-        public BehaviourLooper(BTNodeBase rootNode)
+        public EBTState State { get; private set; }
+        public BehaviourTreeRunner Runner { get; private set; }
+        IBTNode mRoot;
+        IBTNode mRuntime;
+        
+        public BehaviourLooper(BehaviourTreeRunner runner)
         {
-            mRoot = rootNode;
-            IsComplate = mRoot == null;
+            Runner = runner;
+            IsComplate = true;
+        }
+
+        public BehaviourLooper CreateSubLooper()
+        {
+            var looper = new BehaviourLooper(Runner);
+            looper.Parent = this;
+            return looper;
+        }
+
+        public void SetBehaviuor(IBTNode root)
+        {
+            mRoot = root;
+            IsComplate = Runner != null && mRoot == null;
+            mRuntime = null;
         }
 
         public void Reset()
         {
             IsComplate = mRoot == null;
-            RuntimeNode = null;
-        }
-
-        public void Abort(BehaviourTreeRunner btree)
-        {
-            BTNodeBase node = RuntimeNode;
-            while(node != null)
-            {
-                node.Abort(btree);
-                if (node == mRoot)
-                    break;
-                node = node.ParentNode;
-            }
+            mRuntime = null;
+            State = EBTState.inactive;
+#if UNITY_EDITOR
+            EditorClearAccess();
+#endif
         }
         
-        public void Update(BehaviourTreeRunner runner, float deltaTime)
+        public void Abort()
         {
-            if (mRoot == null)
+            if(mRuntime == null)
             {
-                IsComplate = true;
+                State = EBTState.inactive;
                 return;
             }
-            if (RuntimeNode == null)
+            var node = mRuntime;
+            while(node != null)
             {
+                node.Abort();
+                if (node == mRoot)
+                    break;
+                node = node.Parent;
+            }
+            State = mRoot == null ? EBTState.failed : mRoot.State;
+            mRuntime = null;
+            IsComplate = true;
 #if UNITY_EDITOR
-                ResetState(mRoot);
+            EditorClearAccess();
 #endif
-                IsComplate = false;
-                RuntimeNode = mRoot;
-                RuntimeNode.StartLoop(runner);
-            }
-            else
+        }
+        
+        public void Update(float deltaTime)
+        {
+            if (IsComplate)
+                return;
+            if (mRuntime == null)
             {
-                RuntimeNode.Tick(runner, Time.deltaTime);
+                mRuntime = mRoot;
+                mRuntime.Start();
+#if UNITY_EDITOR
+                EditorAccess(mRuntime);
+#endif
             }
-            VisitChildren(runner, RuntimeNode);
-            State = mRoot.State;
-            if(RuntimeNode == null)
-            {
+            mRuntime = Visit(mRuntime);
+            if (mRuntime == null)
                 IsComplate = true;
-            }
+            else
+                mRuntime.OnTick(deltaTime);
+            State = mRoot.State;
         }
 
         // 返回 running 状态的节点
-        void VisitChildren(BehaviourTreeRunner runner, BTNodeBase root)
+        IBTNode Visit(IBTNode root)
         {
-            BTNodeBase tmp = root;
-            BTNodeBase child;
-            BTNodeBase parent;
-            while (tmp != null)
+            var tmp = root;
+            while(tmp != null)
             {
-                child = tmp.ChildForVisit;
-                if (child == null)
+                if (tmp.State == EBTState.running && !tmp.IsOnCondition)
+                    tmp.Abort();
+                if (tmp.IsController)
                 {
-                    if (tmp.State == EBTTaskState.running)
+                    var child = tmp.State == EBTState.running ? tmp.GetNextChildTask() : null;
+                    if(child != null)
                     {
-                        RuntimeNode = tmp;
-                        return;
+                        child.Start();
+                        tmp = child;
+#if UNITY_EDITOR
+                        EditorAccess(child);
+#endif
                     }
-                    tmp.StopLoop(runner);
-                    parent = tmp == mRoot ? null : tmp.ParentNode;
-                    if (parent != null)
+                    else
                     {
-                        RuntimeNode = parent;
-                        parent.ReturnWithState(runner, tmp.State);
+                        tmp.Stop();
+                        var parent = tmp == mRoot ? null : tmp.Parent;
+                        if (parent != null)
+                            parent.ReturnState(tmp.State);
+                        tmp = parent;
                     }
-                    tmp = parent;
                 }
                 else
                 {
-                    RuntimeNode = child;
-                    child.StartLoop(runner);
-                    tmp = child;
+                    if (tmp.State == EBTState.running)
+                        return tmp;
+                    tmp.Stop();
+                    var parent = tmp == mRoot ? null : tmp.Parent;
+                    if (parent != null)
+                        parent.ReturnState(tmp.State);
+                    tmp = parent;
                 }
             }
-            RuntimeNode = null;
+            return null;
+        }
+        
+        public void Dispose()
+        {
+            Parent = null;
+            IsComplate = true;
+            mRuntime = null;
+            mRoot = null;
+            Runner = null;
         }
 
 #if UNITY_EDITOR
-        void ResetState(BTNodeBase root)
+        // 执行过的节点
+        HashSet<IBTNode> mEditorAccessed = new HashSet<IBTNode>();
+        HashSet<IBTNode> mEditorAccessedDeep = new HashSet<IBTNode>();
+        public HashSet<IBTNode> EditorAccessed { get { return mEditorAccessedDeep; } }
+        void EditorAccess(IBTNode node)
         {
-            if (root != null)
+            mEditorAccessed.Add(node);
+            var p = this;
+            while(p != null)
             {
-                root.ResetState();
-                for(int i = 0; i < root.ChildLength; i++)
-                {
-                    ResetState(root.ChildAt(i));
-                }
+                p.mEditorAccessedDeep.Add(node);
+                p = p.Parent;
             }
         }
-
+        void EditorClearAccess()
+        {
+            foreach (var t in mEditorAccessed)
+            {
+                var p = this;
+                while (p != null)
+                {
+                    p.mEditorAccessedDeep.Remove(t);
+                    p = p.Parent;
+                }
+            }
+            mEditorAccessed.Clear();
+        }
 #endif
     }
 }

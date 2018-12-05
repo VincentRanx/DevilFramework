@@ -73,6 +73,10 @@ namespace Devil.AI
         public string StateAtStack(int index) { return m_StateStack[index]; }
         public string StateStackPeek { get { return m_StateStack.Count > 0 ? m_StateStack[m_StateStack.Count - 1] : null; } }
         public int MaxStackSize { get { return m_StackSize; } set { m_StackSize = Mathf.Max(0, value); } }
+        public bool IsStateInStack(string state)
+        {
+            return m_StateStack.Contains(state);
+        }
        
         #endregion
 

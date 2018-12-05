@@ -6,7 +6,7 @@ namespace DevilEditor
     public class EditorCanvasTip: PaintElement
     {
         //flow overlay box
-        static ObjectBuffer<EditorCanvasTip> mBuffer = new ObjectBuffer<EditorCanvasTip>(10, () => new EditorCanvasTip());
+        static ObjectPool<EditorCanvasTip> mBuffer = new ObjectPool<EditorCanvasTip>(10, () => new EditorCanvasTip());
         static EditorCanvasTip mLastTip;
 
         public static EditorCanvasTip NewTip(string text, float time)
@@ -16,7 +16,7 @@ namespace DevilEditor
                 mLastTip.mTick = JDateTime.NowMillies;
                 return mLastTip;
             }
-            EditorCanvasTip tip = mBuffer.GetAnyTarget();
+            EditorCanvasTip tip = mBuffer.Get();
             tip.mDuration = (long)(time * 1000);
             tip.mText = text;
             mLastTip = tip;
@@ -60,7 +60,7 @@ namespace DevilEditor
 
         public override void OnRemoved()
         {
-            mBuffer.SaveBuffer(this);
+            mBuffer.Add(this);
             if (mLastTip == this)
                 mLastTip = null;
         }

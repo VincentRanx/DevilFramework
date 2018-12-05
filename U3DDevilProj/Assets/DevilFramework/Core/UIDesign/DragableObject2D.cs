@@ -3,7 +3,6 @@
 #define MOBILE
 #endif
 
-using Devil.Utility;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -11,6 +10,7 @@ using UnityEngine.UI;
 namespace Devil.UI
 {
     [AddComponentMenu("UISupport/Dragable Object")]
+    [ExecuteInEditMode]
     public class DragableObject2D : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
 
@@ -44,6 +44,7 @@ namespace Devil.UI
         public event DragDelegate OnDragBegin = (x)=> { };
         public event DragDelegate OnDragEnd = (x) => { };
 
+        readonly float mTransitionTime = 0.2f;
         float mPixDistance;
         bool mBeginReset;
         float mResetTimer;
@@ -95,15 +96,19 @@ namespace Devil.UI
             }
         }
 
+        private void Awake()
+        {
+            if (m_DragGraphic == null)
+                m_DragGraphic = GetComponent<Graphic>();
+            if (m_DragTarget == null)
+                m_DragTarget = transform;
+        }
+
         void OnEnable()
         {
             mMoved = false;
-            if (!mCam)
-                mCam = ComponentUtil.ActiveCameraForLayer(gameObject.layer);
-            if (!m_DragTarget)
-                m_DragTarget = transform;
-            if (m_DragGraphic)
-                m_DragGraphic.color = m_NormalColor;
+            if (m_DragGraphic != null)
+                m_DragGraphic.CrossFadeColor(m_NormalColor, mTransitionTime, true, true);
             mStartPos = m_DragTarget.localPosition;
             mOnDragUpdate = false;
             ResetPos();
@@ -116,10 +121,16 @@ namespace Devil.UI
             mBeginReset = false;
             mOnDragUpdate = false;
             mResetTimer = 0;
-            if (m_DragGraphic)
-                m_DragGraphic.color = m_DisableColor;
+            if (m_DragGraphic != null)
+                m_DragGraphic.CrossFadeColor(m_DisableColor, mTransitionTime, true, true);
             if (m_ResetToBegin)
                 m_DragTarget.localPosition = mStartPos;
+        }
+
+        private void OnDestroy()
+        {
+            if (m_DragGraphic != null)
+                m_DragGraphic.CrossFadeColor(Color.white, 0, true, true);
         }
 
         void SetDragSatate(bool drag)
@@ -127,25 +138,13 @@ namespace Devil.UI
             if (drag ^ mOnDragUpdate)
             {
                 mOnDragUpdate = drag;
-                if (isActiveAndEnabled && m_DragGraphic)
+                if (isActiveAndEnabled && (m_DragGraphic != null))
                 {
-                    StopCoroutine("ChangeColor");
-                    StartCoroutine("ChangeColor", drag ? m_OnDragColor : m_NormalColor);
+                    m_DragGraphic.CrossFadeColor(drag ? m_OnDragColor : m_NormalColor, mTransitionTime, true, true);
                 }
             }
         }
-
-        System.Collections.IEnumerator ChangeColor(Color color)
-        {
-            float t = 0;
-            while(t  < 1)
-            {
-                yield return null;
-                t += Time.unscaledDeltaTime * 4f;
-                m_DragGraphic.color = Color.Lerp(m_DragGraphic.color, color, t);
-            }
-        }
-
+        
         void IEndDragHandler.OnEndDrag(PointerEventData eventData)
         {
             mPressed = false;
@@ -153,6 +152,8 @@ namespace Devil.UI
 
         void IBeginDragHandler.OnBeginDrag(PointerEventData eventData)
         {
+            if (m_DragGraphic != null)
+                mCam = m_DragGraphic.canvas.worldCamera;
             mPressed = true;
             ResetPos();
             enabled = true;
@@ -268,12 +269,12 @@ namespace Devil.UI
             mBeginReset = false;
         }
 
-        private void OnValidate()
-        {
-                if (!m_DragTarget)
-                    m_DragTarget = transform;
-                if (m_DragGraphic)
-                    m_DragGraphic.color = enabled ? m_NormalColor : m_DisableColor;
-        }
+        //private void OnValidate()
+        //{
+        //        if (!m_DragTarget)
+        //            m_DragTarget = transform;
+        //    if (m_DragGraphic)
+        //        m_DragGraphic.CrossFadeColor(enabled ? m_NormalColor : m_DisableColor, );
+        //}
     }
 }

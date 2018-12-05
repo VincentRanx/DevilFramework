@@ -29,6 +29,11 @@ namespace Devil.Utility
             return v;
         }
 
+        public static Vector3 Mul(Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
+        }
+
         public static bool Insert<T>(ref T[] lst, int index, T value)
         {
             int len = lst == null ? 0 : lst.Length;
@@ -58,7 +63,7 @@ namespace Devil.Utility
             return true;
         }
 
-        public static int FindIndex<T>(this IList<T> array, FilterDelegate<T> filter)
+        public static int FindIndex<T>(IList<T> array, FilterDelegate<T> filter)
         {
             for (int i = 0; i < array.Count; i++)
             {
@@ -68,7 +73,7 @@ namespace Devil.Utility
             return -1;
         }
 
-        public static T Find<T>(this IList<T> array, FilterDelegate<T> filter)
+        public static T Find<T>(IList<T> array, FilterDelegate<T> filter)
         {
             for (int i = 0; i < array.Count; i++)
             {
@@ -79,7 +84,7 @@ namespace Devil.Utility
             return default(T);
         }
 
-        public static T Find<T>(this ICollection<T> collection, FilterDelegate<T> filter)
+        public static T Find<T>(ICollection<T> collection, FilterDelegate<T> filter)
         {
             IEnumerator<T> iter = collection.GetEnumerator();
             while (iter.MoveNext())
@@ -90,43 +95,67 @@ namespace Devil.Utility
             return default(T);
         }
 
-        public static T Binsearch<T>(this IList<T> list, int id) where T : IIdentified
+        public static bool InsertBySortId<T>(IList<T> list, T value, GetterDelegate<T, int> compareResult)
         {
-            return Binsearch(list, id, 0, list.Count);
+            var index = BinsearchFromRightIndex(list, compareResult);
+            if(index == -1)
+            {
+                list.Add(value);
+                return true;
+            }
+            else if(compareResult(list[index]) == 0)
+            {
+                return false;
+            }
+            else
+            {
+                list.Insert(index, value);
+                return true;
+            }
         }
 
-        public static T Binsearch<T>(this IList<T> list, int id, int start, int end) where T : IIdentified
+        public static bool InsertBySortId<T>(IList<T> list, T value) where T : IIdentified
         {
-            int index = BinsearchIndex(list, id, start, end);
+            var index = BinsearchFromRightIndex(list, value.Identify);
+            if (index == -1)
+            {
+                list.Add(value);
+                return true;
+            }
+            else if (list[index].Identify == value.Identify)
+            {
+                return false;
+            }
+            else
+            {
+                list.Insert(index, value);
+                return true;
+            }
+        }
+        
+        public static T Binsearch<T>(IList<T> list, int id) where T : IIdentified
+        {
+            int index = BinsearchIndex(list, id);
             return index == -1 ? default(T) : list[index];
         }
 
-        public static int BinsearchIndex<T>(this IList<T> list, int id) where T : IIdentified
+        public static T Binsearch<T>(IList<T> list, GetterDelegate<T,int> compareResult)
         {
-            return BinsearchIndex(list, id, 0, list.Count);
+            int index = BinsearchIndex(list, compareResult);
+            return index == -1 ? default(T) : list[index];
         }
 
-        public static int BinsearchIndex<T>(this IList<T> list, int id, int start, int end) where T : IIdentified
+        public static int BinsearchIndex<T>(IList<T> list, int id) where T : IIdentified
         {
-            int l = start;
-            int r = end - 1;
-            int c;
-            int cs;
-            while (l <= r)
-            {
-                c = (l + r) >> 1;
-                cs = list[c].Identify;
-                if (cs == id)
-                    return c;
-                else if (cs > id)
-                    r = c - 1;
-                else
-                    l = c + 1;
-            }
-            return -1;
+            return BinsearchIndex(list, (x) => x.Identify < id ? -1 : (x.Identify > id ? 1 : 0), 0, list.Count);
+        }
+        
+        public static int BinsearchIndex<T>(IList<T> list, GetterDelegate<T, int> compareResult)
+        {
+            return BinsearchIndex(list, compareResult, 0, list.Count);
         }
 
-        public static int BinsearchIndex<T>(this IList<T> list, GetterDelegate<T, int> compareResult, int start, int end)
+        public static int BinsearchIndex<T>(IList<T> list, GetterDelegate<T, int> compareResult, int start, int end)
         {
             int l = start;
             int r = end - 1;
@@ -146,20 +175,20 @@ namespace Devil.Utility
             return -1;
         }
 
-        public static T BinsearchFromRight<T>(this IList<T> list, int id) where T: IIdentified
+        public static T BinsearchFromRight<T>(IList<T> list, int id) where T : IIdentified
         {
-            return BinsearchFromRight(list, id, 0, list.Count);
-        }
-
-        public static T BinsearchFromRight<T>(this IList<T> list, int id, int start, int end) where T: IIdentified
-        {
-            var index = BinsearchFromRightIndex(list, id, start, end);
+            int index = BinsearchFromRightIndex(list, id);
             return index == -1 ? default(T) : list[index];
         }
 
-        public static int BinserachFromRightIndex<T>(this IList<T> list, int id) where T: IIdentified
+        public static int BinsearchFromRightIndex<T>(IList<T> list, int id) where T : IIdentified
         {
-            return BinsearchFromRightIndex(list, id, 0, list.Count);
+            return BinsearchFromRightIndex(list, (x) => x.Identify < id ? -1 : (x.Identify > id ? 1 : 0), 0, list.Count);
+        }
+
+        public static int BinsearchFromRightIndex<T>(IList<T> list, GetterDelegate<T, int> compareResult)
+        {
+            return BinsearchFromRightIndex(list, compareResult, 0, list.Count);
         }
 
         /// <summary>
@@ -167,39 +196,11 @@ namespace Devil.Utility
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
-        /// <param name="id"></param>
+        /// <param name="compareResult"></param>
         /// <param name="start"></param>
         /// <param name="end"></param>
         /// <returns></returns>
-        public static int BinsearchFromRightIndex<T>(this IList<T> list, int id, int start, int end) where T : IIdentified
-        {
-            int l = start;
-            int r = end - 1;
-            int c = l;
-            int cs;
-            int ret = -1;
-            while (l <= r)
-            {
-                c = (l + r) >> 1;
-                cs = list[c].Identify;
-                if (cs == id)
-                {
-                    return c;
-                }
-                else if (cs > id)
-                {
-                    r = c - 1;
-                    ret = c;
-                }
-                else
-                {
-                    l = c + 1;
-                }
-            }
-            return ret;
-        }
-        
-        public static int BinsearchFromRightIndex<T>(this IList<T> list, GetterDelegate<T, int> compareResult, int start, int end)
+        public static int BinsearchFromRightIndex<T>(IList<T> list, GetterDelegate<T, int> compareResult, int start, int end)
         {
             int l = start;
             int r = end - 1;
@@ -227,20 +228,20 @@ namespace Devil.Utility
             return ret;
         }
 
-        public static T BinsearchFromLeft<T>(this IList<T> list, int id) where T: IIdentified
+        public static T BinsearchFromLeft<T>(IList<T> list, int id) where T : IIdentified
         {
-            return BinsearchFromLeft(list, id, 0, list.Count);
-        }
-
-        public static T BinsearchFromLeft<T>(this IList<T> list, int id, int start, int end) where T: IIdentified
-        {
-            var index = BinsearchFromLeftIndex(list, id, start, end);
+            int index = BinsearchFromLeftIndex(list, id);
             return index == -1 ? default(T) : list[index];
         }
 
         public static int BinsearchFromLeftIndex<T>(IList<T> list, int id) where T : IIdentified
         {
-            return BinsearchFromLeftIndex(list, id, 0, list.Count);
+            return BinsearchFromLeftIndex(list, (x) => x.Identify < id ? -1 : (x.Identify > id ? 1 : 0), 0, list.Count);
+        }
+
+        public static int BinsearchFromLeftIndex<T>(IList<T> list, GetterDelegate<T, int> compareResult)
+        {
+            return BinsearchFromRightIndex(list, compareResult, 0, list.Count);
         }
 
         /// <summary>
@@ -248,39 +249,11 @@ namespace Devil.Utility
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
-        /// <param name="id"></param>
+        /// <param name="compareResult"></param>
         /// <param name="start"></param>
         /// <param name="end"></param>
         /// <returns></returns>
-        public static int BinsearchFromLeftIndex<T>(IList<T> list, int id, int start, int end) where T:IIdentified
-        {
-            int l = start;
-            int r = end - 1;
-            int c = l;
-            int cs;
-            int ret = -1;
-            while (l <= r)
-            {
-                c = (l + r) >> 1;
-                cs = list[c].Identify;
-                if (cs == id)
-                {
-                    return c;
-                }
-                else if (cs > id)
-                {
-                    r = c - 1;
-                }
-                else
-                {
-                    l = c + 1;
-                    ret = c;
-                }
-            }
-            return ret;
-        }
-
-        public static int BinsearchFromLeftIndex<T>(this IList<T> list, GetterDelegate<T, int> compareResult, int start, int end)
+        public static int BinsearchFromLeftIndex<T>(IList<T> list, GetterDelegate<T, int> compareResult, int start, int end)
         {
             int l = start;
             int r = end - 1;
@@ -308,7 +281,7 @@ namespace Devil.Utility
             return ret;
         }
 
-        public static void Sort<T>(this IList<T> array, ComparableDelegate<T> compare)
+        public static void Sort<T>(IList<T> array, System.Comparison<T> compare)
         {
             for (int i = 0; i < array.Count; i++)
             {
@@ -325,29 +298,29 @@ namespace Devil.Utility
             }
         }
 
-        public static void Sort<T>(this LinkedList<T> array, ComparableDelegate<T> compare)
+        public static void Sort<T>(LinkedList<T> array, System.Comparison<T> compare)
         {
             var first = array.First;
             if (first == null)
                 return;
             var current = first.Next;
-            while(current != null)
+            while (current != null)
             {
                 var next = current.Next;
                 var prev = current.Previous;
-                while(prev != null)
+                while (prev != null)
                 {
                     if (compare(prev.Value, current.Value) <= 0)
                         break;
                     prev = prev.Previous;
                 }
-                if(prev == null)
+                if (prev == null)
                 {
                     array.Remove(current);
                     array.AddFirst(current);
                     first = current;
                 }
-                else if(prev.Next != current)
+                else if (prev.Next != current)
                 {
                     array.Remove(current);
                     array.AddAfter(prev, current);
@@ -355,7 +328,7 @@ namespace Devil.Utility
                 current = next;
             }
         }
-        
+
         /// <summary>
         /// 计算以normal为发现确定的平面上，从from旋转到to的旋转方向
         /// </summary>
@@ -372,6 +345,12 @@ namespace Devil.Utility
             return Mathf.Sign(dir);
         }
 
+        public static float RotateDirectionOnPlane(Vector3 from, Vector3 to, Vector3 normal)
+        {
+            var cross = Vector3.Cross(from, to);
+            return Mathf.Sin(Vector3.Dot(cross, normal));
+        }
+
         /// <summary>
         /// 计算以normal为法线确定的平面上，从from旋转到to的旋转角度
         /// </summary>
@@ -386,6 +365,13 @@ namespace Devil.Utility
             Vector3 cross = Vector3.Cross(projFrom, projTo);
             float dir = Vector3.Dot(cross, normal);
             return Mathf.Sign(dir) * Vector3.Angle(projFrom, projTo);
+        }
+
+        public static float RotateAngleFromToOnPlane(Vector3 from, Vector3 to, Vector3 normal)
+        {
+            var cross = Vector3.Cross(from, to);
+            var dir = Vector3.Dot(cross, normal);
+            return Mathf.Sign(dir) * Vector3.Angle(from, to);
         }
 
         /// <summary>
@@ -427,7 +413,7 @@ namespace Devil.Utility
                 point = original;
                 return original.y == 0;
             }
-            if(direction.y * original.y > 0)
+            if (direction.y * original.y > 0)
             {
                 point = original;
                 return false;
@@ -439,7 +425,7 @@ namespace Devil.Utility
             return true;
         }
 
-        public static Vector3 AddMagnitude(this Vector3 v, float magnitude)
+        public static Vector3 AddMagnitude(Vector3 v, float magnitude)
         {
             float m = v.magnitude;
             float ma = m + magnitude;
@@ -488,44 +474,44 @@ namespace Devil.Utility
             return n;
         }
 
-        public static bool IsValid(this AnimationCurve curve)
+        public static bool IsValid(AnimationCurve curve)
         {
             return curve != null && curve.length > 1;
         }
 
-        public static float GetMinTime(this AnimationCurve curve)
+        public static float GetMinTime(AnimationCurve curve)
         {
             return curve.keys[0].time;
         }
 
-        public static float GetMaxTime(this AnimationCurve curve)
+        public static float GetMaxTime(AnimationCurve curve)
         {
             return curve.keys[curve.length - 1].time;
         }
 
-        public static float ClampTime(this AnimationCurve curve, float time)
+        public static float ClampTime(AnimationCurve curve, float time)
         {
-            return Mathf.Clamp(time, curve.GetMinTime(), curve.GetMaxTime());
+            return Mathf.Clamp(time, GetMinTime(curve), GetMaxTime(curve));
         }
 
-        public static float GetEndValue(this AnimationCurve curve)
+        public static float GetEndValue(AnimationCurve curve)
         {
             return curve.keys[curve.length - 1].value;
         }
 
-        public static float GetStartValue(this AnimationCurve curve)
+        public static float GetStartValue(AnimationCurve curve)
         {
             return curve.keys[0].value;
         }
 
-        public static float GetNormalizedValue(this AnimationCurve curve, float t)
+        public static float GetNormalizedValue(AnimationCurve curve, float t)
         {
-            float tmin = curve.GetMinTime();
-            float tmax = curve.GetMaxTime();
+            float tmin = GetMinTime(curve);
+            float tmax = GetMaxTime(curve);
             float lerp = Mathf.Lerp(tmin, tmax, t);
             float v = curve.Evaluate(lerp);
-            tmin = curve.GetStartValue();
-            tmax = curve.GetEndValue();
+            tmin = GetStartValue(curve);
+            tmax = GetEndValue(curve);
             float len = tmax - tmin;
             return len == 0 ? v : (v - tmin) / len;
         }

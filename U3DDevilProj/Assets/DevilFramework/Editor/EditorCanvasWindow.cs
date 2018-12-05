@@ -9,6 +9,8 @@ namespace DevilEditor
 
     public abstract class EditorCanvasWindow : EditorWindow
     {
+        public static float deltaTime { get; private set; }
+
         public class DelayTask
         {
             public int Id { get; private set; }
@@ -20,19 +22,20 @@ namespace DevilEditor
             }
         }
 
-        string viewportName = "Viewport";
-
         bool focusCenter;
         Vector2 mousePos;
         Vector2 mouseDeltaPos;
         bool onFocus;
-        bool mInterceptMouse;
         Rect cachedViewportRect;
         Rect clipRect;
+        public bool InterceptMouse { get; private set; }
 
         EMouseAction mouseAction;
         EMouseButton mouseButton;
         protected string statInfo = "";
+
+        readonly float mUpdateDeltaTime = 0.05f;
+        readonly float mUpdateDeltaTimeEditor = 0.03f;
 
         public EditorGUICanvas RootCanvas { get; private set; }
         public EditorGUICanvas GraphCanvas { get; private set; }
@@ -42,23 +45,22 @@ namespace DevilEditor
         protected float mMaxScale = 5f;
         bool mInitOk;
 
-        double mTickTime;
         List<DelayTask> mPostTasks = new List<DelayTask>();
         string mSerializeKey;
-        float mDeltaTime;
         public float TickTime { get; private set; }
+        double mGUITime; // guitime
+        double mTickTime;
 
         protected virtual void UpdateStateInfo()
         {
-            statInfo = string.Format("<b><size=20>[{0} : 1]</size></b>", ScaledCanvas.LocalScale.ToString("0.00"));
+            statInfo = string.Format("<color=#808080><b><size=20>[{0} : 1]</size></b></color>", ScaledCanvas.LocalScale.ToString("0.00"));
         }
 
         void OnEditorUpdate()
         {
-            TickTime = EditorApplication.isPlayingOrWillChangePlaymode ? 0.05f : 0.025f;
+            TickTime = EditorApplication.isPlayingOrWillChangePlaymode ? mUpdateDeltaTime : mUpdateDeltaTimeEditor;
             double time = EditorApplication.timeSinceStartup;
             float t = TickTime;
-            mDeltaTime = t;
             if (time > mTickTime + t)
             {
                 mTickTime = time;
@@ -82,8 +84,6 @@ namespace DevilEditor
             GraphCanvas.ShowGridLine = true;
             GraphCanvas.GridSize = 100;
             GraphCanvas.LocalRect = new Rect(-10000, -10000, 20000, 20000);
-
-            UpdateStateInfo();
         }
 
 
@@ -93,12 +93,14 @@ namespace DevilEditor
             InitCanvas();
         }
 
-        public virtual bool IsInitOk() {return true; }
+        public virtual bool IsInitOk() { return true; }
 
         protected virtual void OnEnable()
         {
             mInitOk = false;
+            mGUITime = EditorApplication.timeSinceStartup;
             ReadData();
+            UpdateStateInfo();
             EditorApplication.update += OnEditorUpdate;
         }
 
@@ -116,8 +118,8 @@ namespace DevilEditor
                 JObject obj = JsonConvert.DeserializeObject<JObject>(str);
                 ScaledCanvas.LocalScale = obj.Value<float>("scale");
                 Rect rect = GraphCanvas.LocalRect;
-                rect.x = Mathf.Clamp(obj.Value<float>("x"), -20000, 20000);
-                rect.y = Mathf.Clamp(obj.Value<float>("y"), -20000, 20000);
+                rect.x = Mathf.Clamp(obj.Value<float>("x"), -100000, 100000);
+                rect.y = Mathf.Clamp(obj.Value<float>("y"), -100000, 100000);
                 GraphCanvas.LocalRect = rect;
                 OnReadCustomData(obj);
             }
@@ -143,8 +145,10 @@ namespace DevilEditor
 
         protected virtual void OnGUI()
         {
+            var t = EditorApplication.timeSinceStartup;
+            deltaTime = Mathf.Min((float)(t - mGUITime), TickTime * 2f);
             bool initOk = IsInitOk();
-            if(!mInitOk && initOk)
+            if (!mInitOk && initOk)
             {
                 OnCanvasStart();
             }
@@ -156,7 +160,7 @@ namespace DevilEditor
 
                 GUI.skin.label.richText = true;
 
-                Rect rect = EditorGUILayout.BeginHorizontal("TE toolbar");
+                Rect rect = EditorGUILayout.BeginHorizontal();
                 OnTitleGUI();
                 EditorGUILayout.EndHorizontal();
 
@@ -185,30 +189,26 @@ namespace DevilEditor
 
         protected virtual void OnTitleGUI()
         {
-            GUILayout.Label(" ");
+            GUILayout.Label(" ", "TE toolbar");
         }
 
-        protected virtual void OnPostGUI()
-        {
+        protected virtual void OnPostGUI() { }
+        
+        protected virtual void OnResized() { }
 
-        }
+        protected virtual void OnPainted() { }
 
-
-        protected virtual void OnResized()
-        {
-
-        }
-
-        protected void OnCanvasGUI()
+        protected virtual void OnCanvasGUI()
         {
             GUI.BeginClip(clipRect);
             GlobalMousePosition = Event.current.mousePosition;
             Rect r = new Rect(Vector2.zero, clipRect.size);
             RootCanvas.LocalRect = r;
             ScaledCanvas.LocalRect = r;
-            RootCanvas.CalculateGlobalRect(true);
+            RootCanvas.OnCalculateGlobalRect(true, r);
             OnResized();
             RootCanvas.OnGUI(r);
+            OnPainted();
             GUI.EndClip();
         }
 
@@ -285,34 +285,39 @@ namespace DevilEditor
 
         void OnKeyDown()
         {
-            RootCanvas.InteractKeyDown(Event.current.keyCode);
+            if (RootCanvas.InteractKeyDown(Event.current.keyCode))
+            {
+                Event.current.Use();
+            }
         }
 
         void OnKeyUp()
         {
-            if(RootCanvas.InteractKeyUp(Event.current.keyCode))
+            if (RootCanvas.InteractKeyUp(Event.current.keyCode))
             {
+                Event.current.Use();
                 return;
             }
             if (Event.current.control && Event.current.keyCode == KeyCode.F)
             {
                 focusCenter = true;
+                Event.current.Use();
             }
         }
 
         // 响应鼠标事件
         void ProcessEvent()
         {
-            mInterceptMouse = clipRect.Contains(Event.current.mousePosition);
-            if (!mInterceptMouse)
+            InterceptMouse = clipRect.Contains(Event.current.mousePosition);
+            if (!InterceptMouse)
             {
                 return;
             }
-            if(Event.current.type == EventType.KeyDown)
+            if (Event.current.type == EventType.KeyDown)
             {
                 OnKeyDown();
             }
-            else if(Event.current.type == EventType.KeyUp)
+            else if (Event.current.type == EventType.KeyUp)
             {
                 OnKeyUp();
             }

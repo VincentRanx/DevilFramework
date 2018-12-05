@@ -1,0 +1,143 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 103884db07ec0b043ab7a1bd73dc1a44, type: 3}
+  m_Name: GameObject_AIRES
+  m_EditorClassIdentifier: 
+  m_RootId: 7
+  m_BTNodes:
+  - id: 1
+    moduleName: BTSubTreeTask
+    parentId: 7
+    children: 
+    position: {x: -77.813934, y: 412.59592}
+    asset: {fileID: 114535464406158026}
+  - id: 2
+    moduleName: BTSubTreeTask
+    parentId: 7
+    children: 
+    position: {x: 297.13202, y: 407.46487}
+    asset: {fileID: 114651734938150724}
+  - id: 3
+    moduleName: BTWaitTask
+    parentId: 7
+    children: 
+    position: {x: 108.08131, y: 405.90543}
+    asset: {fileID: 114538083299483822}
+  - id: 5
+    moduleName: BTWaitTask
+    parentId: 7
+    children: 
+    position: {x: -288.45367, y: 404.62473}
+    asset: {fileID: 114854233474005300}
+  - id: 7
+    moduleName: BTSequence
+    parentId: 0
+    children: 05000000010000000300000002000000
+    position: {x: 0.21372223, y: 184.73984}
+    asset: {fileID: 114106471457727840}
+  - id: 8
+    moduleName: TestService
+    parentId: 0
+    children: 
+    position: {x: 17.140013, y: 562.86346}
+    asset: {fileID: 114490594689441002}
+  m_RootPosition: {x: 4.9440765, y: -38.29261}
+  m_Sorted: 1
+--- !u!114 &114106471457727840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 863edc5c901074242b8ec770d569b84e, type: 3}
+  m_Name: BTSequence_7
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+--- !u!114 &114490594689441002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c63fbc7e62f62f84f9b0261e2d35e1f1, type: 3}
+  m_Name: TestService_8
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+--- !u!114 &114535464406158026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa81339419fd6ae468f6fc5e7062ad00, type: 3}
+  m_Name: BTSubTreeTask_1
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+  m_ResetMode: 1
+  m_BehaviourTree: {fileID: 11400000, guid: 51ff8ccd2d28b854685ef5848bb5ce00, type: 2}
+--- !u!114 &114538083299483822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49740a72fcf6aa046b78a4eebe18f66f, type: 3}
+  m_Name: BTWaitTask_3
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+  m_MinTime: 1
+  m_MaxTime: 2
+--- !u!114 &114651734938150724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa81339419fd6ae468f6fc5e7062ad00, type: 3}
+  m_Name: BTSubTreeTask_2
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+  m_ResetMode: 1
+  m_BehaviourTree: {fileID: 11400000, guid: 51ff8ccd2d28b854685ef5848bb5ce00, type: 2}
+--- !u!114 &114854233474005300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49740a72fcf6aa046b78a4eebe18f66f, type: 3}
+  m_Name: BTWaitTask_5
+  m_EditorClassIdentifier: 
+  m_TreeAsset: {fileID: 11400000}
+  m_Comment: 
+  m_ConditionIds: 
+  m_MinTime: 3
+  m_MaxTime: 3

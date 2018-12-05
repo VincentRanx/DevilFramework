@@ -21,6 +21,11 @@ namespace Devil.UI
                 }
             }
         }
+        // 权重(用以分配缓存数据大小)
+        [Range(0, 1)]
+        [SerializeField]
+        float m_Weight = 1;
+        public float Weight { get { return m_Weight; } }
 
         // 就位时间
         [Range(0, 3f)]

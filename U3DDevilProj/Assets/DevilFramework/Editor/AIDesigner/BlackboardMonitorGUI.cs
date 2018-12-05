@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Devil.AI;
 using Devil.Utility;
 using UnityEditor;
@@ -9,16 +7,16 @@ namespace DevilEditor
 {
     public class BlackboardMonitorGUI : PaintElement
     {
-        BehaviourTreeDesignerWindow mWindow;
+        EditorCanvasWindow mWindow;
         bool mDragEnd;
         Rect mScrollRect;
         float mScrollOffset;
-        bool mVisible;
         bool mDrop = false;
+        public BTBlackboard Blackboard { get; set; }
         BTBlackboarProperty mRaycastProperty;
         //long mTick;
 
-        public BlackboardMonitorGUI(BehaviourTreeDesignerWindow window) : base()
+        public BlackboardMonitorGUI(EditorCanvasWindow window) : base()
         {
             mWindow = window;
         }
@@ -27,10 +25,9 @@ namespace DevilEditor
         {
             mRaycastProperty = null;
             //bool vis = mVisible;
-            mVisible = mWindow.IsPlaying && mWindow.Runner != null;
             //if (!vis && mVisible)
             //    mTick = JDateTime.NowMillies;
-            if (mVisible)
+            if (Visible)
             {
                 Rect rec = LocalRect;
                 rec.width = Mathf.Clamp(Parent.LocalRect.width * 0.35f, 200, 500);
@@ -38,13 +35,13 @@ namespace DevilEditor
                 rec.position = new Vector2(0, Parent.LocalRect.height - LocalRect.height);
                 LocalRect = rec;
 
-                BTBlackboard blackboard = mWindow.Runner.Blackboard;
-                bool set;
-                BTBlackboarProperty[] props = (BTBlackboarProperty[])Ref.GetField(blackboard, "mVariables", out set);
+                BTBlackboard blackboard = Blackboard;
+                //bool set;
+                BTBlackboarProperty[] props = blackboard == null ? null : blackboard.EditorVariables;// (BTBlackboarProperty[])Ref.GetField(blackboard, "mVariables", out set);
                 QuickGUI.DrawBox(GlobalRect, Color.gray * 0.5f, Color.black, 1, true);
                 Rect r = new Rect(GlobalRect.xMin, GlobalRect.yMin, GlobalRect.width, 20);
                 //bool drop = mDrop;
-                mDrop = GUI.Toggle(r, mDrop, "Blackboard", "PreDropDown") && props != null;
+                mDrop = GUI.Toggle(r, mDrop, "Blackboard", "PreDropDown") && props != null && props.Length > 0;
                 //if (!drop && mDrop)
                 //    mTick = JDateTime.NowMillies;
                 if (mDrop)
@@ -104,41 +101,41 @@ namespace DevilEditor
         public override bool InteractDragBegin(EMouseButton button, Vector2 mousePosition)
         {
             //mTick = JDateTime.NowMillies;
-            if (mVisible && button == EMouseButton.left)
+            if (Visible && button == EMouseButton.left)
             {
                 mDragEnd = false;
                 return true;
             }
             else
             {
-                return false;
+                return true;
             }
         }
         
         public override bool InteractDragEnd(EMouseButton button, Vector2 mousePosition)
         {
             //mTick = JDateTime.NowMillies;
-            if (mVisible && button == EMouseButton.left)
+            if (Visible && button == EMouseButton.left)
             {
                 mDragEnd = true;
                 return true;
             }
             else
             {
-                return false;
+                return true;
             }
         }
 
         public override bool InteractDrag(EMouseButton button, Vector2 mousePosition, Vector2 mouseDelta)
         {
-            if (mVisible && button == EMouseButton.left)
+            if (Visible && button == EMouseButton.left)
             {
                 if (mScrollRect.Contains(mWindow.GlobalMousePosition))
                 {
                     mScrollOffset += mouseDelta.y * GlobalScale;
                 }
             }
-            return mVisible;
+            return Visible;
         }
 
         public override bool InteractMouseClick(EMouseButton button, Vector2 mousePosition)
@@ -153,7 +150,7 @@ namespace DevilEditor
                     return true;
                 }
             }
-            return false;
+            return true;
         }
     }
 }

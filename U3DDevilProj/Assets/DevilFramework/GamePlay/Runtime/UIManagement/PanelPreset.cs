@@ -11,11 +11,20 @@ namespace Devil.GamePlay
     {
         [SerializeField]
         Panel[] m_Panels;
+        [SerializeField]
+        bool m_DontDestroyOnLoad;
+
         PanelAsset[] mAssets;
         LinkedList<int> mDefaultOpen;
         float mCheckTime;
 
         private void Awake()
+        {
+            if (m_DontDestroyOnLoad)
+                DontDestroyOnLoad(gameObject);
+        }
+
+        private void Start()
         {
             if (PanelManager.Instance != null)
             {
@@ -32,13 +41,9 @@ namespace Devil.GamePlay
                     if (act)
                         mDefaultOpen.AddLast(asset.Id);
                 }
+                if (mDefaultOpen.Count > 0)
+                    mCheckTime = 1;
             }
-            if (mDefaultOpen.Count > 0)
-                mCheckTime = 1;
-        }
-
-        private void Start()
-        {
             if (mAssets != null)
             {
                 CheckOpen(2);
@@ -54,6 +59,8 @@ namespace Devil.GamePlay
                 var next = node.Next;
                 if (PanelManager.OpenPanel(v))
                     mDefaultOpen.Remove(node);
+                else
+                    break;
                 node = next;
             }
             if (mDefaultOpen.Count > 0)

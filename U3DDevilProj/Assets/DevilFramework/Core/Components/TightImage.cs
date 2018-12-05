@@ -8,10 +8,6 @@ namespace Devil.UI
     {
         readonly UIVertex[] tempQuad = new UIVertex[4];
 
-        // 特效材质
-        [SerializeField]
-        Material m_ImageEffectMaterial;
-
         [SerializeField]
         [Range(0, 5)]
         float m_BlurStep = 1;
@@ -50,8 +46,8 @@ namespace Devil.UI
         
         // 后期特效贴图
         RenderTexture mPostTexture;
+        public RenderTexture postTex { get { return mPostTexture; } }
         int mPostTexId;
-        readonly int prop_blur_step = Shader.PropertyToID("_BlurStep");
 
         public void ReleasePostTexture()
         {
@@ -71,8 +67,7 @@ namespace Devil.UI
             {
                 mPostTexId = id;
                 mPostTexture = RenderTexture.GetTemporary(source.width, source.height);
-                m_ImageEffectMaterial.SetFloat(prop_blur_step, m_BlurStep);
-                GraphicHelper.Blur(source, mPostTexture, m_ImageEffectMaterial, m_BlurIters);
+                GraphicHelper.Blur(source, mPostTexture, m_BlurStep, m_BlurIters);
             }
             return mPostTexture;
         }
@@ -105,7 +100,7 @@ namespace Devil.UI
                     return s_WhiteTexture;
                 }
                 var tex = m_Sprite.texture;
-                if (m_BlurIters > 0 && m_ImageEffectMaterial != null)
+                if (m_BlurIters > 0 && m_BlurStep > 0)
                 {
                     var posttex = GetPostTexture(tex);
                     return posttex;

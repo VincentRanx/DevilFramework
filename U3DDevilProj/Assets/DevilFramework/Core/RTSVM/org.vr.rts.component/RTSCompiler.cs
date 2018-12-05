@@ -19,6 +19,8 @@ namespace org.vr.rts.component
         public RTSCompiler()
         {
             mReader = new RTSTextReader();
+            mReader.SetSeperator(" \r\t");
+            mReader.SetOperators("+-*/%&|~!^=<>?:;,@\n");
             mCompileList = new RTSList<IRTSLinker>(10);
         }
 

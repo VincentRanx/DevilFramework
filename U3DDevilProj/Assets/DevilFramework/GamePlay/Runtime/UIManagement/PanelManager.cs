@@ -1,19 +1,22 @@
-﻿using Devil.Effects;
-using Devil.GamePlay.Assistant;
+﻿using Devil.GamePlay.Assistant;
 using Devil.Utility;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Devil.GamePlay
 {
-    public class PanelIntent : IPanelMessager
+    public struct PanelIntent : IPanelIntent
     {
-        public int RequestId { get; set; }
+        public int requestId;
+        public int RequestId { get { return requestId; } set { requestId = value; } }
 
-        public object RequestData { get; set; }
+        public object requestData;
+        public object RequestData { get { return requestData; } set { requestData = value; } }
 
-        public System.Action<int, object> Handler { get; set; } // <requestid, result>
+        public System.Action<int, object> handler;
+        public System.Action<int, object> Handler { get { return handler; } set { handler = value; } } // <requestid, result>
 
         public void HandleResult(object data)
         {
@@ -30,7 +33,8 @@ namespace Devil.GamePlay
         }
     }
 
-    public class PanelManager : SingletonMono<PanelManager>
+    [DefaultExecutionOrder(-300)]
+    public sealed class PanelManager : MonoBehaviour
     {
         //static int SORT_NORMAL = 0;
         //static int SORT_STATUS = 1;
@@ -73,6 +77,13 @@ namespace Devil.GamePlay
                         m_TargetGraphic.color = col;
                     }
                 }
+            }
+
+            public void Reset()
+            {
+                Alpha = 0;
+                if (m_RootCanvas != null)
+                    m_RootCanvas.enabled = false;
             }
 
             public void SetTarget(Panel basepanel)
@@ -176,6 +187,8 @@ namespace Devil.GamePlay
                                 Instance.OnPanelLostFocus();
                             if (Mgr != null)
                                 Mgr.NotifyFocusPanel(this, value);
+                            if (EventSystem.current != null)
+                                EventSystem.current.SetSelectedGameObject(value && Instance.m_AutoSelectDefault && Instance.m_DefaultSelectable != null ? Instance.m_DefaultSelectable.gameObject : null);
                         }
                     }
                 }
@@ -186,14 +199,6 @@ namespace Devil.GamePlay
                 Mgr = mgr;
             }
         }
-
-        [SerializeField]
-        bool m_CaptureScreenBuffer; // 打开全屏窗口时截取屏幕
-        [SerializeField]
-        [Range(0, 10)]
-        int m_BlurScreenBufferIters;
-        [SerializeField]
-        Material m_BlurBufferMat;
 
         [SerializeField]
         Camera m_UICamera;
@@ -221,7 +226,17 @@ namespace Devil.GamePlay
         public int TopStatusSortingLayer { get { return m_TopStatusSortingLayer; } }
 
         [SerializeField]
+        private string m_CancelButtonName = "Cancel";
+        [SerializeField]
+        private string m_HorizontalAxis = "Horizontal";
+        [SerializeField]
+        private string m_VerticalAxis = "Vertical";
+
+        [SerializeField]
         PanelMask m_EventMask = new PanelMask();
+
+        [SerializeField]
+        bool m_DontDestroyOnLoad = true;
 
         List<PanelStub> mStatus = new List<PanelStub>();
         List<PanelStub> mPanels = new List<PanelStub>();
@@ -233,106 +248,73 @@ namespace Devil.GamePlay
 
         public event System.Action<Panel> OnPanelBecomeForeground = (x) => {
 #if UNITY_EDITOR
-            RTLog.LogFormat(LogCat.Asset, "'{0}' become foreground.", x.name);
+            RTLog.LogFormat(LogCat.UI, "'{0}' become foreground.", x.name);
 #endif
         };
         public event System.Action<Panel> OnPanelBecomeBackground = (x) => {
 #if UNITY_EDITOR
-        RTLog.LogFormat(LogCat.Asset, "'{0}' become backgroud.", x.name);
+        RTLog.LogFormat(LogCat.UI, "'{0}' become backgroud.", x.name);
 #endif
         };
         public event System.Action<Panel> OnPanelOpened = (x) => {
 #if UNITY_EDITOR
-            RTLog.LogFormat(LogCat.Asset, "'{0}' opened.", x.name);
+            RTLog.LogFormat(LogCat.UI, "'{0}' opened.", x.name);
 #endif
         };
         public event System.Action<Panel> OnPanelClosed = (x) => {
 #if UNITY_EDITOR
-            RTLog.LogFormat(LogCat.Asset, "'{0}' closed.", x.name);
+            RTLog.LogFormat(LogCat.UI, "'{0}' closed.", x.name);
 #endif
         };
         public event System.Action<RenderTexture> OnBufferTextureUpdated = (x) => { };
 
-        RenderTexture mBufferTex; // 缓存窗口
-        public RenderTexture BufferTexture { get { return mBufferTex; } }
-        RenderTexture UpdateBufferTexture()
+        private void Awake()
         {
-            var panel = TopDialogOrPanel;
-            if (panel == null)
-                return null;
-            var trans = m_EventMask.m_RootCanvas.transform as RectTransform;
-            if (trans == null)
-                return null;
-            int w = (int)trans.rect.width;
-            int h = (int)trans.rect.height;
-            bool modify = false;
-            if(mBufferTex == null)
+            if (Instance == null)
             {
-                mBufferTex = RenderTexture.GetTemporary(w, h);
-                modify = true;
-            }
-            else if(mBufferTex.width != w || mBufferTex.height != h)
-            {
-                RenderTexture.ReleaseTemporary(mBufferTex);
-                mBufferTex = RenderTexture.GetTemporary(w, h);
-                modify = true;
-            }
-            //GraphicHelper.Clear(mBufferTex, Color.white, m_BlurBufferMat);
-            //RenderTexture tex = RenderTexture.GetTemporary(w, h);
-            GraphicHelper.GrabScreen(UICamera, mBufferTex);
-            if(m_BlurScreenBufferIters > 0 && m_BlurBufferMat != null)
-            {
-                GraphicHelper.Blur(mBufferTex, mBufferTex, m_BlurBufferMat, m_BlurScreenBufferIters);
-            }
-            if (modify)
-            {
-                m_EventMask.SendTexture(mBufferTex);
-                OnBufferTextureUpdated(mBufferTex);
-            }
-            return mBufferTex;
-        }
-
-        protected override void Awake()
-        {
-            base.Awake();
-            Panel[] panels = GetComponentsInChildren<Panel>();
-            int len = panels == null ? 0 : panels.Length;
-            for(int i = 0; i < len; i++)
-            {
-                PanelAsset asset = new PanelAsset(panels[i]);
-                if (asset.IsUsable)
+                Instance = this;
+                Panel[] panels = GetComponentsInChildren<Panel>();
+                int len = panels == null ? 0 : panels.Length;
+                for (int i = 0; i < len; i++)
                 {
-                    mAssets.Add(asset);
+                    PanelAsset asset = new PanelAsset(panels[i]);
+                    if (asset.IsUsable)
+                    {
+                        mAssets.Add(asset);
+                    }
                 }
+                if (m_EventMask != null)
+                    m_EventMask.Reset();
+                if (m_DontDestroyOnLoad)
+                    DontDestroyOnLoad(gameObject);
             }
-            m_EventMask.Alpha = 0;
-            UpdateMask();
         }
 
         private void Start()
         {
-            SceneHelper sh = SceneHelper.Instance;
-            if(sh != null)
+            if (Instance == this)
             {
-                sh.OnLoadBegin += OnSceneLoadBegin;
-                sh.OnSceneWillLoad += OnSceneWillLoad;
-                OnSceneLoadBegin(sh.ActiveScene.name);
+                SceneHelper sh = SceneHelper.Instance;
+                if (sh != null)
+                {
+                    sh.OnLoadBegin += OnSceneLoadBegin;
+                    sh.OnSceneWillLoad += OnSceneWillLoad;
+                    OnSceneLoadBegin(sh.ActiveScene.name);
+                }
             }
         }
 
-        protected override void OnDestroy()
+        private void OnDestroy()
         {
-            base.OnDestroy();
-            SceneHelper sh = SceneHelper.Instance;
-            if (sh != null)
+            if (Instance == this)
             {
-                sh.OnLoadBegin -= OnSceneLoadBegin;
-                sh.OnSceneWillLoad -= OnSceneWillLoad;
-            }
-            if(mBufferTex != null)
-            {
-                RenderTexture.ReleaseTemporary(mBufferTex);
-                mBufferTex = null;
+                Instance = null;
+                SceneHelper sh = SceneHelper.Instance;
+                if (sh != null)
+                {
+                    sh.OnLoadBegin -= OnSceneLoadBegin;
+                    sh.OnSceneWillLoad -= OnSceneWillLoad;
+                }
             }
         }
 
@@ -418,7 +400,7 @@ namespace Devil.GamePlay
             mFindFocusWindow = true;
         }
 
-        PanelAsset GetAsset(int panelId)
+        public PanelAsset GetAsset(int panelId)
         {
             for (int i = 0; i < mAssets.Count; i++)
             {
@@ -429,7 +411,7 @@ namespace Devil.GamePlay
             return null;
         }
 
-        PanelAsset GetAsset(string assetName)
+        public PanelAsset GetAsset(string assetName)
         {
             for(int i = 0; i < mAssets.Count; i++)
             {
@@ -440,25 +422,25 @@ namespace Devil.GamePlay
             return null;
         }
 
-        Panel OpenPanelAsStatus(PanelAsset asset, IPanelMessager request)
+        Panel OpenPanelAsStatus(PanelAsset asset, IPanelIntent request)
         {
             return OpenPanelFor(mStatus, asset.Mode == EPanelMode.Status ? m_StatusSortingLayer : m_TopStatusSortingLayer, asset, request, false);
         }
 
-        Panel OpenPanelAsDialog(PanelAsset asset, IPanelMessager request)
+        Panel OpenPanelAsDialog(PanelAsset asset, IPanelIntent request)
         {
             return OpenPanelFor(mDialogs, m_DialogSortingLayer, asset, request, true);
         }
 
-        Panel OpenPanelAsNormal(PanelAsset asset, IPanelMessager request)
+        Panel OpenPanelAsNormal(PanelAsset asset, IPanelIntent request)
         {
             if (mDialogs.Count > 0)
                 return null;
             return OpenPanelFor(mPanels, m_NormalSortingLayer, asset, request, true);
         }
-
+        
         // asset must be usable.
-        Panel OpenPanelFor(List<PanelStub> list, int sortLayer, PanelAsset asset, IPanelMessager request, bool useFocus)
+        Panel OpenPanelFor(List<PanelStub> list, int sortLayer, PanelAsset asset, IPanelIntent request, bool useFocus)
         {
             Panel panel = asset.InstantiateAsset();
             if (panel == null || panel.IsClosing())
@@ -493,7 +475,7 @@ namespace Devil.GamePlay
             can.renderMode = RenderMode.ScreenSpaceCamera;
             can.worldCamera = m_UICamera;
             can.sortingLayerID = sortLayer;
-            if (sortLayer != m_StatusSortingLayer)
+            if (asset.Mode != EPanelMode.Status)
                 can.sortingOrder = prevcan == null ? 1 : prevcan.sortingOrder + 2;
             if (useFocus)
             {
@@ -502,13 +484,46 @@ namespace Devil.GamePlay
                     mFocusStub.HasFocus = false;
                     mFocusStub = null;
                 }
+                //else
+                //{
+                //    mFocusStub = stub;
+                //    mFocusStub.HasFocus = true;
+                //}
                 mFindFocusWindow = true;
             }
             if (asset.IsUseMask)
                 UpdateMask();
             return panel;
         }
-        
+
+        void MovePanelForeground(List<PanelStub> list, Panel panel)
+        {
+            var old = GetPanelIndex(list, panel);
+            if (old == -1 || old == list.Count - 1)
+                return;
+            var stub = list[old];
+            list.RemoveAt(old);
+            list.Add(stub);
+            if (mFocusStub != null)
+            {
+                mFocusStub.HasFocus = false;
+                mFocusStub = null;
+            }
+            mFindFocusWindow = true;
+            if (stub.Asset.IsUseMask)
+            {
+                UpdateSortingOrder(list, old);
+                UpdateMask();
+            }
+            else
+            {
+                var prev = GetRecentPanel(list, 1);
+                Canvas prevcan = prev == null ? null : prev.Instance.GetCanvas();
+                Canvas can = panel.GetCanvas();
+                can.sortingOrder = prevcan == null ? 1 : prevcan.sortingOrder + 2;
+            }
+        }
+
         bool ClosePanelAsDialog(PanelStub stub)
         {
             return ClosePanelFor(mDialogs, stub, true);
@@ -591,14 +606,34 @@ namespace Devil.GamePlay
             return true;
         }
 
+        void UpdateSortingOrder(List<PanelStub> list, int startIndex)
+        {
+            if (startIndex >= list.Count)
+                return;
+            int order = 1;
+            if(startIndex > 0)
+            {
+                var can = list[startIndex - 1].Instance.GetCanvas();
+                if (can != null)
+                    order = can.sortingOrder + 2;
+            }
+            for(int i = startIndex; i < list.Count; i++)
+            {
+                var stub = list[i];
+                var can = stub.Instance.GetCanvas();
+                if (can != null)
+                {
+                    can.sortingOrder = order;
+                    order += 2;
+                }
+            }
+        }
+
         void UpdateMask()
         {
             if (m_EventMask.m_RootCanvas == null)
                 return;
-
-            if (m_CaptureScreenBuffer)
-                UpdateBufferTexture();
-
+            
             Panel basepanel = GetMaskPanel(mDialogs);
             if (basepanel == null)
                 basepanel = GetMaskPanel(mPanels);
@@ -645,18 +680,27 @@ namespace Devil.GamePlay
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (GameInput.GetButtonDown(m_CancelButtonName) && !string.IsNullOrEmpty(m_CancelButtonName))
             {
-                InteractEscape();
+                InteractCancel();
+            }
+            if (mFocusStub != null && mFocusStub.Instance.m_DefaultSelectable != null
+                && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null)
+            {
+                if (Mathf.Abs(GameInput.GetAxis(m_HorizontalAxis)) > 0.5f || Mathf.Abs(GameInput.GetAxis(m_VerticalAxis)) > 0.5f ||
+                    GameInput.GetButtonDown(m_HorizontalAxis) || GameInput.GetButtonDown(m_VerticalAxis))
+                {
+                    EventSystem.current.SetSelectedGameObject(mFocusStub.Instance.m_DefaultSelectable.gameObject);
+                }
             }
         }
 
-        public void InteractEscape()
+        public void InteractCancel()
         {
             for (int i = mDialogs.Count - 1; i >= 0; i--)
             {
                 var p = mDialogs[i];
-                if (p.Instance.InteractEscape())
+                if (p.Instance.InteractCancel())
                 {
                     return;
                 }
@@ -664,7 +708,7 @@ namespace Devil.GamePlay
             for(int i= mPanels.Count - 1; i >= 0; i--)
             {
                 var p = mPanels[i];
-                if (p.Instance.InteractEscape())
+                if (p.Instance.InteractCancel())
                     return;
             }
         }
@@ -680,13 +724,15 @@ namespace Devil.GamePlay
         // 场景即将卸载
         void OnSceneWillLoad(string scene)
         {
-            for (int i = 0; i < mAssets.Count; i++)
-            {
-                mAssets[i].Release();
-            }
+            //for (int i = 0; i < mAssets.Count; i++)
+            //{
+            //    mAssets[i].Release();
+            //}
         }
 
         #region opend method
+
+        public static PanelManager Instance { get; private set; }
 
         public static bool WaittingForOpenPanel { get; set; }
 
@@ -699,6 +745,13 @@ namespace Devil.GamePlay
                     return null;
                 else
                     return inst.mFocusStub.Instance;
+            }
+            set
+            {
+                var inst = Instance;
+                if (value == null || value.m_Mode != EPanelMode.Normal || inst == null || inst.mDialogs.Count > 0)
+                    return;
+                inst.MovePanelForeground(inst.mPanels, value);
             }
         }
 
@@ -744,7 +797,7 @@ namespace Devil.GamePlay
                 return panel;
             return null;
         }
-        
+
         public static Panel FindPanel(FilterDelegate<Panel> filter)
         {
             if (filter == null)
@@ -766,7 +819,7 @@ namespace Devil.GamePlay
             return null;
         }
 
-        public static Panel OpenPanel(int id, IPanelMessager request = null)
+        public static Panel OpenPanel(int id, IPanelIntent request = null)
         {
             PanelManager inst = Instance;
             if (inst == null)
@@ -784,7 +837,7 @@ namespace Devil.GamePlay
                 return null;
         }
 
-        public static Panel OpenPanel(string panelName, IPanelMessager request = null)
+        public static Panel OpenPanel(string panelName, IPanelIntent request = null)
         {
             PanelManager inst = Instance;
             if (inst == null)

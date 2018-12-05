@@ -63,11 +63,13 @@ namespace Devil.AI
 
         public bool m_UseSubState;
 
-        private System.Action m_BeginDelegate;
-        private System.Action m_TickDelegate;
-        private System.Action m_EndDelegate;
+        public System.Action m_BeginDelegate;
+        public System.Action m_TickDelegate;
+        public System.Action m_EndDelegate;
         string m_SuperName;
         FStateMachineMono m_SubFSM;
+
+        public IFiniteState Implemention { get; set; }
 
         public bool Init<T>(T target) where T : MonoBehaviour
         {
@@ -81,9 +83,9 @@ namespace Devil.AI
                 m_SubFSM = substat == null ? null : substat.GetComponent<FStateMachineMono>();
                 if (m_SubFSM != null)
                 {
+                    m_SubFSM.IsSubStateMachine = true;
                     m_SubFSM.enabled = false;
                     ret = true;
-                    return ret;
                 }
             }
             if (!string.IsNullOrEmpty(m_BeginMethod))
@@ -123,17 +125,16 @@ namespace Devil.AI
 #if UNITY_EDITOR
             RTLog.Log(LogCat.AI, string.Format("Begin State: {0}/{1}", m_SuperName, m_StateName));
 #endif
+            if (Implemention != null)
+                Implemention.OnBegin();
+            else if (m_BeginDelegate != null)
+                m_BeginDelegate();
             if (m_SubFSM != null)
             {
                 m_SubFSM.enabled = true;
                 m_SubFSM.FSM.OnBegin();
             }
-            else if (m_BeginDelegate != null)
-            {
-                m_BeginDelegate();
-            }
         }
-
 
         public void OnEnd()
         {
@@ -142,10 +143,10 @@ namespace Devil.AI
                 m_SubFSM.enabled = false;
                 m_SubFSM.FSM.OnEnd();
             }
+            if (Implemention != null)
+                Implemention.OnEnd();
             else if (m_EndDelegate != null)
-            {
                 m_EndDelegate();
-            }
 #if UNITY_EDITOR
             RTLog.Log(LogCat.AI, string.Format("End State: {0}/{1}", m_SuperName, m_StateName));
 #endif
@@ -153,10 +154,10 @@ namespace Devil.AI
 
         public void OnTick(float deltaTime)
         {
-            if (m_TickDelegate != null)
-            {
+            if (Implemention != null)
+                Implemention.OnTick(deltaTime);
+            else if (m_TickDelegate != null)
                 m_TickDelegate();
-            }
         }
     }
 
@@ -168,9 +169,8 @@ namespace Devil.AI
         public string m_ToState;
         public string m_ConditionMethod;
 
-        private ValueDelegate<bool> m_CondtionDelegate;
-
-
+        public ValueDelegate<bool> m_CondtionDelegate;
+        
         public bool Init<T>(T target) where T : MonoBehaviour
         {
             if (target == null)

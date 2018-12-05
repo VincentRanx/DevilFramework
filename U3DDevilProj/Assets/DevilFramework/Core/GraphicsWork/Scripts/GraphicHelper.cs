@@ -4,23 +4,30 @@ namespace Devil.Effects
 {
     public static class GraphicHelper
     {
-        static int prop_blur_iters = Shader.PropertyToID("_BlurIters");
-        static int prop_color = Shader.PropertyToID("_Color");
+        static bool install;
+        static int prop_blur_iters;
+        static int prop_blur_step;
+        static int prop_color;
+        //static int prop_clip;
+        static Material blitMat;
 
-        //static Material mBlitMat;
-        //static Material GetMaterial()
-        //{
-        //    if (mBlitMat == null)
-        //    {
-        //        var shad = Shader.Find("DevilTeam/BlitImg");
-        //        mBlitMat = new Material(shad);
-        //        prop_blur_iters = Shader.PropertyToID("_BlurIters");
-        //        prop_color = Shader.PropertyToID("_Color");
-        //    }
-        //    return mBlitMat;
-        //}
+        static readonly int blur_pass = 0;
+        static readonly int clear_pass = 1;
+        
+        static void Install()
+        {
+            if(!install || blitMat == null)
+            {
+                install = true;
+                prop_blur_iters = Shader.PropertyToID("_BlurIters");
+                prop_blur_step = Shader.PropertyToID("_BlurStep");
+                prop_color = Shader.PropertyToID("_Color");
+                //prop_clip = Shader.PropertyToID("_ClipRect");
+                blitMat = new Material(Resources.Load<Shader>("Shaders/BlitImg"));
+            }
+        }
 
-        public static void GrabScreen(Camera cam, RenderTexture tex)
+        public static void GrabCamera(Camera cam, RenderTexture tex)
         {
             var old = cam.targetTexture;
             cam.targetTexture = tex;
@@ -33,41 +40,41 @@ namespace Devil.Effects
         /// </summary>
         /// <param name="source">源</param>
         /// <param name="destination"></param>
-        /// <param name="mat">材质</param>
+        /// <param name="amount">强度</param>
         /// <param name="iters">迭代次数</param>
-        public static void Blur(Texture source, RenderTexture destination, Material mat, int iters, int pass = 0)
+        public static void Blur(Texture source, RenderTexture destination, float amount, int iters)
         {
-            if (mat == null || iters < 1)
+            if (iters < 1 || amount <= 0)
             {
                 if (source != destination)
                     Graphics.Blit(source, destination);
                 return;
             }
+            Install();
             int width = source.width;
             int height = source.height;
             RenderTexture rt0 = RenderTexture.GetTemporary(width, height);
             RenderTexture rt1 = RenderTexture.GetTemporary(width, height);
-            mat.SetFloat(prop_blur_iters, 1);
-            Graphics.Blit(source, rt1, mat, pass);
-            for (int i = 1; i < iters;)
+            blitMat.SetFloat(prop_blur_step, amount);
+            blitMat.SetFloat(prop_blur_iters, 1);
+            Graphics.Blit(source, rt1, blitMat, blur_pass);
+            for (int i = 1; i < iters - 1;)
             {
-                mat.SetFloat(prop_blur_iters, i++);
-                Graphics.Blit(rt1, rt0, mat, pass);
-                mat.SetFloat(prop_blur_iters, i++);
-                Graphics.Blit(rt0, rt1, mat, pass);
+                blitMat.SetFloat(prop_blur_iters, 0.5f + 0.5f * i++);
+                Graphics.Blit(rt1, rt0, blitMat, blur_pass);
+                blitMat.SetFloat(prop_blur_iters, 0.5f + 0.5f * i++);
+                Graphics.Blit(rt0, rt1, blitMat, blur_pass);
             }
-            Graphics.Blit(rt1, destination, mat, pass);
+            Graphics.Blit(rt1, destination, blitMat, blur_pass);
             RenderTexture.ReleaseTemporary(rt0);
             RenderTexture.ReleaseTemporary(rt1);
         }
 
-        public static void Clear(RenderTexture destination, Color color, Material mat, int pass = 1)
+        public static void Clear(RenderTexture destination, Color color)
         {
-            if(mat != null)
-            {
-                mat.SetColor(prop_color, color);
-                Graphics.Blit(null, destination, mat, pass);
-            }
+            Install();
+            blitMat.SetColor(prop_color, color);
+            Graphics.Blit(null, destination, blitMat, clear_pass);
         }
 
     }

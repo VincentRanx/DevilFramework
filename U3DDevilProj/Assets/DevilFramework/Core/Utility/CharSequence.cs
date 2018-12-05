@@ -8,8 +8,8 @@ namespace Devil.Utility
         public const string OPERATORS = "+-*/%&|~!^=<>?:;,@";
         public const string BRACKET_OPERATORS = "{}()[]";
 
-        public const string ESCAPE_CHARACTOR = "btrn0";
-        public const string ESCAPE_VALUE = "\b\t\r\n\0";
+        public const string ESCAPE_CHARACTOR = @"btrn0\";
+        public const string ESCAPE_VALUE = "\b\t\r\n\0\\";
 
         char[] chars;
         bool started;
