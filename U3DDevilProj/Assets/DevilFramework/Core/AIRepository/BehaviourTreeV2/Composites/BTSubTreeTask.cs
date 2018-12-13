@@ -9,8 +9,7 @@ namespace Devil.AI
     public class BTSubTreeTask : BTTaskAsset
     {
         public BehaviourTreeRunner.EResetMode m_ResetMode = BehaviourTreeRunner.EResetMode.ResetWhenLoopEnd;
-
-        [BTSubBehaviourTree]
+        public bool m_SubTreeStandalone;
         public BehaviourTreeAsset m_BehaviourTree;
         BehaviourTreeRunner.AssetBinder mBinder;
 
@@ -36,16 +35,16 @@ namespace Devil.AI
                 if (mBinder != null)
                 {
                     mBinder.Name = GetInstanceID().ToString("x");
-                    mBinder.BindAsset(m_BehaviourTree, m_ResetMode);
                 }
             }
         }
 
         public override EBTState OnAbort()
         {
-            if(mBinder != null)
+            if(mBinder != null && mBinder.IsAvailable)
             {
-                mBinder.Looper.Abort();
+                if (!m_SubTreeStandalone && !mBinder.Looper.IsComplate)
+                    mBinder.Looper.Abort();
                 return mBinder.Looper.State;
             }
             else
@@ -56,9 +55,10 @@ namespace Devil.AI
 
         public override EBTState OnStart()
         {
-            if(mBinder != null)
+            if(mBinder != null && mBinder.IsAvailable)
             {
-                if (m_ResetMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
+                mBinder.BindAsset(m_BehaviourTree, m_ResetMode);
+                if (m_ResetMode == BehaviourTreeRunner.EResetMode.ResetWhenBegin)
                     mBinder.Looper.Reset();
                 return EBTState.running;
             }
@@ -68,9 +68,18 @@ namespace Devil.AI
             }
         }
 
+        public override void OnStop()
+        {
+            if (m_ResetMode == BehaviourTreeRunner.EResetMode.AlwaysReset && mBinder != null && mBinder.RuntimeTree != null)
+            {
+                mBinder.StopService();
+                mBinder.Looper.Reset();
+            }
+        }
+
         public override EBTState OnUpdate(float deltaTime)
         {
-            if(mBinder != null)
+            if(mBinder != null && mBinder.RuntimeTree != null)
             {
                 mBinder.UpdateLooper(deltaTime);
                 mBinder.UpdateService(deltaTime);

@@ -30,8 +30,8 @@ namespace Devil.GamePlay
             if (!IsSingleInstance)
             {
                 mPool = new ObjectPool<Panel>(16);
-                mPool.Creator = InstantiatePanel;
-                mPool.Cleaner = DestroyPanel;
+                mPool.SetConstructor(InstantiatePanel);
+                mPool.SetCleaner(DestroyPanel);
             }
         }
 
@@ -50,8 +50,8 @@ namespace Devil.GamePlay
                 if (!IsSingleInstance)
                 {
                     mPool = new ObjectPool<Panel>(16);
-                    mPool.Creator = InstantiatePanel;
-                    mPool.Cleaner = DestroyPanel;
+                    mPool.SetConstructor(InstantiatePanel);
+                    mPool.SetCleaner(DestroyPanel);
                     mPool.Add(mBuiltinAsset);
                 }
                 else

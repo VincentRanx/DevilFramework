@@ -25,7 +25,7 @@ namespace Devil.GamePlay
         IPlayerMotion FindMotion(int motionId);
         IPlayerMotion FindMotion(string motionName);
 
-        void AddInput(int flag, object data);
+        bool AddInput(int flag, object data);
         
     }
 }

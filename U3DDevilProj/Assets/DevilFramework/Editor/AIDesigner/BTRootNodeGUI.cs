@@ -20,6 +20,8 @@ namespace DevilEditor
 
         BehaviourTreeAsset mAsset;
         BTNode mContext;
+        string mComment = "";
+        Vector2 mCommentSize;
 
         public BTRootNodeGUI(BehaviourTreeEditor editor) : base(editor)
         {
@@ -133,7 +135,7 @@ namespace DevilEditor
             GUITitle(pos, title, TITLE_COLOR, TITLE_SIZE + 4, FontStyle.Bold, TextAnchor.MiddleLeft);
             pos.size = dsize;
             pos.position = rect.position + new Vector2(space.x, tsize.y + space.y);
-            GUITitle(pos, detail, Color.white, FontStyle.Bold, TextAnchor.MiddleLeft);
+            GUITitle(pos, detail, Color.white, FontStyle.Normal, TextAnchor.MiddleLeft);
 
             var raycast = false;
             float h = pos.yMax + space.y;
@@ -154,6 +156,30 @@ namespace DevilEditor
                     Resize();
             }
 
+        }
+
+        public override void DrawComment(bool raycast)
+        {
+            if (mAsset == null)
+                return;
+            var com = mAsset.m_Comment;
+            if (string.IsNullOrEmpty(com))
+                return;
+            if (com != mComment)
+            {
+                mComment = com;
+                mCommentSize = CalculateSubtitleSize(mComment, SUB_SIZE + 2);
+            }
+            var rect = new Rect();
+            var size = mCommentSize * GlobalScale;
+            rect.size = size + Vector2.one * 4;
+            rect.x = GlobalRect.x;
+            rect.y = GlobalRect.y - size.y - 8;
+            QuickGUI.DrawBox(rect, Color.gray * (raycast ? 0.7f : 0.5f), Color.black, raycast ? 1 : 0);
+            rect.size = size;
+            rect.x = GlobalRect.x + 2;
+            rect.y = GlobalRect.y - size.y - 6;
+            GUISubtitle(rect, mComment, Color.white * (raycast ? 1f : 0.7f), SUB_SIZE + 2, raycast ? FontStyle.Normal : FontStyle.Italic, TextAnchor.MiddleLeft);
         }
 
         public override bool EnableParentAs(BehaviourNode node)

@@ -17,7 +17,7 @@ namespace Devil.UI
             set
             {
                 var v = Mathf.Clamp(m_BlurStep, 0, 5);
-                if(v != m_BlurStep)
+                if (v != m_BlurStep)
                 {
                     m_BlurStep = v;
                     ReleasePostTexture();
@@ -35,7 +35,7 @@ namespace Devil.UI
             set
             {
                 var v = Mathf.Clamp(value, 0, 10);
-                if(m_BlurIters != v)
+                if (m_BlurIters != v)
                 {
                     m_BlurIters = v;
                     ReleasePostTexture();
@@ -43,7 +43,7 @@ namespace Devil.UI
                 }
             }
         }
-        
+
         // 后期特效贴图
         RenderTexture mPostTexture;
         public RenderTexture postTex { get { return mPostTexture; } }
@@ -51,7 +51,7 @@ namespace Devil.UI
 
         public void ReleasePostTexture()
         {
-            if(mPostTexture != null)
+            if (mPostTexture != null)
             {
                 RenderTexture.ReleaseTemporary(mPostTexture);
                 mPostTexture = null;
@@ -78,7 +78,7 @@ namespace Devil.UI
             get { return m_Sprite; }
             set
             {
-                if(m_Sprite != value)
+                if (m_Sprite != value)
                 {
                     m_Sprite = value;
                     ReleasePostTexture();
@@ -86,7 +86,7 @@ namespace Devil.UI
                 }
             }
         }
-        
+
         public override Texture mainTexture
         {
             get
@@ -108,7 +108,7 @@ namespace Devil.UI
                 return tex;
             }
         }
-        
+
         Vector3 Lerp(Rect rect, Vector3 uv)
         {
             Vector3 v = new Vector3();
@@ -144,7 +144,7 @@ namespace Devil.UI
                 vert.color = color;
                 vh.AddVert(vert);
             }
-            for(int i = 0; i < triangles.Length; i += 3)
+            for (int i = 0; i < triangles.Length; i += 3)
             {
                 vh.AddTriangle(triangles[i], triangles[i + 1], triangles[i + 2]);
             }

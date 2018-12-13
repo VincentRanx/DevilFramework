@@ -6,75 +6,32 @@ using UnityEngine;
 
 namespace DevilEditor
 {
-
+    using AssetBinder = BehaviourTreeRunner.AssetBinder;
     public class BehaviourTreeAssetBinder : System.IDisposable
     {
         private BehaviourTreeRunner runner;
         private BehaviourTreeAsset tree; // 持久化资源
         private BehaviourTreeAsset tmpAsset; // 编辑器编辑对象
+        private AssetBinder runtimeBinder;
 
         public BehaviourTreeAsset source { get { return tree; } }
         public BehaviourLooper looper
         {
             get
             {
-                if (runner == null)
-                    return null;
-                var bind = runner.GetBinder(tree);
-                return bind == null ? null : bind.Looper;
+                return runtimeBinder == null ? null : runtimeBinder.Looper;
             }
         }
         public BehaviourTreeAsset runtime
         {
             get
             {
-                if (runner == null)
-                    return null;
-                var bind = runner.GetBinder(tree);
-                return bind == null ? null : bind.RuntimeTree;
+                return runtimeBinder == null ? null : runtimeBinder.RuntimeTree;
             }
         }
 
-        public string PreferBinderName { get; set; }
-        List<BehaviourTreeRunner.AssetBinder> mRuntimeBinders = new List<BehaviourTreeRunner.AssetBinder>();
-        public BehaviourTreeRunner.AssetBinder RuntimeBinder
-        {
-            get
-            {
-                if (!Application.isPlaying)
-                    return null;
-                if (!string.IsNullOrEmpty(PreferBinderName))
-                {
-                    for (int i = 0; i < mRuntimeBinders.Count; i++)
-                    {
-                        if (mRuntimeBinders[i].Name == PreferBinderName)
-                            return mRuntimeBinders[i];
-                    }
-                }
-                return mRuntimeBinders.Count > 0 ? mRuntimeBinders[0] : null;
-            }
-        }
-
-        public void UpdateRuntimeBinders()
-        {
-            mRuntimeBinders.Clear();
-            if (!Application.isPlaying || runner == null || tree == null)
-                return;
-            runner.GetBinders(tree, mRuntimeBinders);
-        }
-
-        public BehaviourTreeAsset parent
-        {
-            get
-            {
-                if (runner == null)
-                    return null;
-                var bind = runner.GetBinder(tree);
-                bind = bind == null ? null : bind.Parent;
-                return bind == null ? null : bind.RuntimeTree;
-            }
-        }
-
+        public AssetBinder RuntimeBinder { get { return runtimeBinder; } }
+        
         public BehaviourTreeAsset targetTree
         {
             get
@@ -105,17 +62,7 @@ namespace DevilEditor
                     return "Unknown";
             }
         }
-
-        public bool IsBindToRunner(BehaviourTreeAsset asset)
-        {
-            if (runner == null)
-                return false;
-            if (runner.SourceAsset == asset)
-                return true;
-            var binder = runner.GetBinder(asset);
-            return binder != null && binder.RuntimeTree != null;
-        }
-
+        
         public BehaviourTreeAssetBinder()
         {
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
@@ -146,7 +93,7 @@ namespace DevilEditor
                     if (tmpru != null && tmpru.SourceAsset == tree)
                         runner = tmpru;
                 }
-                UpdateRuntimeBinders();
+                runtimeBinder = runner == null ? null : runner.ActiveBinder;
                 if (updateTreeAsset != null)
                     updateTreeAsset();
             }
@@ -173,6 +120,24 @@ namespace DevilEditor
             return false;
         }
 
+        public void SetBehaviourBinder(AssetBinder binder)
+        {
+            if (binder == null || runtimeBinder == binder)
+                return;
+            if (tmpAsset != null)
+            {
+                BehaviourTreeAsset.DestroyAsset(tmpAsset, true);
+                tmpAsset = null;
+            }
+            runner = binder.Runner;
+            tree = binder.Source;
+            runtimeBinder = binder;
+            if (tree != null)
+                tmpAsset = tree.Clone();
+            if (updateTreeAsset != null)
+                updateTreeAsset();
+        }
+
         public void SetBehaviourTreeAsset(BehaviourTreeAsset asset)
         {
             if (asset == tree)
@@ -183,11 +148,10 @@ namespace DevilEditor
                 tmpAsset = null;
             }
             tree = asset;
-            UpdateRuntimeBinders();
-            if(!IsBindToRunner(asset))
-            {
-                runner = null;
-            }
+            var bind = runner == null  || asset == null ? null : runner.GetBinder(asset);
+            if (bind != null)
+                runner = bind.Runner;
+            runtimeBinder = bind;
             if (tree != null)
                 tmpAsset = tree.Clone();
             if (updateTreeAsset != null)
@@ -196,14 +160,23 @@ namespace DevilEditor
         
         public void SetBehaviourTreeRunner(BehaviourTreeRunner runner)
         {
+            if (runner == null)
+            {
+                this.runner = null;
+                this.runtimeBinder = null;
+                return;
+            }
             if (this.runner == null)
                 this.runner = null;
-            var asset = runner == null ? null : runner.SourceAsset;
-            if (runner == this.runner && tree == asset)
+            var asset = runner == null ? tree : runner.SourceAsset;
+            if (asset == null)
+                asset = tree;
+            var bind = runner == null ? null : runner.GetBinder(asset);
+            if (asset == tree && this.runner == runner && runtimeBinder == bind)
                 return;
             this.runner = runner;
             this.tree = asset;
-            UpdateRuntimeBinders();
+            runtimeBinder = bind;
             if (tmpAsset != null)
             {
                 BehaviourTreeAsset.DestroyAsset(tmpAsset, true);
@@ -226,11 +199,11 @@ namespace DevilEditor
             }
             if (tree != null)
             {
-                UpdateRuntimeBinders();
+                runtimeBinder = runner == null ? null : runner.GetBinder(tree);
                 if (tmpAsset == null)
                     tmpAsset = tree.Clone();
                 else
-                    tree.EditorMergeTo(tmpAsset);
+                    tree.EditorMergeTo(null, tmpAsset);
                 if (updateTreeAsset != null)
                     updateTreeAsset();
             }
@@ -238,8 +211,7 @@ namespace DevilEditor
 
         public bool IsRunning()
         {
-            var bind = RuntimeBinder;
-            return bind != null && bind.RuntimeTree != null;
+            return runtimeBinder != null && runtimeBinder.RuntimeTree != null && runtimeBinder.Runner.isActiveAndEnabled;
         }
 
         public bool IsActiveSelection()
@@ -308,7 +280,7 @@ namespace DevilEditor
             }
             else
             {
-                tmpAsset.EditorMergeTo(tree);
+                tmpAsset.EditorMergeTo(path, tree);
                 tree.GetAllNodes(children);
                 foreach (var t in children)
                 {

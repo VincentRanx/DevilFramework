@@ -8,6 +8,12 @@ namespace Devil.Utility
         bool AddData(object data);
     }
 
+    public interface IPoolWorker<T>
+    {
+        T NewData();
+        void CleanData(T data);
+    }
+
     public class ObjectPool<T> : IPool where T : class
     {
         object mLock = new object();
@@ -17,8 +23,41 @@ namespace Devil.Utility
 
         private T[] mCache;
         private int mLen;
-        public ObjectConstructor Creator { get; set; }
-        public ObjectCleaner Cleaner { get; set; }
+
+        IPoolWorker<T> mWorker;
+        public IPoolWorker<T> Worker
+        {
+            get { return mWorker; }
+            set
+            {
+                if(mWorker != value)
+                {
+                    mWorker = value;
+                    if(mWorker != null)
+                    {
+                        mConstructor = mWorker.NewData;
+                        mCleaner = mWorker.CleanData;
+                    }
+                }
+            }
+        }
+
+        ObjectConstructor mConstructor;
+        ObjectCleaner mCleaner;
+        public void SetConstructor(ObjectConstructor constructor)
+        {
+            mConstructor = constructor;
+            if (mConstructor == null && mWorker != null)
+                mConstructor = mWorker.NewData;
+        }
+
+        public void SetCleaner(ObjectCleaner cleaner)
+        {
+            mCleaner = cleaner;
+            if (mCleaner == null && mWorker != null)
+                mCleaner = mWorker.CleanData;
+        }
+
         public int Length { get { return mLen; } }
         public int Capacity { get { return mCache.Length; } }
         public System.Type GetPoolType()
@@ -34,8 +73,8 @@ namespace Devil.Utility
 
         public ObjectPool(int capacity, ObjectConstructor creator, ObjectCleaner cleaner = null)
         {
-            Creator = creator;
-            Cleaner = cleaner;
+            mConstructor = creator;
+            mCleaner = cleaner;
             mCache = new T[Mathf.Max(32, capacity)];
             mLen = 0;
         }
@@ -48,11 +87,11 @@ namespace Devil.Utility
                 if (len != mCache.Length)
                 {
                     var newcache = new T[len];
-                    if (Cleaner != null)
+                    if (mCleaner != null)
                     {
                         while (mLen > len)
                         {
-                            Cleaner(mCache[--mLen]);
+                            mCleaner(mCache[--mLen]);
                             mCache[mLen] = null;
                         }
                     }
@@ -98,8 +137,8 @@ namespace Devil.Utility
                 }
                 else
                 {
-                    if (Cleaner != null)
-                        Cleaner(data);
+                    if (mCleaner != null)
+                        mCleaner(data);
                     return false;
                 }
             }
@@ -147,9 +186,9 @@ namespace Devil.Utility
                     mCache[--mLen] = null;
                     return ret;
                 }
-                else if (Creator != null)
+                else if (mConstructor != null)
                 {
-                    return Creator();
+                    return mConstructor();
                 }
                 else
                 {
@@ -182,11 +221,11 @@ namespace Devil.Utility
         {
             lock (mLock)
             {
-                if (Cleaner != null)
+                if (mCleaner != null)
                 {
                     while (mLen > 0)
                     {
-                        Cleaner(mCache[--mLen]);
+                        mCleaner(mCache[--mLen]);
                         mCache[mLen] = null;
                     }
                 }

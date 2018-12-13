@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Devil.Utility;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Devil.AI
@@ -15,7 +16,7 @@ namespace Devil.AI
             get
             {
                 if (asset != null)
-                    moduleName = asset.GetType().FullName;
+                    moduleName = asset.GetType().Name;
                 return moduleName;
             }
         }
@@ -25,41 +26,26 @@ namespace Devil.AI
         {
             get
             {
-                var p = parentId == 0 ? null : asset.TreeAsset.GetNodeById(parentId);
+                var p = parentId == 0 || asset == null ? null : asset.TreeAsset.GetNodeById(parentId);
                 if (p == null)
                     parentId = 0;
                 return p;
             }
-            set
-            {
-                var p = parentId == 0 ? null : asset.TreeAsset.GetNodeById(parentId);
-                if (p == value)
-                    return;
-                if (value == null)
-                {
-                    parentId = 0;
-                }
-                else
-                {
-                    parentId = value.id;
-                    if (!value.children.Contains(id))
-                        value.children.Add(id);
-                }
-                if (p != null)
-                    p.children.Remove(id);
-            }
         }
+
         [SerializeField]
         List<int> children = new List<int>();
-        public List<int> ChildrenIds { get { return children; } }
         public int ChildrenCount { get { return children.Count; } }
         public BTNode ChildAt(int index)
         {
             return asset.TreeAsset.GetNodeById(children[index]);
         }
+
         public Vector2 position;
+
         [SerializeField]
         BTAsset asset;
+
         public BTAsset Asset { get { return asset; } }
 
         public int Identify { get { return id; } }
@@ -122,6 +108,38 @@ namespace Devil.AI
             return newnode;
         }
 
+        public BTNode Copy(BehaviourTreeAsset tree, int newid, Vector2 deltaPosition)
+        {
+            BTNode newnode = new BTNode();
+            newnode.id = newid;
+            newnode.moduleName = moduleName;
+            newnode.position = position + deltaPosition;
+            if (asset != null)
+            {
+                newnode.asset = Object.Instantiate(asset);
+                newnode.asset.name = string.Format("{0}_{1}", asset.GetType().Name, newid);
+                newnode.asset.TreeAsset = tree;
+            }
+            else
+            {
+                newnode.asset = null;
+            }
+            return newnode;
+        }
+
+#if UNITY_EDITOR
+        public List<int> EditorChildrenIds { get { return children; } }
+        public int EditorParentId { get { return parentId; } set { parentId = value; } }
+        public void EditorResovleAsset(Object[] assets)
+        {
+            if(asset == null)
+            {
+                var aname = StringUtil.Concat(moduleName, "_", Identify);
+                var t = GlobalUtil.Find(assets, (x) => x.name == aname);
+                asset = t as BTAsset;
+            }
+        }
+#endif
     }
 
     public abstract class BTAsset : ScriptableObject 
@@ -132,10 +150,5 @@ namespace Devil.AI
         public BehaviourTreeAsset TreeAsset { get { return m_TreeAsset; } set { m_TreeAsset = value; } }
         public abstract bool EnableChild { get; }
         public abstract void OnPrepare(BehaviourTreeRunner.AssetBinder assetBinder, BTNode node);
-
-#if UNITY_EDITOR
-        public virtual void EditorNodeRemoved(ICollection<int> ids) {}
-        public virtual void EditorGetDependentIds(ICollection<int> ids) { }
-#endif
     }
 }

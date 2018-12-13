@@ -1,4 +1,5 @@
 ﻿using Devil.AI;
+using Devil.Utility;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -38,6 +39,7 @@ namespace DevilEditor
             enableParent = mAsset != null;
             mContext = mNode;
             mDetail = GetDetail();
+            BreakToggle = mAsset == null ? false : mAsset.EditorBreakToggle;
             Resize();
         }
         
@@ -183,9 +185,7 @@ namespace DevilEditor
             var runtime = nd == null ? null : nd.Asset as BTNodeAsset;
             if (runtime == null || looper == null)
                 return;
-            //var access = looper.EditorAccessed.Contains(runtime);
-            //if (!access)
-            //    return;
+            runtime.EditorBreakToggle = BreakToggle;
             if(runtime.State == EBTState.running)
             {
                 var size = SLOT_SIZE * 1.5f * GlobalScale;
@@ -208,7 +208,7 @@ namespace DevilEditor
                 pos = new Rect(pos.xMax - dh, pos.y, dh, dh);
                 for(int i= 0; i < runtime.ConditionCount; i++)
                 {
-                    var ok = runtime.editor_conditionCache[i];
+                    var ok = runtime.EditorConditionResult(i);
                     GUI.DrawTexture(pos, ok ? AIModules.GoodIcon : AIModules.BadIcon);
                     pos.y += h;
                 }
@@ -222,6 +222,15 @@ namespace DevilEditor
                 editor.AIGraph.RemoveElement(this);
                 return;
             }
+            if (editor.Binder.IsRunning())
+            {
+                var runtime = editor.Binder.runtime;
+                mRuntime = runtime == null ? null : runtime.GetNodeById(mNode.Identify);
+            }
+            else
+            {
+                mRuntime = null;
+            }
             mContext = mNode;
             var space = SPACE * GlobalScale;
             var icon = ICON_SIZE * GlobalScale;
@@ -230,7 +239,13 @@ namespace DevilEditor
             var dsize = mDetailSize * GlobalScale;
             var pos = rect;
             QuickGUI.DrawBox(rect, color, selected ? SELECTED_COLOR : BOARDER_COLOR, selected ? 2 : 1, true);
-            
+            if(mRuntime != null && mRuntime.isTask)
+            {
+                pos.width *= Mathf.PingPong(((BTTaskAsset)mRuntime.Asset).EditorDebugTime * 0.5f, 1f);
+                pos.height = tsize.y;
+                pos.y = rect.y + decorh * mConditionNames.Count;
+                GUI.Label(pos, DevilEditorUtility.EmptyContent, "MeLivePlayBar");
+            }
             bool raycast;
             float h = rect.y;
             for (int i = 0; i < mConditionNames.Count; i++)
@@ -257,39 +272,48 @@ namespace DevilEditor
             pos.size = tsize;
             pos.position += Vector2.right * (icon.x + space.x * 0.5f);
             GUITitle(pos, title, FontStyle.Bold, TextAnchor.UpperLeft);
-            if(!string.IsNullOrEmpty(mDetail))
+            if (!string.IsNullOrEmpty(mDetail))
             {
                 pos.size = dsize;
                 pos.position = new Vector2(rect.x + space.x, pos.y + tsize.y + 0.5f * space.y);
                 GUISubtitle(pos, mDetail, FontStyle.Normal, TextAnchor.MiddleLeft);
             }
             var del = GetDetail();
-            if(del != mDetail)
+            if (del != mDetail)
             {
                 mDetail = del;
                 Resize();
             }
-            if (editor.Binder.IsRunning())
+            if (mRuntime != null)
             {
-                var runtime = editor.Binder.runtime;
-                mRuntime = runtime == null ? null : runtime.GetNodeById(mNode.Identify);
                 DebugRuntimeState(rect);
             }
-            else
+            if (BreakToggle)
             {
-                mRuntime = null;
+                pos.size = Vector2.one * 15;
+                pos.center = new Vector2(rect.xMax, rect.yMin);
+                GUI.Label(pos, DevilEditorUtility.EmptyContent, "Icon.AutoKey");
             }
         }
         
         public override void DrawComment(bool raycast)
         {
+            if (!mResized)
+                return;
             var com = mAsset.m_Comment;
+            if(mRuntime != null)
+            {
+                if (string.IsNullOrEmpty(com))
+                    com = StringUtil.Concat("ID: ", mRuntime.Asset.GetInstanceID().ToString("x"));
+                else
+                    com = StringUtil.Concat("ID: ", mRuntime.Asset.GetInstanceID().ToString("x"), '\n', com);
+            }
             if (string.IsNullOrEmpty(com))
                 return;
             if (com != mComment)
             {
                 mComment = com;
-                mCommentSize = CalculateSubtitleSize(mComment);
+                mCommentSize = CalculateSubtitleSize(mComment, SUB_SIZE + 2);
             }
             var rect = new Rect();
             var size = mCommentSize * GlobalScale;
@@ -300,7 +324,7 @@ namespace DevilEditor
             rect.size = size;
             rect.x = GlobalRect.x + 2;
             rect.y = GlobalRect.y - size.y - 6;
-            GUISubtitle(rect, mComment, Color.white * (raycast ? 1f : 0.7f), raycast ? FontStyle.Normal : FontStyle.Italic, TextAnchor.MiddleLeft);
+            GUISubtitle(rect, mComment, Color.white * (raycast ? 1f : 0.7f), SUB_SIZE + 2, raycast ? FontStyle.Normal : FontStyle.Italic, TextAnchor.MiddleLeft);
         }
 
         public override bool EnableParentAs(BehaviourNode node)
@@ -318,12 +342,11 @@ namespace DevilEditor
         public override void ModifyParentAs(BehaviourNode node)
         {
             base.ModifyParentAs(node);
-            var todo = BTEditableDO.New<ModifyParent>(editor);
+            var todo = BTEditableDO.New<BTModifyParent>(editor);
             todo.isParentRoot = node == editor.RootNode;
             todo.child = mNode;
             todo.parent = node == null ? null : node.GetNode();
             editor.DoEdit(todo);
         }
-        
     }
 }

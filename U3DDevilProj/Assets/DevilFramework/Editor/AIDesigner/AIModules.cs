@@ -12,7 +12,7 @@ namespace DevilEditor
         public const int CATE_TASK = 1;
         public const int CATE_CONDITION = 2;
         public const int CATE_SERVICE = 3;
-
+        
         public readonly static string[] CATES = { "控制节点", "任务节点", "条件", "服务" };
 
         public class Module
@@ -28,8 +28,9 @@ namespace DevilEditor
 
             public Color color { get; private set; }
             public Texture icon { get; private set; }
-            public string Title { get { return composite == null || string.IsNullOrEmpty(composite.Title) ? type.Name : composite.Title; } }
-            public string Detail { get { return composite == null ? null : composite.Detail; } }
+            public string Title { get; private set; }
+            public string Detail { get; private set; }
+            public string CateTitle { get; private set; }
 
             public bool IsController { get { return CategoryId == CATE_COMPOSITE; } }
             public bool IsTask { get { return CategoryId == CATE_TASK; } }
@@ -44,6 +45,8 @@ namespace DevilEditor
                 this.Category = category;
                 composite = Ref.GetCustomAttribute<BTCompositeAttribute>(type);
                 Hotkey = composite == null ? 0 : composite.HotKey;
+                Title = composite == null || string.IsNullOrEmpty(composite.Title) ? type.Name : composite.Title;
+                Detail = composite == null ? null : composite.Detail;
                 Color c;
                 if (composite != null && !string.IsNullOrEmpty(composite.color) && ColorUtility.TryParseHtmlString(composite.color, out c))
                     color = c;
@@ -53,11 +56,12 @@ namespace DevilEditor
                 var buf = StringUtil.GetBuilder();
                 buf.Append(category).Append('/');
                 if (composite != null && !string.IsNullOrEmpty(composite.Category))
-                    buf.Append(composite.Category).Append('/');
-                if (composite != null && !string.IsNullOrEmpty(composite.Title))
-                    buf.Append(composite.Title);
+                    CateTitle = StringUtil.Concat(composite.Category, '/', Title);
+                else if (!string.IsNullOrEmpty(type.Namespace) && type.Namespace != "Devil.AI")
+                    CateTitle = StringUtil.Concat(type.Namespace, '/', Title);
                 else
-                    buf.Append(type.FullName);
+                    CateTitle = Title;
+                buf.Append(CateTitle);
                 Path = new GUIContent(StringUtil.ReleaseBuilder(buf));
             }
 
@@ -156,9 +160,9 @@ namespace DevilEditor
                 return null;
             if (node.Asset != null)
                 return Get(node.Asset.GetType());
-            foreach(var t in sAllModules)
+            foreach (var t in sAllModules)
             {
-                if (t.ModuleType.FullName == node.ModName)
+                if (t.ModuleType.Name == node.ModName)
                     return t;
             }
             return null;
@@ -177,7 +181,7 @@ namespace DevilEditor
                 cate = CATE_CONDITION;
             else if (hotkey == KeyCode.Alpha4)
                 cate = CATE_SERVICE;
-            foreach(var t in sAllModules)
+            foreach (var t in sAllModules)
             {
                 if (t.Hotkey == hotkey || t.CategoryId == cate)
                     modules.Add(t);
@@ -188,8 +192,8 @@ namespace DevilEditor
         {
             sColors[CATES[CATE_COMPOSITE]] = new Color(0.3f, 0.3f, 0.3f);
             sColors[CATES[CATE_TASK]] = new Color(0.6f, 0.1f, 1f);
-            sColors[CATES[CATE_SERVICE]] = new Color(0.1f, 0.5f, 0.1f);
-            sColors[CATES[CATE_CONDITION]] = new Color(0.4f, 0.4f, 0.4f);
+            sColors[CATES[CATE_SERVICE]] = new Color(0.1f, 0.35f, 0.1f);
+            sColors[CATES[CATE_CONDITION]] = new Color(0.1f, 0.3f, 0.5f);
 
             sSharedTypes.Clear();
             sSharedTypes.Add(typeof(GameObject));
@@ -201,7 +205,7 @@ namespace DevilEditor
             sSharedTypes.Add(typeof(string));
 
             icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/DevilFramework/Gizmos/AI Icons/BehaviourTree Icon.png");
-            for(int i = 0; i < sModules.Length; i++)
+            for (int i = 0; i < sModules.Length; i++)
             {
                 sModules[i] = new List<Module>();
             }
@@ -227,7 +231,7 @@ namespace DevilEditor
 
             sSharedTypes.Add(typeof(object));
             sSharedTypeNames = new string[sSharedTypes.Count];
-            for(int i= 0; i < sSharedTypeNames.Length; i++)
+            for (int i = 0; i < sSharedTypeNames.Length; i++)
             {
                 sSharedTypeNames[i] = sSharedTypes[i].FullName;
             }

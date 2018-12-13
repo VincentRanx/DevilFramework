@@ -281,6 +281,18 @@ namespace Devil.Utility
             return ret;
         }
 
+        public static void RandomSort<T>(IList<T> array)
+        {
+            T tmp;
+            for (int i = array.Count - 1; i > 0; i--)
+            {
+                var r = Mathf.RoundToInt(Random.value * i);
+                tmp = array[r];
+                array[r] = array[i];
+                array[i] = tmp;
+            }
+        }
+
         public static void Sort<T>(IList<T> array, System.Comparison<T> compare)
         {
             for (int i = 0; i < array.Count; i++)
@@ -349,6 +361,100 @@ namespace Devil.Utility
         {
             var cross = Vector3.Cross(from, to);
             return Mathf.Sin(Vector3.Dot(cross, normal));
+        }
+
+        /// <summary>
+        /// 判断点p在平面前面否
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="pointInPlane"></param>
+        /// <param name="planeNormal"></param>
+        /// <returns></returns>
+        public static bool IsFront(Vector3 p, Vector3 pointInPlane, Vector3 planeNormal)
+        {
+            var dir = p - pointInPlane;
+            return Vector3.Dot(dir, planeNormal) >= 0;
+        }
+
+        public static bool IsBack(Vector3 p, Vector3 pointInPlane, Vector3 planeNormal)
+        {
+            var dir = p - pointInPlane;
+            return Vector3.Dot(dir, planeNormal) < 0;
+        }
+
+        // not normalized
+        public static Vector3 TopNormalDir(FrustumPlanes frustum)
+        {
+            return new Vector3(0,
+                frustum.zFar * frustum.right - frustum.zFar * frustum.left, 
+                frustum.left * frustum.top - frustum.right * frustum.top);
+        }
+
+        public static Vector3 DownNormalDir(FrustumPlanes frustum)
+        {
+            return new Vector3(0,
+                frustum.zFar * frustum.left - frustum.zFar * frustum.right,
+                frustum.right * frustum.bottom - frustum.left * frustum.bottom);
+        }
+         
+        public static Vector3 RightNormalDir(FrustumPlanes frustum)
+        {
+            return new Vector3(frustum.zFar * frustum.top - frustum.zFar * frustum.bottom,
+                0,
+                frustum.right * frustum.bottom - frustum.right * frustum.top);
+        }
+
+        public static Vector3 LeftNormalDir(FrustumPlanes frustum)
+        {
+            return new Vector3(frustum.zFar * frustum.bottom - frustum.zFar * frustum.top,
+                0,
+                frustum.left * frustum.top - frustum.left * frustum.bottom);
+        }
+
+        public static bool IsInFrustum(Vector3 p, FrustumPlanes frustum)
+        {
+            if (p.z <= frustum.zNear || p.z >= frustum.zFar)
+                return false;
+            var nor = TopNormalDir(frustum);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            nor = DownNormalDir(frustum);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            nor = RightNormalDir(frustum);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            nor = LeftNormalDir(frustum);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            return true;
+        }
+
+        public static bool IsInFrustum(Vector3 p, float zFar, float zNear, float x, float y)
+        {
+            if (p.z <= zNear || p.z >= zFar)
+                return false;
+            var nor = new Vector3(0,
+                zFar * x * 2,
+                -2 * x * y);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            nor = new Vector3(0,
+                -2 * zFar * x,
+                -2 * x * y);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            nor = new Vector3(zFar * y * 2,
+                0,
+               -2 * x * y);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            nor = new Vector3(-2 * zFar * y,
+                0,
+                -2 * x * y);
+            if (Vector3.Dot(p, nor) >= 0)
+                return false;
+            return true;
         }
 
         /// <summary>

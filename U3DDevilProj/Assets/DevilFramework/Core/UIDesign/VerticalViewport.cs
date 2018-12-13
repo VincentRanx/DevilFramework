@@ -101,7 +101,7 @@ namespace Devil.UI
                 {
                     if (dataEntity == null)
                     {
-                        dataEntity = viewport.mObjectBuffer.GetAnyTarget(prototype);
+                        dataEntity = viewport.mObjectBuffer[prototype].Get();// .GetAnyTarget(prototype);
                         dataEntity.OnBindData(info);
                     }
                     if (!dataEntity.gameObject.activeSelf)
@@ -116,7 +116,7 @@ namespace Devil.UI
                 else if (dataEntity != null)
                 {
                     dataEntity.OnUnbindData();
-                    viewport.mObjectBuffer.SaveBuffer(prototype, dataEntity);
+                    viewport.mObjectBuffer[prototype].Add(dataEntity);// .SaveBuffer(prototype, dataEntity);
                     if (viewport.m_MoveCachedItemOutOfBounds && viewport.m_ClipRect != null)
                     {
                         var rect = _2DUtil.CalculateRelativeRect(viewport.transform, viewport.m_ClipRect);
@@ -254,6 +254,36 @@ namespace Devil.UI
             }
         }
 
+        class Prototype : IPoolWorker<LayoutData>
+        {
+            public LayoutData prefab;
+
+            public void CleanData(LayoutData data)
+            {
+                if(data != prefab)
+                {
+#if UNITY_EDITOR
+                    if(!Application.isPlaying)
+                    {
+                        Object.DestroyImmediate(data.gameObject);
+                    }
+                    else
+                    {
+#endif
+                    Object.Destroy(data.gameObject);
+#if UNITY_EDITOR
+                    }
+#endif
+                }
+            }
+
+            public LayoutData NewData()
+            {
+                var go = Instantiate(prefab.gameObject, prefab.transform.parent);
+                return go.GetComponent<LayoutData>();
+            }
+        }
+
         public RectTransform m_ClipRect;
 
         [SerializeField]
@@ -285,8 +315,8 @@ namespace Devil.UI
         }
 
         float mFixedWidth; // 宽度
-        LayoutData[] mPrototypes; // 预设原型
-        ObjectBuffers<LayoutData> mObjectBuffer;
+        Prototype[] mPrototypes; // 预设原型
+        ObjectPool<LayoutData>[] mObjectBuffer;
 
         Element mFirst;
         Element mLast;
@@ -319,7 +349,7 @@ namespace Devil.UI
 
         Vector2 SizeOfPrototype(int prototype)
         {
-            var p = mPrototypes[prototype];
+            var p = mPrototypes[prototype].prefab;
             return p.rectTransform.rect.size;
         }
 
@@ -328,21 +358,24 @@ namespace Devil.UI
             if (mPrototypes == null || mObjectBuffer == null)
             {
                 Transform trans = transform;
-                mPrototypes = new LayoutData[trans.childCount];
-                mObjectBuffer = new ObjectBuffers<LayoutData>(mPrototypes.Length, m_InitCacheSize, InstantiateData, DestroyData);
+                mPrototypes = new Prototype[trans.childCount];
+                mObjectBuffer = new ObjectPool<LayoutData>[mPrototypes.Length];
                 Vector2 anchor = new Vector2(0, 1);
                 for (int i = 0; i < mPrototypes.Length; i++)
                 {
+                    mObjectBuffer[i] = new ObjectPool<LayoutData>();
+                    mPrototypes[i] = new Prototype();
+                    mObjectBuffer[i].Worker = mPrototypes[i];
                     GameObject go = trans.GetChild(i).gameObject;
                     LayoutData data = go.GetComponent<LayoutData>();
                     if (data == null)
                         data = go.AddComponent<LayoutData>();
-                    mPrototypes[i] = data;
+                    mPrototypes[i].prefab = data;
                     data.rectTransform.anchorMin = anchor;
                     data.rectTransform.anchorMax = anchor;
                     if (go.activeSelf)
                         go.SetActive(false);
-                    mObjectBuffer.SaveBuffer(i, data);
+                    mObjectBuffer[i].Add(data);
                 }
             }
         }
@@ -407,34 +440,6 @@ namespace Devil.UI
             return -1;
         }
 
-        // 实例化对象
-        LayoutData InstantiateData(int prototype)
-        {
-            LayoutData proto = mPrototypes[prototype];
-            if (proto == null)
-                return null;
-            GameObject obj = Instantiate(proto.gameObject, transform, false);
-            return obj.GetComponent<LayoutData>();
-        }
-
-        bool DestroyData(int prototype, LayoutData data)
-        {
-            if (data != null && data != mPrototypes[prototype])
-            {
-#if UNITY_EDITOR
-                if (!Application.isPlaying)
-                    DestroyImmediate(data.gameObject);
-                else
-#endif
-                    Destroy(data.gameObject);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         int CompareData(Element a, Element b)
         {
             if (Sorter == null)
@@ -465,11 +470,16 @@ namespace Devil.UI
             {
                 for(int i = 0; i < mPrototypes.Length; i++)
                 {
-                    mPrototypes[i].gameObject.SetActive(true);
+                    mPrototypes[i].prefab.gameObject.SetActive(true);
                 }
             }
             if (!Application.isPlaying && mObjectBuffer != null)
-                mObjectBuffer.Clear();
+            {
+                foreach(var pool in mObjectBuffer)
+                {
+                    pool.Clear();
+                }
+            }
             SetDirty();
             //SelfRect.offsetMin = new Vector2(0, -m_Space.y * 2f);
             //SelfRect.offsetMax = new Vector2(mFixedWidth, 0);
@@ -479,7 +489,12 @@ namespace Devil.UI
         {
             base.OnDestroy();
             if(mObjectBuffer != null)
-                mObjectBuffer.Clear();
+            {
+                foreach (var pool in mObjectBuffer)
+                {
+                    pool.Clear();
+                }
+            }
         }
 
         [ContextMenu("Resposition")]

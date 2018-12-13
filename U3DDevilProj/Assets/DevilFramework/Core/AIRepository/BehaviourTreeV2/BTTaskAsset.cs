@@ -1,4 +1,6 @@
-﻿namespace Devil.AI
+﻿using UnityEngine;
+
+namespace Devil.AI
 {
     public interface IBTTask
     {
@@ -26,6 +28,11 @@
 
         public override void Start()
         {
+#if UNITY_EDITOR
+            EditorDebugTime = 0;
+            if (EditorBreakToggle)
+                Debug.Break();
+#endif
             mState = OnStart();
         }
 
@@ -40,6 +47,9 @@
 
         public override void OnTick(float deltaTime)
         {
+#if UNITY_EDITOR
+            EditorDebugTime += Time.unscaledDeltaTime;
+#endif
             mState = OnUpdate(deltaTime);
         }
 
@@ -47,5 +57,9 @@
         public abstract EBTState OnUpdate(float deltaTime);
         public abstract EBTState OnAbort();
         public virtual void OnStop() { }
+
+#if UNITY_EDITOR
+        public float EditorDebugTime { get; private set; }
+#endif
     }
 }

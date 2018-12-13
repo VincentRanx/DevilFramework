@@ -43,7 +43,7 @@ namespace Devil.AI
                     FiniteStateTransition trans = m_Transitions[i];
                     if (trans.Init(impl))
                     {
-                        m_StateMachine.AddTransition(trans.m_FromState, trans.m_ToState, trans.IsSuccess);
+                        m_StateMachine.AddTransition(trans.m_FromState, trans.m_ToState, trans);
                     }
                 }
             }

@@ -17,9 +17,6 @@ namespace DevilEditor
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            BlackboardAsset aseet = m_Blackboard.objectReferenceValue as BlackboardAsset;
-            if (aseet != null )
-                BlackboardAssetInspector.OnBlackboardInspectorGUI(aseet);
             serializedObject.ApplyModifiedProperties();
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(40);

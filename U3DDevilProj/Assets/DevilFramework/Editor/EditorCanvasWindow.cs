@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -89,7 +90,6 @@ namespace DevilEditor
 
         public EditorCanvasWindow() : base()
         {
-            mSerializeKey = GetType() + ".sav";
             InitCanvas();
         }
 
@@ -110,8 +110,16 @@ namespace DevilEditor
             SaveData();
         }
 
+        protected virtual string GetSerializeKey()
+        {
+            var dic = new DirectoryInfo(Application.dataPath);
+            return dic.Parent.Name + GetType() + ".sav";
+        }
+
         void ReadData()
         {
+            if (string.IsNullOrEmpty(mSerializeKey))
+                mSerializeKey = GetSerializeKey();
             string str = EditorPrefs.GetString(mSerializeKey);
             if (!string.IsNullOrEmpty(str))
             {
@@ -127,6 +135,8 @@ namespace DevilEditor
 
         void SaveData()
         {
+            if (string.IsNullOrEmpty(mSerializeKey))
+                mSerializeKey = GetSerializeKey();
             JObject obj = new JObject();
             OnSaveCustomData(obj);
             obj["scale"] = ScaledCanvas.LocalScale;
@@ -387,5 +397,16 @@ namespace DevilEditor
             mPostTasks.Add(new DelayTask(id, act));
         }
 
+        public bool IsDelayTaskScheduled(int id)
+        {
+            for (int i = 0; i < mPostTasks.Count; i++)
+            {
+                if (mPostTasks[i].Id == id)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

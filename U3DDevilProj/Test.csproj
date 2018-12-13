@@ -300,23 +300,22 @@
     <Compile Include="Assets\Test\Scripts\TestService.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\DevilFramework\Backup\Emission-normal.shader" />
-    <None Include="Assets\DevilFramework\Backup\ImageBlendEffect.shader" />
-    <None Include="Assets\DevilFramework\Backup\RefractionNormal-transport.shader" />
-    <None Include="Assets\DevilFramework\Core\Command\notepadstyle.xml" />
-    <None Include="Assets\DevilFramework\Core\Command\rts.init.txt" />
     <None Include="Assets\DevilFramework\Core\DevilFramework.Core.asmdef" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework-Cfg-Default.xml" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework-Cfg.xml" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework.Editor.asmdef" />
     <None Include="Assets\DevilFramework\GamePlay\Editor\DevilFramework.GamePlay.Editor.asmdef" />
     <None Include="Assets\DevilFramework\GamePlay\Runtime\DevilFramework.GamePlay.asmdef" />
+    <None Include="Assets\DevilFramework\RTSVM\Command\notepadstyle.xml" />
+    <None Include="Assets\DevilFramework\RTSVM\Command\rts.init.txt" />
+    <None Include="Assets\DevilFramework\RTSVM\RTSVM.asmdef" />
     <None Include="Assets\DevilFramework\Resources\Shaders\BlitImg.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\DevilCG.cginc" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-BlurScreen.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-ColorAsChannel.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-EmojiFont.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-Transition.shader" />
+    <None Include="Assets\Scenes\WorldCreater\test.xml" />
     <None Include="Assets\Test\Scripts\Test.asmdef" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

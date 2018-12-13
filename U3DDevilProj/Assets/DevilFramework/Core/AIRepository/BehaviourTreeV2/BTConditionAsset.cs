@@ -6,9 +6,9 @@
     {
         public int Identify { get; private set; }
         public virtual string DisplayName { get { return null; } }
-        public abstract int Mask { get; }
         public abstract bool IsSuccess { get; }
         public override bool EnableChild { get { return false; } }
+        
         public override void OnPrepare(BehaviourTreeRunner.AssetBinder binder, BTNode node)
         {
             Identify = node.Identify;

@@ -4,6 +4,38 @@ namespace Devil.Utility
 {
     public class GizmosUtil
     {
+        public static void DrawFrustum(FrustumPlanes frustum)
+        {
+            if (frustum.zFar <= 0)
+                return;
+            var p0 = new Vector3(frustum.left, frustum.top, frustum.zFar);
+            var p1 = new Vector3(frustum.right, frustum.top, frustum.zFar);
+            var p2 = new Vector3(frustum.right, frustum.bottom, frustum.zFar);
+            var p3 = new Vector3(frustum.left, frustum.bottom, frustum.zFar);
+            Gizmos.DrawLine(p0, p1);
+            Gizmos.DrawLine(p1, p2);
+            Gizmos.DrawLine(p2, p3);
+            Gizmos.DrawLine(p3, p0);
+            var f = frustum.zNear > 0 && frustum.zNear < frustum.zFar ? frustum.zNear / frustum.zFar : 0;
+            f = 1 - f;
+            Gizmos.DrawRay(p0, -p0 * f);
+            Gizmos.DrawRay(p1, -p1 * f);
+            Gizmos.DrawRay(p2, -p2 * f);
+            Gizmos.DrawRay(p3, -p3 * f);
+            f = 1 - f;
+            if(f > 0)
+            {
+                p0 *= f;
+                p1 *= f;
+                p2 *= f;
+                p3 *= f;
+                Gizmos.DrawLine(p0, p1);
+                Gizmos.DrawLine(p1, p2);
+                Gizmos.DrawLine(p2, p3);
+                Gizmos.DrawLine(p3, p0);
+            }
+        }
+
         public static void DrawWiredCube(Vector3 center, Vector3 size, float bodyTransparency = 0.5f)
         {
             Color color = Gizmos.color;

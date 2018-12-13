@@ -2,7 +2,8 @@
 
 namespace Devil.AI
 {
-    [BTComposite(Title = "选择 (SELECTOR)",Detail = "依次执行子节点，\n直到任何一个任务执行成功", IconPath = "Assets/DevilFramework/Gizmos/AI Icons/selector.png", HotKey = KeyCode.S)]
+    [BTComposite(Title = "选择 (SELECTOR)",Detail = "依次执行子节点，\n直到任何一个任务执行成功", 
+        IconPath = "Assets/DevilFramework/Gizmos/AI Icons/selector.png", HotKey = KeyCode.S)]
     public class BTSelector : BTControllerAsset
     {
         int mIndex;

@@ -6,28 +6,25 @@ namespace Devil.AI
     public class BlackboardAsset : ScriptableObject
     {
         [System.Serializable]
-        public class KeyValue
+        public struct VariableDefine
         {
-            public string m_Key;
-            public string m_Value;
-            public string m_Comment;
-
-            public KeyValue()
-            {
-                m_Key = "varName";
-                m_Value = typeof(int).FullName;
-                m_Comment = "";
-            }
+            public string name;
+            public string typeDef;
+            public bool isList;
+            public string comment;
         }
 
-        [HideInInspector]
-        public KeyValue[] m_Properties = new KeyValue[0];
+        [SerializeField]
+        VariableDefine[] m_Properties = new VariableDefine[0];
+
+        public int Length { get { return m_Properties.Length; } }
+        public VariableDefine this[int index] { get { return m_Properties[index]; } }
 
         public bool HasKey(string key)
         {
-            for(int i = 0; i < m_Properties.Length; i++)
+            for (int i = 0; i < m_Properties.Length; i++)
             {
-                if (m_Properties[i].m_Key == key)
+                if (m_Properties[i].name == key)
                     return true;
             }
             return false;

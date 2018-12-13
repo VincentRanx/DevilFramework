@@ -74,7 +74,7 @@ namespace DevilEditor
         {
 #if UNITY_2017
             if (!boxTex)
-                boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Editor/Icons/box.png"));
+                boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Gizmos/box.png"));
             if (color.a > 0)
                 GUI.DrawTexture(rect, boxTex, ScaleMode.StretchToFill, true, 0, color, 0, 0);
             if (borderSize > 0 && borderColor.a > 0)
@@ -90,7 +90,7 @@ namespace DevilEditor
             }
 #else
             if (!boxTex)
-                boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Editor/Icons/box.png"));
+                boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Gizmos/box.png"));
             if (color.a > 0)
                 GUI.DrawTexture(rect, boxTex, ScaleMode.StretchToFill, true);
             bool border = borderSize > 0 && borderColor.a > 0;

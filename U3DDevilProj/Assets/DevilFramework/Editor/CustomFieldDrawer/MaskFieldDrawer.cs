@@ -13,18 +13,21 @@ namespace DevilEditor
         {
             EditorGUI.BeginProperty(position, label, property);
             int lv = EditorGUI.indentLevel;
-            //builder.Remove(0, builder.Length);
-            //for (int i = 0; i < lv; i++)
-            //{
-            //    builder.Append("    ");
-            //}
-            //builder.Append(label.text);
-            //label.text = builder.ToString();
             position = EditorGUI.PrefixLabel(position, label);
             EditorGUI.indentLevel = 0;
-            if (property.propertyType == SerializedPropertyType.Enum)
+            var att = attribute as MaskFieldAttribute;
+            if(property.propertyType == SerializedPropertyType.Integer && att.Names != null && att.Names.Length > 0)
             {
-                property.intValue = EditorGUI.MaskField(position, property.intValue, property.enumDisplayNames);
+                property.intValue = EditorGUI.MaskField(position, property.intValue, att.Names);
+            }
+            else if (property.propertyType == SerializedPropertyType.Enum)
+            {
+                string[] names;
+                if (att.Names != null && att.Names.Length > 0)
+                    names = att.Names;
+                else
+                    names = property.enumDisplayNames;
+                property.intValue = EditorGUI.MaskField(position, property.intValue, names);
             }
             else
             {

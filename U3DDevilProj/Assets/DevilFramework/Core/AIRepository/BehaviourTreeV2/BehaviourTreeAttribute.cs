@@ -19,13 +19,34 @@ namespace Devil.AI
     {
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
-    public class BTBlackboardPropertyAttribute : PropertyAttribute
+    public enum EVarType
     {
+        Any,
+        Variable,
+        List,
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Field , AllowMultiple = false, Inherited = true)]
-    public class BTSubBehaviourTreeAttribute : PropertyAttribute
+    [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public class BTVariableReferenceAttribute : PropertyAttribute
     {
+        public EVarType VarType { get; set; }
+        public System.Type VarClass { get; set; }
+
+        public BTVariableReferenceAttribute()
+        {
+        }
+
+        public BTVariableReferenceAttribute(System.Type type)
+        {
+            this.VarClass = type;
+            this.VarType = EVarType.Any;
+        }
+
+        public BTVariableReferenceAttribute(System.Type type, EVarType vartype)
+        {
+            this.VarClass = type;
+            this.VarType = vartype;
+        }
     }
+
 }

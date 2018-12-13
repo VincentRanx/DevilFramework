@@ -30,8 +30,8 @@
                     }
                     else if (mActive)
                     {
-                        self.OnRefreshData(mData);
                         self.OnBindDataEvents(mData);
+                        self.OnRefreshData(mData);
                     }
                 };
             }
@@ -49,8 +49,8 @@
                     {
                         if (value)
                         {
-                            self.OnRefreshData(mData);
                             self.OnBindDataEvents(mData);
+                            self.OnRefreshData(mData);
                             mRefresh = false;
                         }
                         else

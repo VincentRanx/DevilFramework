@@ -163,7 +163,7 @@ namespace Devil.AI
 
 
     [System.Serializable]
-    public class FiniteStateTransition
+    public class FiniteStateTransition : ICondition
     {
         public string m_FromState;
         public string m_ToState;
@@ -186,15 +186,18 @@ namespace Devil.AI
             }
         }
 
-        public bool IsSuccess()
+        public bool IsSuccess
         {
-            if (m_CondtionDelegate != null)
+            get
             {
-                return m_CondtionDelegate();
-            }
-            else
-            {
-                return false;
+                if (m_CondtionDelegate != null)
+                {
+                    return m_CondtionDelegate();
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
     }

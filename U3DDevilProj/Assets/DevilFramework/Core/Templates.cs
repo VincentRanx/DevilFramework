@@ -69,7 +69,6 @@ namespace Devil
     // 条件接口
     public interface ICondition
     {
-        int Mask { get; }
         bool IsSuccess { get; }
     }
 }

@@ -77,10 +77,17 @@ namespace DevilEditor
 
         List<Binder> mConditions = new List<Binder>();
         AIModules.Module mMod;
+        SerializedProperty mComment;
+        string comment;
+        readonly string comHint = "Edit Comment...";
 
         private void OnEnable()
         {
-            mMod = target == null ? null : AIModules.Get(target.GetType());
+            if (this == null || target == null || serializedObject == null)
+                return;
+            mMod = AIModules.Get(target.GetType());
+            mComment = serializedObject.FindProperty("m_Comment");
+            comment = mComment.stringValue;
         }
 
         private void OnDisable()
@@ -138,15 +145,29 @@ namespace DevilEditor
         }
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
             if (target != null)
             {
                 OnConditionGUI();
-                EditorGUILayout.LabelField(mMod.Title, (GUIStyle)"LODLevelNotifyText", GUILayout.Height(30));
-                if (!string.IsNullOrEmpty(mMod.Detail))
-                    EditorGUILayout.HelpBox(mMod.Detail, MessageType.Info);
+                DrawTitle();
+                EditorGUILayout.BeginHorizontal("helpbox");
+                comment = EditorGUILayout.TextArea(string.IsNullOrEmpty(comment) ? comHint : comment, DevilEditorUtility.HintStyle("label"), GUILayout.Height(50));
+                EditorGUILayout.EndHorizontal();
+                if (comment != comHint)
+                    mComment.stringValue = comment;
+                else
+                    mComment.stringValue = "";
+                serializedObject.ApplyModifiedProperties();
             }
             if (serializedObject != null)
                 base.OnInspectorGUI();
+        }
+
+        protected void DrawTitle()
+        {
+            EditorGUILayout.LabelField(mMod.Title, (GUIStyle)"LODLevelNotifyText", GUILayout.Height(30));
+            if (!string.IsNullOrEmpty(mMod.Detail))
+                EditorGUILayout.HelpBox(mMod.Detail, MessageType.Info);
         }
 
         protected virtual void OnConditionGUI()

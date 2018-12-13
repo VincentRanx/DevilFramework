@@ -1,4 +1,5 @@
 ﻿using Devil.AI;
+using Devil.Utility;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -20,7 +21,7 @@ namespace DevilEditor
         }
     }
 
-    public class AddNode : BTEditableDO
+    public class BTAddNode : BTEditableDO
     {
         public BTNode context;
         public Vector2 position;
@@ -47,14 +48,7 @@ namespace DevilEditor
                     else
                     {
                         asset = editor.TargetTree.EditorCreateNode(mod.ModuleType, position);
-                        using (var ser = new SerializedObject(context.Asset))
-                        {
-                            var pro = ser.FindProperty(BTNodeAsset.P_CONDITION);
-                            pro.arraySize++;
-                            pro = pro.GetArrayElementAtIndex(pro.arraySize - 1);
-                            pro.intValue = asset.Identify;
-                            ser.ApplyModifiedPropertiesWithoutUndo();
-                        }
+                        ((BTNodeAsset)context.Asset).EditorConditionIds.Add(asset.Identify);
                         editor.EditNodes((x) =>
                         {
                             if (x.GetNode() == context)
@@ -71,7 +65,7 @@ namespace DevilEditor
                         editor.Tip.Show(string.Format("!!!无法添加\"{0}\"", mod.Title), 5);
                         return false;
                     }
-                     asset = editor.TargetTree.EditorCreateNode(mod.ModuleType, position);
+                    asset = editor.TargetTree.EditorCreateNode(mod.ModuleType, position);
                     if (asset.Asset is BTNodeAsset)
                     {
                         var node = new BTNodeGUI(editor, asset);
@@ -84,16 +78,17 @@ namespace DevilEditor
                     else if (editor.PresentChildRequest != null && editor.PresentChildRequest.GetNode() != null)
                     {
                         var parent = editor.PresentChildRequest.GetNode();
-                        asset.Parent = parent;
+                        editor.TargetTree.EditorResetParent(asset.Identify, parent.Identify);
                     }
                     else if (editor.PresentParentRequest != null && editor.PresentParentRequest.GetNode() != null)
                     {
                         var child = editor.PresentParentRequest.GetNode();
-                        child.Parent = asset;
+                        editor.TargetTree.EditorResetParent(child.Identify, asset.Identify);
                     }
                     newNode = asset;
                     editor.AddDelayTask(BehaviourTreeEditor.ACT_UPDATE_WIRES, editor.Wires.UpdateWires);
                     editor.RequestChild(null);
+                    editor.SetSelections((x) => x.GetNode() == asset);
                     return true;
                 case AIModules.CATE_SERVICE:
                     if (editor.TargetTree.EditorContainsNodeType(mod.ModuleType))
@@ -122,7 +117,7 @@ namespace DevilEditor
         }
     }
 
-    public class ModifyParent : BTEditableDO
+    public class BTModifyParent : BTEditableDO
     {
         bool isDo;
 
@@ -147,10 +142,7 @@ namespace DevilEditor
             }
             else
             {
-                if (child.Parent == parent)
-                    return false;
-                oldparent = child.Parent;
-                child.Parent = parent;
+                editor.TargetTree.EditorResetParent(child.Identify, parent == null ? 0 : parent.Identify);
                 isDo = true;
             }
             editor.AddDelayTask(BehaviourTreeEditor.ACT_UPDATE_WIRES, editor.Wires.UpdateWires);
@@ -167,15 +159,14 @@ namespace DevilEditor
                 }
                 else
                 {
-                    child.Parent = oldparent;
+                    editor.TargetTree.EditorResetParent(child.Identify, oldparent == null ? 0 : oldparent.Identify);
                 }
                 editor.AddDelayTask(BehaviourTreeEditor.ACT_UPDATE_WIRES, editor.Wires.UpdateWires);
             }
         }
     }
-
-
-    public class DeleteNode : BTEditableDO
+    
+    public class BTDeleteNode : BTEditableDO
     {
         bool isDo;
         List<BehaviourNode> selections = new List<BehaviourNode>();
@@ -207,6 +198,76 @@ namespace DevilEditor
         public override void UndoEdit()
         {
 
+        }
+    }
+
+    public class BTCopy : BTEditableDO
+    {
+        public Vector2 deltaPosition;
+        List<BTNode> selection;
+        bool isDo;
+
+        public int SelectionCount { get { return selection == null ? 0 : selection.Count; } }
+        
+        public Vector2 GetSelectionPositin()
+        {
+            var rect = new Rect();
+            for (int i = 0; i < selection.Count; i++)
+            {
+                if (i == 0)
+                {
+                    rect.position = selection[i].position;
+                    rect.size = Vector2.zero;
+                }
+                else
+                {
+                    var pos = selection[i].position;
+                    rect.xMin = Mathf.Min(pos.x, rect.xMin);
+                    rect.xMax = Mathf.Max(pos.x, rect.xMax);
+                    rect.yMin = Mathf.Min(pos.y, rect.yMin);
+                    rect.yMax = Mathf.Max(pos.y, rect.yMax);
+                }
+            }
+            return new Vector2(rect.center.x, rect.yMin);
+        }
+
+        public void SetSelection(List<BehaviourNode> selection)
+        {
+            if (this.selection == null)
+                this.selection = new List<BTNode>();
+            else
+                this.selection.Clear();
+            foreach(var t in selection)
+            {
+                var node = t.GetNode();
+                if (node != null)
+                    this.selection.Add(node);
+            }
+        }
+
+        public override bool DoEditWithUndo()
+        {
+            if (isDo || SelectionCount == 0)
+                return false;
+            var nodes = editor.TargetTree.EditorPaste(selection, deltaPosition);
+            foreach(var t in nodes)
+            {
+                if(t.Asset is BTNodeAsset)
+                {
+                    var newitem = new BTNodeGUI(editor, t);
+                    editor.AIGraph.AddElement(newitem);
+                }
+            }
+            editor.AddDelayTask(BehaviourTreeEditor.ACT_UPDATE_WIRES, editor.Wires.UpdateWires);
+            editor.SetSelections((x) =>
+            {
+                return GlobalUtil.FindIndex(nodes, (y) => y == x.GetNode()) != -1;
+            });
+            return false;
+        }
+
+        public override void UndoEdit()
+        {
         }
     }
 }

@@ -13,6 +13,10 @@ namespace DevilEditor
         List<BTNode> mServNodes = new List<BTNode>();
         List<Binder> mServices = new List<Binder>();
 
+        string missAssets;
+        bool getMissAsset;
+        readonly string comHint = "Edit Comment...";
+
         void UpdateBinders()
         {
             var node = target as BehaviourTreeAsset;
@@ -46,10 +50,22 @@ namespace DevilEditor
             }
         }
 
+        void TryGetMissingAssets()
+        {
+            if (!getMissAsset)
+                return;
+            var tree = target as BehaviourTreeAsset;
+            if (tree == null)
+                return;
+            missAssets = tree.EditorMissingAssets();
+            if (!string.IsNullOrEmpty(missAssets))
+                missAssets = "Missing " + missAssets;
+            getMissAsset = false;
+        }
+
         private void OnEnable()
         {
-            serializedObject.Update();
-            serializedObject.ApplyModifiedProperties();
+            getMissAsset = true;
         }
 
         private void OnDisable()
@@ -63,11 +79,27 @@ namespace DevilEditor
 
         public override void OnInspectorGUI()
         {
+            TryGetMissingAssets();
             UpdateBinders();
-            EditorGUI.BeginDisabledGroup(true);
-            base.OnInspectorGUI();
+            if(!string.IsNullOrEmpty(missAssets))
+            {
+                EditorGUILayout.HelpBox(missAssets, MessageType.Warning);
+            }
+            var tree = target as BehaviourTreeAsset;
+            if (tree != null)
+            {
+                EditorGUILayout.BeginHorizontal("helpbox");
+                var s = EditorGUILayout.TextArea(string.IsNullOrEmpty(tree.m_Comment) ? comHint : tree.m_Comment, DevilEditorUtility.HintStyle("label"), GUILayout.Height(120));
+                if (s == comHint)
+                    tree.m_Comment = "";
+                else
+                    tree.m_Comment = s;
+                EditorGUILayout.EndHorizontal();
+            }
+            //EditorGUI.BeginDisabledGroup(true);
+            //base.OnInspectorGUI();
             
-            EditorGUI.EndDisabledGroup();
+            //EditorGUI.EndDisabledGroup();
 
             if (mServices.Count > 0)
                 EditorGUILayout.LabelField("服务", (GUIStyle)"LODLevelNotifyText", GUILayout.Height(30));
@@ -80,18 +112,18 @@ namespace DevilEditor
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(40);
 
-            if (!BehaviourTreeEditor.IsActive && GUILayout.Button("打开编辑器", "LargeButton"))
+            var editing = BehaviourTreeEditor.ActiveBTEditor == null ? null : BehaviourTreeEditor.ActiveBTEditor.TargetTree;
+            if (target != editing && GUILayout.Button("打开编辑器", "LargeButton"))
             {
                 BehaviourTreeEditor.OpenBTEditor(target as BehaviourTreeAsset);
             }
-            else if(BehaviourTreeEditor.IsActive && !Application.isPlaying && GUILayout.Button("保存修改", "LargeButton"))
+            if(target != editing && GUILayout.Button("修复资源引用", "LargeButton"))
             {
-                BehaviourTreeEditor.ActiveBTEditor.Binder.SaveAsset();
+                ((BehaviourTreeAsset)target).EditorResovleAsset();
+                getMissAsset = true;
+                if (BehaviourTreeEditor.ActiveBTEditor != null && BehaviourTreeEditor.ActiveBTEditor.Binder != null)
+                    BehaviourTreeEditor.ActiveBTEditor.Binder.Reset();
             }
-            //if(GUILayout.Button("清理无用资源", "LargeButton"))
-            //{
-            //    (target as BehaviourTreeAsset).EditorCleanup();
-            //}
             GUILayout.Space(40);
             EditorGUILayout.EndHorizontal();
         }

@@ -6,12 +6,12 @@ namespace Devil.AI
     [BTComposite(Title = "开关？(G)", HotKey = KeyCode.G)]
     public class BTGateway : BTConditionAsset
     {
-        [BTBlackboardProperty]
+        [BTVariableReference]
         public string m_UseBlackboard;
 
         public bool m_IsTrue;
 
-        BTBlackboardGetter<bool> mBlackboardValue;
+        IBlackboardValue<bool> mBlackboardValue;
 
         public override string DisplayName
         {
@@ -21,18 +21,10 @@ namespace Devil.AI
             }
         }
 
-        public override int Mask
-        {
-            get
-            {
-                return 0;
-            }
-        }
-
         public override void OnPrepare(BehaviourTreeRunner.AssetBinder binder, BTNode node)
         {
             base.OnPrepare(binder, node);
-            mBlackboardValue = string.IsNullOrEmpty(m_UseBlackboard) ? binder.Runner.Blackboard.Getter<bool>(m_UseBlackboard) : null;
+            mBlackboardValue = !string.IsNullOrEmpty(m_UseBlackboard) ? binder.Runner.Blackboard.Value<bool>(m_UseBlackboard) : null;
         }
 
         public override bool IsSuccess
@@ -40,7 +32,7 @@ namespace Devil.AI
             get
             {
                 if (mBlackboardValue != null)
-                    return m_IsTrue == mBlackboardValue.IsSet && mBlackboardValue.Value;
+                    return m_IsTrue == mBlackboardValue.Value && mBlackboardValue.Value;
                 else
                     return m_IsTrue;
             }

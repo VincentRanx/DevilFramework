@@ -13,7 +13,7 @@ namespace DevilEditor
         float mScrollOffset;
         bool mDrop = false;
         public BTBlackboard Blackboard { get; set; }
-        BTBlackboarProperty mRaycastProperty;
+        IBlackboardProperty mRaycastProperty;
         //long mTick;
 
         public BlackboardMonitorGUI(EditorCanvasWindow window) : base()
@@ -24,54 +24,56 @@ namespace DevilEditor
         public override void OnGUI(Rect clipRect)
         {
             mRaycastProperty = null;
+            if(Blackboard == null)
+            {
+                Visible = false;
+                return;
+            }
             //bool vis = mVisible;
             //if (!vis && mVisible)
             //    mTick = JDateTime.NowMillies;
-            if (Visible)
-            {
-                Rect rec = LocalRect;
-                rec.width = Mathf.Clamp(Parent.LocalRect.width * 0.35f, 200, 500);
-                rec.height = mDrop ? 180 : 25;
-                rec.position = new Vector2(0, Parent.LocalRect.height - LocalRect.height);
-                LocalRect = rec;
+            Rect rec = LocalRect;
+            rec.width = Mathf.Clamp(Parent.LocalRect.width * 0.35f, 200, 500);
+            rec.height = mDrop ? 180 : 25;
+            rec.position = new Vector2(0, Parent.LocalRect.height - LocalRect.height);
+            LocalRect = rec;
 
-                BTBlackboard blackboard = Blackboard;
-                //bool set;
-                BTBlackboarProperty[] props = blackboard == null ? null : blackboard.EditorVariables;// (BTBlackboarProperty[])Ref.GetField(blackboard, "mVariables", out set);
-                QuickGUI.DrawBox(GlobalRect, Color.gray * 0.5f, Color.black, 1, true);
-                Rect r = new Rect(GlobalRect.xMin, GlobalRect.yMin, GlobalRect.width, 20);
-                //bool drop = mDrop;
-                mDrop = GUI.Toggle(r, mDrop, "Blackboard", "PreDropDown") && props != null && props.Length > 0;
-                //if (!drop && mDrop)
-                //    mTick = JDateTime.NowMillies;
-                if (mDrop)
+            BTBlackboard blackboard = Blackboard;
+            //bool set;
+            QuickGUI.DrawBox(GlobalRect, Color.gray * 0.5f, Color.black, 1, true);
+            Rect r = new Rect(GlobalRect.xMin, GlobalRect.yMin, GlobalRect.width, 20);
+            //bool drop = mDrop;
+            mDrop = GUI.Toggle(r, mDrop, "Blackboard", "PreDropDown") && blackboard.Length > 0;
+            //if (!drop && mDrop)
+            //    mTick = JDateTime.NowMillies;
+            if (mDrop)
+            {
+                r.height = GlobalRect.height - 20;
+                r.y = GlobalRect.yMin + 25;
+                BeginScroll(r, ref mScrollRect);
+                r.position = new Vector2(0, mScrollOffset);
+                r.height = 20;
+                for (int i = 0; i < blackboard.Length; i++)
                 {
-                    r.height = GlobalRect.height - 20;
-                    r.y = GlobalRect.yMin + 25;
-                    BeginScroll(r, ref mScrollRect);
-                    r.position = new Vector2(0, mScrollOffset);
-                    r.height = 20;
-                    for (int i = 0; i < props.Length; i++)
+                    r.width = 100;
+                    r.position = new Vector2(0, i * 20 + mScrollOffset);
+                    GUI.Label(r, blackboard.GetPropertyName(i));
+                    r.width = GlobalRect.width - 100;
+                    r.x = 100;
+                    if (blackboard.IsSet(i))
                     {
-                        r.width = 100;
-                        r.position = new Vector2(0, i * 20 + mScrollOffset);
-                        GUI.Label(r, props[i].Name);
-                        r.width = GlobalRect.width - 100;
-                        r.x = 100;
-                        if (props[i].IsSet)
-                        {
-                            GUI.Label(r, props[i].Value == null ? "[NULL]" : props[i].Value.ToString(), "AssetLabel");
-                        }
-                        else
-                        {
-                            GUI.Label(r, "[NOT SET]");
-                        }
-                        if (r.Contains(Event.current.mousePosition))
-                            mRaycastProperty = props[i];
+                        GUI.Label(r, blackboard[i].ToString(), "AssetLabel");
                     }
-                    EndScroll(r.yMax, ref mScrollRect, ref mScrollOffset);
+                    else
+                    {
+                        GUI.Label(r, "[NOT SET]");
+                    }
+                    if (r.Contains(Event.current.mousePosition))
+                        mRaycastProperty = blackboard[i];
                 }
+                EndScroll(r.yMax, ref mScrollRect, ref mScrollOffset);
             }
+
         }
 
 
@@ -140,16 +142,15 @@ namespace DevilEditor
 
         public override bool InteractMouseClick(EMouseButton button, Vector2 mousePosition)
         {
-            //mTick = JDateTime.NowMillies;
-            if (button == EMouseButton.left && mRaycastProperty !=null && mRaycastProperty.Value != null)
-            {
-                Object o = mRaycastProperty.Value as Object;
-                if(o != null)
-                {
-                    EditorGUIUtility.PingObject(o);
-                    return true;
-                }
-            }
+            //if (button == EMouseButton.left && mRaycastProperty != null && mRaycastProperty.Value != null)
+            //{
+            //    Object o = mRaycastProperty.Value as Object;
+            //    if (o != null)
+            //    {
+            //        EditorGUIUtility.PingObject(o);
+            //        return true;
+            //    }
+            //}
             return true;
         }
     }

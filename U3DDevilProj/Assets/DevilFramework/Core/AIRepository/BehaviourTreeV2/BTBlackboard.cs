@@ -1,170 +1,216 @@
-﻿using System.Collections.Generic;
+﻿using Devil.Utility;
+using System;
+using System.Collections.Generic;
 
 namespace Devil.AI
 {
-    public class BTBlackboarProperty
+    public interface IBlackboardProperty
     {
-        public bool IsSet { get; set; }
-        public string Name { get; private set; }
-        public string TypeName { get; private set; }
-        public object Value { get; set; }
-
-        public BTBlackboarProperty(string name, string typeName)
-        {
-            this.Name = name;
-            this.TypeName = typeName;
-        }
-
-        public BTBlackboardGetter<T> Getter<T>()
-        {
-            if (typeof(T).FullName != TypeName)
-                return null;
-            else
-                return new BTBlackboardGetter<T>(this);
-        }
-
-        public BTBlackboardSetter<T> Setter<T>()
-        {
-            if (typeof(T).FullName != TypeName)
-                return null;
-            else
-                return new BTBlackboardSetter<T>(this);
-        }
-
-        public bool SetValue(object value)
-        {
-            if(value != null)
-            {
-                if (value.GetType().FullName != TypeName)
-                    return false;
-                Value = value;
-                IsSet = true;
-            }
-            else
-            {
-                Value = null;
-                IsSet = false;
-            }
-            return IsSet;
-        }
-
-        public object GetValue()
-        {
-            return Value;
-        }
-        
+        bool IsList { get; }
+        System.Type TypeDefine { get; }
+        void GatherData(ICollection<object> collection);
     }
 
-    public class BTBlackboardGetter<T>
+    public interface IBlackboardValue<T>
     {
-        protected BTBlackboarProperty mProperty;
-
-        public BTBlackboardGetter(BTBlackboarProperty prop)
-        {
-            mProperty = prop;
-        }
-
-        public bool IsSet { get { return mProperty.IsSet; } }
-
-        public T Value { get { return IsSet ? (T)mProperty.Value : default(T); } }
+        bool IsSet { get; }
+        T Value { get; }
+        void Set(T value);
+        void Unset();
     }
 
-    public class BTBlackboardSetter<T> : BTBlackboardGetter<T>
-    {
-        public BTBlackboardSetter(BTBlackboarProperty prop) : base(prop) { }
-
-        public void SetValue(T valule)
-        {
-            mProperty.Value = valule;
-            mProperty.IsSet = true;
-        }
-
-        public void UnsetValue()
-        {
-            mProperty.Value = default(T);
-            mProperty.IsSet = false;
-        }
-    }
-
+    public interface IBlackboardList<T> : IList<T> { }
+    
     public class BTBlackboard
     {
-
-        static List<BTBlackboarProperty> mCache;
-        static List<BTBlackboarProperty> Cache
+        interface ICopy : IBlackboardProperty
         {
-            get
+            bool IsEmpty { get; }
+            ICopy CopyThis();
+            void CopyValue(ICopy copyTo);
+            void ClearAll();
+        }
+
+        class PValue<T> : IBlackboardValue<T>, ICopy
+        {
+            bool mIsSet;
+            T mValue;
+            public bool IsSet { get { return mIsSet; } }
+
+            public T Value { get { return mValue; } }
+
+            public bool IsEmpty { get { return !mIsSet; } }
+
+            public bool IsList { get { return false; } }
+
+            public Type TypeDefine { get { return typeof(T); } }
+            
+            public ICopy CopyThis()
             {
-                if (mCache == null)
-                    mCache = new List<BTBlackboarProperty>();
-                return mCache;
+                var v = new PValue<T>();
+                v.mValue = mValue;
+                v.mIsSet = mIsSet;
+                return v;
+            }
+
+            public void CopyValue(ICopy copyTo)
+            {
+                var p = copyTo as PValue<T>;
+                if (p == null)
+                    return;
+                p.mValue = mValue;
+                p.mIsSet = mIsSet;
+            }
+
+            public void GatherData(ICollection<object> collection)
+            {
+                if (mIsSet)
+                    collection.Add(mValue);
+            }
+
+            public void Set(T value)
+            {
+                mValue = value;
+                mIsSet = true;
+            }
+
+            public void Unset()
+            {
+                mValue = default(T);
+                mIsSet = false;
+            }
+
+            public void ClearAll()
+            {
+                mValue = default(T);
+                mIsSet = false;
             }
         }
 
-        BTBlackboarProperty[] mVariables;
+        class PList<T> : List<T>, IBlackboardList<T>, ICopy
+        {
+            public bool IsEmpty { get { return Count == 0; } }
+            
+            public bool IsList { get { return true; } }
+
+            public Type TypeDefine { get { return typeof(T); } }
+
+            public ICopy CopyThis()
+            {
+                var p = new PList<T>();
+                p.AddRange(this);
+                return p;
+            }
+
+            public void CopyValue(ICopy copyTo)
+            {
+                if (Count == 0)
+                    return;
+                var p = copyTo as PList<T>;
+                if (p != null)
+                    p.AddRange(this);
+            }
+
+            public void GatherData(ICollection<object> collection)
+            {
+                if(Count > 0)
+                {
+                    foreach(var v in this)
+                    {
+                        collection.Add(v);
+                    }
+                }
+            }
+
+            public void ClearAll() { Clear(); }
+        }
+
+        BlackboardAsset.VariableDefine[] mPropertyDefines;
+        ICopy[] mProperties;
 
         public BTBlackboard(BlackboardAsset asset)
         {
-            mVariables = new BTBlackboarProperty[asset.m_Properties.Length];
-            for (int i = 0; i < mVariables.Length; i++)
+            if (asset == null)
             {
-                mVariables[i] = new BTBlackboarProperty(asset.m_Properties[i].m_Key, asset.m_Properties[i].m_Value);
+                mPropertyDefines = new BlackboardAsset.VariableDefine[0];
+                mProperties = new ICopy[0];
             }
-        }
-
-        public BTBlackboard()
-        {
-            mVariables = new BTBlackboarProperty[0];
-        }
-
-        public int GetPropertyId(string propertyName)
-        {
-            for (int i = 0; i < mVariables.Length; i++)
-            {
-                if (propertyName == mVariables[i].Name)
-                    return i;
-            }
-            return -1;
-        }
-
-        public bool IsPropertySet(int propertyId)
-        {
-            if (propertyId < 0 || propertyId >= mVariables.Length)
-                return false;
             else
-                return mVariables[propertyId].IsSet;
+            {
+                mPropertyDefines = new BlackboardAsset.VariableDefine[asset.Length];
+                for (int i = 0; i < mPropertyDefines.Length; i++)
+                {
+                    mPropertyDefines[i] = asset[i];
+                }
+                mProperties = new ICopy[mPropertyDefines.Length];
+            }
         }
 
-        public BTBlackboarProperty GetProperty(string propertyName)
+
+        public int Length { get { return mProperties.Length; } }
+        public string GetPropertyName(int index) { return mPropertyDefines[index].name; }
+        public IBlackboardProperty this[int index] { get { return mProperties[index]; } }
+        
+        public bool IsSet(int index)
         {
-            for (int i = 0; i < mVariables.Length; i++)
-            {
-                if (propertyName == mVariables[i].Name)
-                    return mVariables[i];
-            }
-            return null;
+            return index >= 0 && index < mProperties.Length && mProperties[index] != null && !mProperties[index].IsEmpty;
         }
 
-        public BTBlackboardGetter<T> Getter<T>(string propertyName)
+        public int GetIndex(string propertyName)
         {
-            for(int i = 0; i < mVariables.Length; i++)
-            {
-                if (propertyName == mVariables[i].Name)
-                    return mVariables[i].Getter<T>();
-            }
-            return null;
+            return string.IsNullOrEmpty(propertyName) ? -1 : GlobalUtil.FindIndex(mPropertyDefines, (x) => x.name == propertyName);
         }
 
-        public BTBlackboardSetter<T> Setter<T>(string propertyName)
+        bool IsValid<T>(int index, bool isList)
         {
-            for (int i = 0; i < mVariables.Length; i++)
-            {
-                if (propertyName == mVariables[i].Name)
-                    return mVariables[i].Setter<T>();
-            }
-            return null;
+            if (isList ^ mPropertyDefines[index].isList || typeof(T).FullName != mPropertyDefines[index].typeDef)
+                return false;
+            return true;
         }
-#if UNITY_EDITOR
-        public BTBlackboarProperty[] EditorVariables { get { return mVariables; } }
-#endif
+
+        public IBlackboardValue<T> Value<T>(int index)
+        {
+            if (!IsValid<T>(index, false))
+                return null;
+            var p = mProperties[index];
+            if(p == null)
+            {
+                p = new PValue<T>();
+                mProperties[index] = p;
+            }
+            return (IBlackboardValue<T>)p;
+        }
+
+        public IBlackboardValue<T> Value<T>(string propertyName)
+        {
+            var index = GetIndex(propertyName);
+            return index == -1 ? null : Value<T>(index);
+        }
+        
+        public IBlackboardList<T> List<T>(string propertyName)
+        {
+            var index = GetIndex(propertyName);
+            return index == -1 ? null : List<T>(index);
+        }
+
+        public IBlackboardList<T> List<T>(int index)
+        {
+            if (!IsValid<T>(index, true))
+                return null;
+            var p = mProperties[index];
+            if(p == null)
+            {
+                p = new PList<T>();
+                mProperties[index] = p;
+            }
+            return (IBlackboardList<T>)p;
+        }
+
+        public void ClearAt(int index)
+        {
+            var p = mProperties[index];
+            if (p != null)
+                p.ClearAll();
+        }
     }
 }

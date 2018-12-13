@@ -1,0 +1,8 @@
+{
+    "name": "RTSVM",
+    "references": [
+        "DevilFramework.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

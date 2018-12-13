@@ -29,7 +29,7 @@ namespace Devil.AI
     [System.Serializable]
     public abstract class BTNodeAsset : BTAsset, IBTNode
     {
-        [TextArea(3, 7)]
+        [HideInInspector]
         public string m_Comment = "";
         [HideInInspector]
         [SerializeField]
@@ -39,33 +39,42 @@ namespace Devil.AI
         {
             return m_ConditionIds[index];
         }
-       
+
+        [SerializeField]
+        ELogic m_ConditionLogic;
+
         public int Identify { get; private set; }
-        List<ICondition> mConditions = new List<ICondition>();
+        protected List<ICondition> mConditions = new List<ICondition>();
         public virtual string DisplayContent { get { return null; } }
 
         public IBTNode Parent { get; private set; }
 
-        public bool IsOnCondition
+        public virtual bool IsOnCondition
         {
             get
             {
-#if UNITY_EDITOR
-                for (int i = 0; i < mConditions.Count; i++)
+                if (m_ConditionLogic == ELogic.Or && mConditions.Count > 0)
                 {
-                    editor_conditionCache[i] = mConditions[i].IsSuccess;
+                    for (int i = 0; i < mConditions.Count; i++)
+                    {
+                        if (mConditions[i].IsSuccess)
+                            return true;
+                    }
+                    return false;
                 }
-#endif
-                for (int i = 0; i < mConditions.Count; i++)
+                else
                 {
-                    if (!mConditions[i].IsSuccess)
-                        return false;
+                    for (int i = 0; i < mConditions.Count; i++)
+                    {
+                        if (!mConditions[i].IsSuccess)
+                            return false;
+                    }
+                    return true;
                 }
-                return true;
             }
         }
-        
-        public override void OnPrepare(BehaviourTreeRunner.AssetBinder asset, BTNode node)
+
+        public override void OnPrepare(BehaviourTreeRunner.AssetBinder binder, BTNode node)
         {
             Identify = node.Identify;
             var p = node.Parent; // TreeAsset.GetNodeById(node.parentId);
@@ -77,9 +86,6 @@ namespace Devil.AI
                 if (cond != null)
                     mConditions.Add(cond.Asset as ICondition);
             }
-#if UNITY_EDITOR
-            editor_conditionCache = new bool[m_ConditionIds.Count];
-#endif
         }
 
         public abstract void Abort();
@@ -92,28 +98,15 @@ namespace Devil.AI
         public abstract bool IsController { get; }
 
 #if UNITY_EDITOR
-
-        public const string P_CONDITION = "m_ConditionIds";
-        public const string P_SERVICE = "m_ServiceIds";
-        [System.NonSerialized]
-        public bool[] editor_conditionCache;
-
-        public override void EditorNodeRemoved(ICollection<int> ids)
+        public bool EditorConditionResult(int index)
         {
-            foreach(var id in ids)
-            {
-                m_ConditionIds.Remove(id);
-            }
+            return index >= 0 && index < mConditions.Count ? mConditions[index].IsSuccess : false;
         }
-        public override void EditorGetDependentIds(ICollection<int> ids)
+        public List<int> EditorConditionIds { get { return m_ConditionIds; } }
+        public bool EditorBreakToggle { get; set; }
+        public void EditorRemoveCondition(int id)
         {
-            if(m_ConditionIds != null)
-            {
-                foreach(var id in m_ConditionIds)
-                {
-                    ids.Add(id);
-                }
-            }
+            m_ConditionIds.Remove(id);
         }
         public void EditorSwitchCondition(BTNode condition, int offset)
         {
@@ -126,6 +119,11 @@ namespace Devil.AI
             var a = m_ConditionIds[index];
             m_ConditionIds[index] = m_ConditionIds[to];
             m_ConditionIds[to] = a;
+        }
+        public void EditorSetCondition(int index, int id)
+        {
+            if (index >= 0 && index < m_ConditionIds.Count)
+                m_ConditionIds[index] = id;
         }
 #endif
     }

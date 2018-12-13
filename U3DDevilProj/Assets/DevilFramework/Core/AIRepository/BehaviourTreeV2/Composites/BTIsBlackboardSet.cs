@@ -7,29 +7,21 @@ namespace Devil.AI
         HotKey = KeyCode.B)]
     public class BTIsBlackboardSet : BTConditionAsset
     {
-        public bool m_IsNot;
+        public bool m_ReverseResult;
 
-        [BTBlackboardProperty]
+        [BTVariableReference]
         public string m_BlackboardProperty;
 
         BTBlackboard mBlackboard;
-        int mPropertyId;
+        int mPropertyIndex;
         
-        public override int Mask
-        {
-            get
-            {
-                return 0;
-            }
-        }
-
         public override string DisplayName
         {
             get
             {
                 if (string.IsNullOrEmpty(m_BlackboardProperty))
                     return null;
-                else if(m_IsNot)
+                else if(m_ReverseResult)
                     return string.Format("非\"{0}\"?", m_BlackboardProperty);
                 else
                     return string.Format("\"{0}\"?", m_BlackboardProperty);
@@ -39,11 +31,11 @@ namespace Devil.AI
         public override void OnPrepare(BehaviourTreeRunner.AssetBinder binder, BTNode node)
         {
             base.OnPrepare(binder, node);
-            mBlackboard = binder.Runner.Blackboard;
-            mPropertyId = mBlackboard.GetPropertyId(m_BlackboardProperty);
+            mBlackboard = binder.Blackboard;
+            mPropertyIndex = string.IsNullOrEmpty(m_BlackboardProperty) ? -1 : mBlackboard.GetIndex(m_BlackboardProperty);
         }
 
-        public override bool IsSuccess { get { return mBlackboard.IsPropertySet(mPropertyId) ^ m_IsNot; } }
+        public override bool IsSuccess { get { return mBlackboard.IsSet(mPropertyIndex) ^ m_ReverseResult; } }
 
     }
 }

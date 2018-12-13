@@ -14,7 +14,7 @@ namespace DevilEditor
         public static Color SELECTED_COLOR = new Color(1f, 1f, 0.1f, 1f);
         public static Color BOARDER_COLOR = new Color(0.2f, 0.2f, 0.2f, 1f);
         public static Color SLOT_COLOR = new Color(0.3f, 0.3f, 0.3f, 1f);
-        public static Color TITLE_COLOR = new Color(0.3f, 1f, 0.3f);
+        public static Color TITLE_COLOR = new Color(0.5f, 1f, 0.5f);
         public static Color SUBTITLE_COLOR = new Color(0.9f, 0.9f, 0.9f);
         public readonly static int TITLE_SIZE = 14;
         public readonly static int SUB_SIZE = 12;
@@ -28,16 +28,19 @@ namespace DevilEditor
             TITLE_STYLE.fontSize = TITLE_SIZE;
             TITLE_STYLE.wordWrap = false;
             TITLE_STYLE.fontStyle = FontStyle.Bold;
-            TITLE_STYLE.normal.textColor = Color.green;
+            TITLE_STYLE.normal.textColor = TITLE_COLOR;
             TITLE_STYLE.onHover.textColor = Color.yellow;
+            //TITLE_STYLE.padding = new RectOffset(3, 3, 2, 2);
 
             SUB_STYLE.alignment = TextAnchor.UpperLeft;
             SUB_STYLE.richText = true;
             SUB_STYLE.fontSize = SUB_SIZE;
             SUB_STYLE.wordWrap = false;
             SUB_STYLE.fontStyle = FontStyle.Normal;
-            SUB_STYLE.normal.textColor = Color.white;
+            SUB_STYLE.stretchWidth = true;
+            SUB_STYLE.normal.textColor = SUBTITLE_COLOR;
             SUB_STYLE.onHover.textColor = Color.white;
+            //SUB_STYLE.padding = new RectOffset(2, 2, 2, 2);
         }
 
         public static void SetFontScale(float scale)
@@ -167,6 +170,8 @@ namespace DevilEditor
         public virtual BTNode GetRuntimeNode() { return null; }
 
         public virtual BTNode GetContext() { return null; }
+
+        public bool BreakToggle { get; set; }
 
         protected virtual void OnBaseLayerGUI(Rect rect)
         {

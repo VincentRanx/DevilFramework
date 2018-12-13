@@ -26,14 +26,11 @@ namespace Devil.AI
         {
             if (mLoopers.Length == 0)
                 return EBTState.failed;
-            //if (m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
-            //{
             for (int i = 0; i < mLoopers.Length; i++)
             {
                 if (mLoopers[i].State == EBTState.running)
                     mLoopers[i].Abort();
             }
-            //}
             return mLoopers[0].State;
         }
 
@@ -41,7 +38,7 @@ namespace Devil.AI
         {
             if (mLoopers.Length == 0)
                 return EBTState.failed;
-            if (m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
+            if(m_LoopMode == BehaviourTreeRunner.EResetMode.ResetWhenBegin)
             {
                 for (int i = 0; i < mLoopers.Length; i++)
                 {
@@ -55,10 +52,9 @@ namespace Devil.AI
         {
             if (m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
             {
-                for (int i = 1; i < mLoopers.Length; i++)
+                for (int i = 0; i < mLoopers.Length; i++)
                 {
-                    if (mLoopers[i].State == EBTState.running)
-                        mLoopers[i].Abort();
+                    mLoopers[i].Reset();
                 }
             }
         }
@@ -67,7 +63,7 @@ namespace Devil.AI
         {
             for (int i = 0; i < mLoopers.Length; i++)
             {
-                if (m_LoopMode != BehaviourTreeRunner.EResetMode.NeverReset && mLoopers[i].IsComplate)
+                if ((m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset || m_LoopMode == BehaviourTreeRunner.EResetMode.ResetWhenLoopEnd) && mLoopers[i].IsComplate)
                     mLoopers[i].Reset();
                 mLoopers[i].Update(deltaTime);
             }

@@ -22,7 +22,8 @@ namespace DevilEditor
                 mItems.Clear();
                 for (int i = 0; i < mModules.Count; i++)
                 {
-                    mContents[i] = new GUIContent(mModules[i].Title);
+                    mContents[i] = new GUIContent(hotkey == KeyCode.Alpha1 || hotkey == KeyCode.Alpha2 || hotkey == KeyCode.Alpha3 || hotkey == KeyCode.Alpha4 ?
+                        mModules[i].CateTitle : mModules[i].Title);
                     var it = NewItem(mContents[i], CreateNode, mModules[i]);
                     mItems.Add(it);
                 }

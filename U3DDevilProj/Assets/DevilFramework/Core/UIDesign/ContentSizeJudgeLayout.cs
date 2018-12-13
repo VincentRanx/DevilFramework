@@ -98,7 +98,6 @@ namespace Devil.UI
             }
 
             m_Tracker.Add(this, rectTransform, (axis == 0 ? DrivenTransformProperties.SizeDeltaX : DrivenTransformProperties.SizeDeltaY));
-
             // Set size to min or preferred size
             if (fitting == FitMode.MinSize)
                 rectTransform.SetSizeWithCurrentAnchors((RectTransform.Axis)axis, LayoutUtility.GetMinSize(m_Rect, axis));
@@ -109,6 +108,7 @@ namespace Devil.UI
         public virtual void SetLayoutHorizontal()
         {
             m_Tracker.Clear();
+            FixAnchors();
             HandleSelfFittingAlongAxis(0);
         }
 
@@ -124,6 +124,39 @@ namespace Devil.UI
                 return;
 
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+        }
+
+        void FixAnchors()
+        {
+            if (!m_ExpendParentHeight && !m_ExpendParentWidth)
+                return;
+            RectTransform parent = transform.parent as RectTransform;
+            var self = rectTransform;
+            if (parent != null)
+            {
+                var amin = parent.anchorMin;
+                var amax = parent.anchorMax;
+                var smin = self.anchorMin;
+                var smax = self.anchorMax;
+                if (m_ExpendParentHeight)
+                {
+                    var v = (amin.y + amax.y) * 0.5f;
+                    amin.y = v;
+                    amax.y = v;
+                    v = (smin.y + smax.y) * 0.5f;
+                    smin.y = v;
+                    smax.y = v;
+                }
+                if (m_ExpendParentWidth)
+                {
+                    var h = (amin.x + amax.x) * 0.5f;
+                    amin.x = h;
+                    amax.x = h;
+                    h = (smin.x + smax.x) * 0.5f;
+                    smin.x = h;
+                    smax.x = h;
+                }
+            }
         }
 
         void AlignBrother()
@@ -145,6 +178,7 @@ namespace Devil.UI
             if (m_ExpendParentWidth || m_ExpendParentHeight)
             {
                 RectTransform parent = transform.parent as RectTransform;
+                var self = rectTransform;
                 if(parent != null)
                 {
                     if (m_ExpendParentWidth)

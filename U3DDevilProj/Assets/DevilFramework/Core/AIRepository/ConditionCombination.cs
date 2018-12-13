@@ -17,7 +17,6 @@ namespace Devil.AI
             this.isTrue = value;
         }
 
-        public int Mask { get { return 0; } }
         public bool IsSuccess { get { return isTrue; } }
 
         public bool Equals(BoolLogic other)
@@ -38,22 +37,6 @@ namespace Devil.AI
     public struct AndLogic : ICondition , System.IEquatable<AndLogic>
     {
         public ICollection<ICondition> combines;
-
-        public int Mask
-        {
-            get
-            {
-                int mask = 0;
-                if (combines != null)
-                {
-                    foreach (var t in combines)
-                    {
-                        mask |= t.Mask;
-                    }
-                }
-                return mask;
-            }
-        }
 
         public bool IsSuccess
         {
@@ -80,22 +63,6 @@ namespace Devil.AI
     {
         public ICollection<ICondition> combines;
 
-        public int Mask
-        {
-            get
-            {
-                int mask = 0;
-                if (combines != null)
-                {
-                    foreach (var t in combines)
-                    {
-                        mask |= t.Mask;
-                    }
-                }
-                return mask;
-            }
-        }
-
         public bool IsSuccess
         {
             get
@@ -120,7 +87,6 @@ namespace Devil.AI
     public struct NotLogic: ICondition, System.IEquatable<NotLogic>
     {
         public ICondition target;
-        public int Mask { get { return target == null ? 0 : target.Mask; } }
         public bool IsSuccess { get { return target == null ? true : !target.IsSuccess; } }
 
         public bool Equals(NotLogic other)

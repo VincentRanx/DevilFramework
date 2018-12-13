@@ -241,21 +241,21 @@ namespace Devil.GamePlay
             return false;
         }
 
-        public void AddInput(int flag, object data)
+        public bool AddInput(int flag, object data)
         {
             if (!mIsReady || !isAlive)
-                return;
+                return false;
             // 被动劫持动作响应
             if (ProcessPassiveMotion(flag, data))
-                return;
+                return true;
             // 优先响应当前动作
             if (ProcessCurrentMotion(flag, data))
-                return;
+                return true;
             // 响应叠加动作
             if (ProcessAdditiveMotion(flag, data))
-                return;
+                return true;
             // 响应基础层动作
-            ProcessBaseMotion(flag, data);
+            return ProcessBaseMotion(flag, data);
         }
 
         protected virtual void Update()

@@ -8,6 +8,8 @@ namespace Devil.AI
     [System.Serializable]
     public class BehaviourTreeAsset : ScriptableObject, System.IDisposable
     {
+        public string m_Comment = "";
+
         [HideInInspector]
         [SerializeField]
         public int m_RootId;
@@ -76,6 +78,7 @@ namespace Devil.AI
         {
             var asset = CreateInstance<BehaviourTreeAsset>();
             asset.name = string.Format("{0}_{1}", name, asset.GetInstanceID().ToString("x"));
+            asset.m_Comment = m_Comment;
             asset.m_RootId = m_RootId;
             asset.m_Sorted = m_Sorted;
             asset.m_RootPosition = m_RootPosition;
@@ -136,11 +139,49 @@ namespace Devil.AI
 
 #if UNITY_EDITOR
         
+        public string EditorMissingAssets()
+        {
+            var buf = StringUtil.GetBuilder();
+            foreach (var t in m_BTNodes)
+            {
+                if (t.Asset == null)
+                {
+                    buf.Append(StringUtil.Concat(t.ModName, "_", t.Identify, ", "));
+                }
+            }
+            return StringUtil.ReleaseBuilder(buf);
+        }
+
+        public void EditorResetParent(int childid, int parentid)
+        {
+            var child = GetNodeById(childid);
+            var parent = GetNodeById(parentid);
+            if (child != null)
+            {
+                var oldp = child.EditorParentId;
+                var newp = parent == null ? 0 : parent.Identify;
+                if (oldp != newp)
+                {
+                    child.EditorParentId = newp;
+                    var old = oldp == 0 ? null : GetNodeById(oldp);
+                    if (old != null)
+                        old.EditorChildrenIds.Remove(childid);
+                    if (parent != null && !parent.EditorChildrenIds.Contains(childid))
+                        parent.EditorChildrenIds.Add(childid);
+                }
+            }
+            else if (parent != null)
+            {
+                parent.EditorChildrenIds.Remove(childid);
+            }
+        }
+
         public bool EditorContainsNodeType(System.Type type)
         {
+            var tname = type.Name;
             foreach(var t in m_BTNodes)
             {
-                if (t.Asset.GetType() == type)
+                if (t.ModName == tname)
                     return true;
             }
             return false;
@@ -151,7 +192,7 @@ namespace Devil.AI
             GlobalUtil.Sort(m_BTNodes, (x, y) => x.Identify <= y.Identify ? -1 : 1);
             foreach (var t in m_BTNodes)
             {
-                GlobalUtil.Sort(t.ChildrenIds, (x, y) =>
+                GlobalUtil.Sort(t.EditorChildrenIds, (x, y) =>
                 {
                     var a = GetNodeById(x);
                     var b = GetNodeById(y);
@@ -162,97 +203,127 @@ namespace Devil.AI
             UnityEditor.EditorUtility.SetDirty(this);
         }
 
-        public void EditorMergeTo(BehaviourTreeAsset asset)
+        public void EditorMergeTo(string path, BehaviourTreeAsset asset)
         {
             if (asset == this || asset == null)
                 return;
-            foreach(var t in asset.m_BTNodes)
+            if (!string.IsNullOrEmpty(path))
             {
-                if (t.Asset != null)
-                    DestroyImmediate(t.Asset, true);
+                asset.m_BTNodes.Clear();
+                var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(path);
+                foreach (var t in assets)
+                {
+                    if (t != asset)
+                        DestroyImmediate(t, true);
+                }
             }
-            asset.m_BTNodes.Clear();
+            else
+            {
+                foreach(var t in asset.m_BTNodes)
+                {
+                    if (t.Asset != null)
+                        DestroyImmediate(t.Asset, true);
+                }
+                asset.m_BTNodes.Clear();
+            }
             for(int i = 0; i < m_BTNodes.Count; i++)
             {
                 var node = m_BTNodes[i].Clone(asset);
                 asset.m_BTNodes.Add(node);
             }
+            asset.m_Comment = m_Comment;
             asset.m_RootId = m_RootId;
             asset.m_Sorted = m_Sorted;
             asset.m_RootPosition = m_RootPosition;
             UnityEditor.EditorUtility.SetDirty(asset);
         }
         
-        public void EditorCleanup()
+        public BTNode[] EditorPaste(List<BTNode> selection, Vector2 deltaPos)
         {
-            HashSet<int> removeIds = new HashSet<int>();
-            for (int i = m_BTNodes.Count - 1; i >= 0; i--)
+            HashSet<BTNode> toCopy = new HashSet<BTNode>();
+            foreach(var t in selection)
             {
-                if (m_BTNodes[i].Asset == null)
+                if (toCopy.Add(t))
                 {
-                    removeIds.Add(m_BTNodes[i].Identify);
-                    m_BTNodes.RemoveAt(i);
-                }
-                else
-                {
-                    m_BTNodes[i].Asset.TreeAsset = this;
-                }
-            }
-            if (removeIds.Count > 0)
-            {
-                foreach (var t in m_BTNodes)
-                {
-                    t.Asset.EditorNodeRemoved(removeIds);
-                }
-            }
-            var path = UnityEditor.AssetDatabase.GetAssetPath(this);
-            if (!string.IsNullOrEmpty(path))
-            {
-                bool reimport = false;
-                var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(path);
-                foreach (var asset in assets)
-                {
-                    if (asset is BTAsset && GlobalUtil.FindIndex(m_BTNodes, (x) => x.Asset == asset) == -1)
+                    var nasset = t.Asset as BTNodeAsset;
+                    if(nasset != null)
                     {
-                        DestroyImmediate(asset, true);
-                        reimport = true;
+                        foreach(var c in nasset.EditorConditionIds)
+                        {
+                            var cond = GetNodeById(c);
+                            toCopy.Add(cond);
+                        }
                     }
                 }
-                if (reimport)
-                    UnityEditor.AssetDatabase.ImportAsset(path);
             }
-            UnityEditor.AssetDatabase.SaveAssets();
+            
+            BTNode[] src = new BTNode[toCopy.Count];
+            BTNode[] copies = new BTNode[src.Length];
+            toCopy.CopyTo(src);
+            int id0 = m_BTNodes.Count > 0 ? (m_BTNodes[m_BTNodes.Count - 1].Identify + 1) : 1;
+            for (int i = 0; i < src.Length; i++)
+            {
+                copies[i] = src[i].Copy(this, id0 + i, deltaPos);
+            }
+            m_BTNodes.AddRange(copies);
+            for (int i = 0; i < copies.Length; i++)
+            {
+                var p = src[i].Parent;
+                // 关联父节点
+                var index = GlobalUtil.FindIndex(src, (x) => x == p);
+                if (index == -1)
+                    EditorResetParent(copies[i].Identify, 0);
+                else
+                    EditorResetParent(copies[i].Identify, copies[index].Identify);
+                // 关联条件节点
+                var nasset = src[i].Asset as BTNodeAsset;
+                if (nasset == null)
+                    continue;
+                for (int n = 0; n < nasset.ConditionCount; n++)
+                {
+                    var cindex = GlobalUtil.FindIndex(src, (x) => x.Identify == nasset.GetConditionId(n));
+                    ((BTNodeAsset)copies[i].Asset).EditorSetCondition(n, copies[cindex].Identify);
+                }
+            }
+            return copies;
         }
-
+        
         public void EditorDeleteNode(BTNode node)
         {
             if (node.Asset != null && node.Asset.TreeAsset != this)
                 return;
+            EditorResetParent(node.Identify, 0);
             var delId = node.Identify;
             // goto delete
             HashSet<int> removeIds = new HashSet<int>();
             removeIds.Add(node.Identify);
-            Stack<int> toRemove = new Stack<int>();
-            toRemove.Push(node.Identify);
-            // collect dependent nodes
-            HashSet<int> tmpIds = new HashSet<int>();
-            while (toRemove.Count > 0)
+            var cnode = node.Asset as BTNodeAsset;
+            if (cnode != null)
             {
-                var id = toRemove.Pop();
-                var other = GetNodeById(id);
-                if (other != null)
+                // clean parents and conditions
+                foreach (var c in cnode.EditorConditionIds)
                 {
-                    other.Asset.EditorGetDependentIds(tmpIds);
-                    foreach (var tmp in tmpIds)
-                    {
-                        if (removeIds.Add(tmp))
-                        {
-                            toRemove.Push(tmp);
-                        }
-                    }
-                    tmpIds.Clear();
+                    removeIds.Add(c);
+                }
+                foreach (var t in m_BTNodes)
+                {
+                    if (t == node)
+                        continue;
+                    if (t.EditorParentId == node.Identify)
+                        EditorResetParent(t.Identify, 0);
                 }
             }
+            // do clean condition
+            if (node.isCondition)
+            {
+                foreach (var t in m_BTNodes)
+                {
+                    var nasset = t.Asset as BTNodeAsset;
+                    if (nasset != null)
+                        nasset.EditorConditionIds.RemoveAll((x) => removeIds.Contains(x));
+                }
+            }
+            // do delete
             for (int i = m_BTNodes.Count - 1; i >= 0; i--)
             {
                 node = m_BTNodes[i];
@@ -263,12 +334,6 @@ namespace Devil.AI
                         DestroyImmediate(node.Asset);
                     }
                     m_BTNodes.RemoveAt(i);
-                }
-                else
-                {
-                    node.Asset.EditorNodeRemoved(removeIds);
-                    if (node.ChildrenIds != null)
-                        node.ChildrenIds.RemoveAll((x) => removeIds.Contains(x));
                 }
             }
             if (delId == m_RootId)
@@ -292,6 +357,23 @@ namespace Devil.AI
             var node = GlobalUtil.Find(m_BTNodes, (x) => x.Asset == asset);
             if(node != null)
                 EditorDeleteNode(node);
+        }
+
+        // 修复资源引用
+        public void EditorResovleAsset()
+        {
+            var path = UnityEditor.AssetDatabase.GetAssetPath(this);
+            if (string.IsNullOrEmpty(path))
+                return;
+            var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(path);
+            foreach(var t in m_BTNodes)
+            {
+                if(t.Asset == null)
+                {
+                    t.EditorResovleAsset(assets);
+                }
+            }
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         int QueryId()

@@ -1,4 +1,6 @@
-﻿namespace Devil.AI
+﻿using UnityEngine;
+
+namespace Devil.AI
 {
     public interface IBTController
     {
@@ -36,6 +38,10 @@
 
         public override void Start()
         {
+#if UNITY_EDITOR
+            if (EditorBreakToggle)
+                Debug.Break();
+#endif
             mState = OnStart();
         }
 

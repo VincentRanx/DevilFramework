@@ -152,7 +152,7 @@ namespace DevilEditor
                 }
             }
         }
-
+        
         public override void OnGUI(Rect clipRect)
         {
             float size = LINE_SIZE * GlobalScale;
@@ -181,7 +181,6 @@ namespace DevilEditor
                // p0 = new Vector2(l.from.GlobalRect.center.x, l.from.GlobalRect.yMax);
                 p1 = new Vector2(l.to.GlobalRect.center.x, l.to.GlobalRect.yMin);
                 Link(l.from.GlobalRect, p1, size, color);
-                
             }
             Rect rect;
             if (editor.PresentParentRequest != null)

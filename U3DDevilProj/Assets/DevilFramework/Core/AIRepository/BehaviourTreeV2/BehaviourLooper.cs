@@ -33,6 +33,14 @@ namespace Devil.AI
 
         public void Reset()
         {
+            var t = mRuntime;
+            while(t != null)
+            {
+                t.Stop();
+                if (t == mRoot)
+                    break;
+                t = t.Parent;
+            }
             IsComplate = mRoot == null;
             mRuntime = null;
             State = EBTState.inactive;
@@ -63,7 +71,7 @@ namespace Devil.AI
             EditorClearAccess();
 #endif
         }
-        
+
         public void Update(float deltaTime)
         {
             if (IsComplate)

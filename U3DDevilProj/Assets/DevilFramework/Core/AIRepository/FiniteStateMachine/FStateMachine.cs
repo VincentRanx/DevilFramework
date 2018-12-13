@@ -20,13 +20,30 @@ namespace Devil.AI
     
     public class FStateMachine : IFiniteState
     {
-        public delegate bool TransitionCondition();
-
-        public class Transition
+        [System.Serializable]
+        public class Transition : ICondition
         {
             public string m_FromState;
             public string m_ToState;
-            public TransitionCondition m_Condition;
+            public BTConditionAsset m_ConditionAsset;
+
+            [System.NonSerialized]
+            public ICondition m_Condition;
+
+            public Transition() { }
+
+            public bool IsSuccess
+            {
+                get
+                {
+                    if (m_ConditionAsset != null)
+                        return m_ConditionAsset.IsSuccess;
+                    if (m_Condition != null)
+                        return m_Condition.IsSuccess;
+                    else
+                        return false;
+                }
+            }
         }
 
         #region fields
@@ -125,7 +142,7 @@ namespace Devil.AI
             for (int i = 0; i < m_CurrentTransitions.Count; i++)
             {
                 Transition t = m_CurrentTransitions[i];
-                if (t.m_Condition())
+                if (t.IsSuccess)
                 {
                     return t;
                 }
@@ -194,7 +211,7 @@ namespace Devil.AI
         /// <param name="from"></param>
         /// <param name="to"></param>
         /// <param name="condition"></param>
-        public void AddTransition(string from, string to, TransitionCondition condition)
+        public void AddTransition(string from, string to, ICondition condition)
         {
             if (condition == null)
             {
@@ -205,6 +222,13 @@ namespace Devil.AI
             trans.m_ToState = to;
             trans.m_Condition = condition;
             m_Transitions.Add(trans);
+        }
+
+        public void AddTransition(Transition transition)
+        {
+            if (transition == null || m_Transitions.Contains(transition))
+                return;
+            m_Transitions.Add(transition);
         }
 
         // 释放对象

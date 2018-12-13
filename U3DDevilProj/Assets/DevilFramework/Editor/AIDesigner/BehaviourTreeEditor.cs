@@ -40,7 +40,10 @@ namespace DevilEditor
                 window = GetWindow<BehaviourTreeEditor>(typeof(SceneView));
                 window.Show();
             }
-            window.AddDelayTask(ACT_OPEN_ASSET, () => window.mAssetBinder.SetSelectedAsset());
+            else
+            {
+                window.AddDelayTask(ACT_OPEN_ASSET, () => window.mAssetBinder.SetSelectedAsset());
+            }
         }
 
         public static void OpenBTEditor(BehaviourTreeRunner runner)
@@ -51,9 +54,10 @@ namespace DevilEditor
                 window = GetWindow<BehaviourTreeEditor>(typeof(SceneView));
                 window.Show();
             }
-            window.AddDelayTask(ACT_OPEN_ASSET, () => {
-                window.mAssetBinder.SetBehaviourTreeRunner(runner);
-            });
+            else
+            {
+                window.AddDelayTask(ACT_OPEN_ASSET, () => window.mAssetBinder.SetBehaviourTreeRunner(runner));
+            }
         }
 
         public static void OpenBTEditor(BehaviourTreeAsset asset)
@@ -70,12 +74,26 @@ namespace DevilEditor
             });
         }
 
+        public static BlackboardAsset UsingBlackboard
+        {
+            get
+            {
+                var r = ActiveBTEditor == null ? null : ActiveBTEditor.TargetRunner;
+                if (r != null && r.BlackboardAsset != null)
+                    return r.BlackboardAsset;
+                return sUsedBlackboard;
+            }
+        }
+
+        static BlackboardAsset sUsedBlackboard; // 使用中的黑板
+
         static BTEditorMenu sNewTreeMenu; // 创建树
         static BTEditorMenu sTreeMenu; // 树编辑
         static BTEditorMenu sContextMenu; // 右键菜单
         static BTEditorMenu sNodeMenu; // 新节点
         static BTHotkeyMenu sHotkeyMenu;
         static BTEditorMenu sConditionMenu; // 
+        public static BTEditorMenu sDebugMenu = new BTEditorMenu();
 
         public static void InitModules()
         {
@@ -85,6 +103,7 @@ namespace DevilEditor
             sContextMenu = new BTEditorMenu();
             sNodeMenu = new BTEditorMenu();
             sConditionMenu = new BTEditorMenu();
+            sDebugMenu = new BTEditorMenu();
 
             var newtree = BTEditorMenu.NewItem("创建行为树", (menu, index, data) =>
             {
@@ -114,13 +133,23 @@ namespace DevilEditor
             {
                 menu.editor.MoveContextCondition(1);
             });
+            var copy = BTEditorMenu.NewItem("复制", (menu, index, data) =>
+            {
+                menu.editor.CopySelection();
+            });
+            var paste = BTEditorMenu.NewItem("粘贴", (menu, index, data) => {
+                menu.editor.PasteSelection();
+            });
 
             sNewTreeMenu.AddItem(newtree);
             sTreeMenu.AddItem(newtree);
             sTreeMenu.AddItem(resetItem);
             sContextMenu.AddItem(resetItem);
+            sDebugMenu.AddItem(resetItem);
             sTreeMenu.AddItem(saveitem);
             sContextMenu.AddItem(saveitem);
+            sContextMenu.AddItem(copy);
+            sTreeMenu.AddItem(paste);
             sContextMenu.AddItem(delitem);
             sConditionMenu.AddItem(delitem);
             sConditionMenu.AddItem(moveup);
@@ -141,14 +170,14 @@ namespace DevilEditor
             {
                 var item = BTEditorMenu.NewItem(t.Path, newnode, t);
                 sTreeMenu.AddItem(item);
-                sContextMenu.AddItem(item);
+                //sContextMenu.AddItem(item);
                 sNodeMenu.AddItem(item);
             }
             foreach (var t in tasks)
             {
                 var item = BTEditorMenu.NewItem(t.Path, newnode, t);
                 sTreeMenu.AddItem(item);
-                sContextMenu.AddItem(item);
+                //sContextMenu.AddItem(item);
                 sNodeMenu.AddItem(item);
             }
             var conds = AIModules.GetModules(AIModules.CATE_CONDITION);
@@ -166,6 +195,19 @@ namespace DevilEditor
                 //sContextMenu.AddItem(item);
                 sNodeMenu.AddItem(item);
             }
+
+            sDebugMenu.AddItem("添加断点", (menu, index, data) =>
+            {
+                var item = menu.editor.mContextNode;
+                if (item != null)
+                    item.BreakToggle = true;
+            }, null);
+            sDebugMenu.AddItem("删除断点", (menu, index, data) =>
+            {
+                var item = menu.editor.mContextNode;
+                if (item != null)
+                    item.BreakToggle = false;
+            }, null);
         }
 
         BehaviourTreeAssetBinder mAssetBinder;
@@ -180,9 +222,9 @@ namespace DevilEditor
         public BTRootNodeGUI RootNode { get; private set; }
         BTWireGUI mWires;
         public BTWireGUI Wires { get { return mWires; } }
-        
+
         const int undo_size = 100;
-        
+
         List<BehaviourNode> mSelection = new List<BehaviourNode>();
         public List<BehaviourNode> SelectionNodes { get { return mSelection; } }
         List<Object> mSelectionAssets = new List<Object>();
@@ -223,11 +265,14 @@ namespace DevilEditor
         public BehaviourNode PresentChildRequest { get; private set; }
         public bool IsRequestParentOrChild { get { return PresentParentRequest != null || PresentChildRequest != null; } }
         public BehaviourHelpGUI HelpBox { get; private set; }
-
+        
         const int HISTORY_SIZE = 20;
         // 资源打开记录
         List<string> mHistory = new List<string>();
         GUIContent[] mHistoryContent;
+
+        BTCopy mCopyDo;
+
         void AllocHistoryContent()
         {
             if (mHistoryContent == null || mHistoryContent.Length != mHistory.Count)
@@ -350,7 +395,7 @@ namespace DevilEditor
             if (AIGraph.ElementCount == 0)
                 return base.GetFocusDeltaPosition();
             var p = new Vector2();
-            for(int i= 0; i < AIGraph.ElementCount; i++)
+            for (int i = 0; i < AIGraph.ElementCount; i++)
             {
                 p += AIGraph.ElementAt(i).GlobalRect.center;
             }
@@ -373,7 +418,7 @@ namespace DevilEditor
         {
             foreach (var asset in DragAndDrop.objectReferences)
             {
-                if (asset is GameObject || asset is BehaviourTreeAsset || asset is BTAsset)
+                if (asset is GameObject || asset is BehaviourTreeAsset || asset is BTAsset || asset is BlackboardAsset)
                     return true;
             }
             return false;
@@ -383,7 +428,7 @@ namespace DevilEditor
         {
             base.OnResized();
             RaycastNode = GetRaycastNode(GlobalMousePosition);
-            for(int i= 0; i < AIGraph.ElementCount; i++)
+            for (int i = 0; i < AIGraph.ElementCount; i++)
             {
                 var bt = AIGraph.GetElement<BehaviourNode>(i);
                 if (bt != null && !bt.cliped && bt != RaycastNode)
@@ -441,15 +486,21 @@ namespace DevilEditor
                             break;
                         }
                     }
+                    else if(obj is BlackboardAsset)
+                    {
+                        sUsedBlackboard = obj as BlackboardAsset;
+                        act = true;
+                        break;
+                    }
                 }
                 DragAndDrop.AcceptDrag();
-                if(!act)
+                if (!act)
                 {
                     EditorUtility.DisplayDialog("Error", "没有可用的行为树资源.", "OK");
                 }
             }
         }
-        
+
         protected override void OnEnable()
         {
             ActiveBTEditor = this;
@@ -460,9 +511,14 @@ namespace DevilEditor
             GraphCanvas.OnDragEnd = InteractGraphDragEnd;
             GraphCanvas.OnKeyDown = InteractGraphKeyDown;
             if (mAssetBinder == null)
+            {
                 mAssetBinder = new BehaviourTreeAssetBinder();
+            }
             mAssetBinder.updateTreeAsset += ReloadGraph;
-            //ReloadGraph();
+            if (mAssetBinder.targetTree == null)
+                mAssetBinder.SetSelectedAsset();
+            else
+                ReloadGraph();
         }
 
         protected override void OnDisable()
@@ -494,6 +550,9 @@ namespace DevilEditor
                 mHistory.Clear();
                 StringUtil.ParseArray(his, mHistory, '\n');
             }
+            var black = data.Value<string>("black");
+            if (sUsedBlackboard == null && !string.IsNullOrEmpty(black))
+                sUsedBlackboard = AssetDatabase.LoadAssetAtPath<BlackboardAsset>(black);
         }
 
         protected override void OnSaveCustomData(JObject data)
@@ -501,12 +560,12 @@ namespace DevilEditor
             base.OnSaveCustomData(data);
             data["help"] = HelpBox.Visible;
             data["history"] = StringUtil.Gather(mHistory, -1, "\n");
+            if (sUsedBlackboard != null)
+                data["black"] = AssetDatabase.GetAssetPath(sUsedBlackboard);
         }
 
         protected override void OnTitleGUI()
         {
-            //base.OnTitleGUI();
-            //CN EntryInfoIcon
             HelpBox.Visible = GUILayout.Toggle(HelpBox.Visible, "<b>?</b>", "TE toolbarbutton", GUILayout.Width(20));
             if (mHistory.Count > 0 && GUILayout.Button("历史", "TE toolbarbutton", GUILayout.Width(45)))
             {
@@ -552,8 +611,7 @@ namespace DevilEditor
                     ping = GUILayout.Button(mAssetBinder.AssetName, "GUIEditor.BreadcrumbMid");
                 if (sel >= 0 && sel < mBindStack.Count - 1)
                 {
-                    mAssetBinder.PreferBinderName = mBindStack[sel].Name;
-                    mAssetBinder.SetBehaviourTreeAsset(mBindStack[sel].Source);
+                    mAssetBinder.SetBehaviourBinder(mBindStack[sel]);
                 }
                 else if (sel != -1)
                     ping = true;
@@ -562,8 +620,8 @@ namespace DevilEditor
                 EditorGUIUtility.PingObject(mAssetBinder.source);
 
             GUILayout.Label(" ");
-            
-            
+
+
             if (GUILayout.Button("重置", "TE toolbarbutton", GUILayout.Width(60)))
             {
                 mAssetBinder.Reset();
@@ -584,6 +642,7 @@ namespace DevilEditor
 
         void UpdateTreeGraph()
         {
+            mCopyDo = null;
             AddHistory(mAssetBinder.source);
             mBindStack.Clear();
             mUndoStack.Clear();
@@ -592,10 +651,10 @@ namespace DevilEditor
             RaycastNode = null;
             RequestChild(null);
 
-            if(Application.isPlaying)
+            if (Application.isPlaying)
             {
                 var bind = mAssetBinder.RuntimeBinder;
-                while(bind != null)
+                while (bind != null)
                 {
                     mBindStack.Insert(0, bind);
                     bind = bind.Parent;
@@ -608,6 +667,11 @@ namespace DevilEditor
                 mAssetBinder.targetTree.GetAllNodes(datas);
                 foreach (var t in datas)
                 {
+                    if(t.Asset == null)
+                    {
+                        mAssetBinder.targetTree.EditorDeleteNode(t);
+                        continue;
+                    }
                     if (t.Asset is BTNodeAsset)
                     {
                         var node = new BTNodeGUI(this, t);
@@ -647,7 +711,7 @@ namespace DevilEditor
 
         public void ClearSelection()
         {
-            foreach(var t in mSelection)
+            foreach (var t in mSelection)
             {
                 t.selected = false;
             }
@@ -677,7 +741,9 @@ namespace DevilEditor
                 Selection.objects = mSelectionAssets.ToArray();
             }
             else if (mAssetBinder != null)
+            {
                 mAssetBinder.SelectTarget();
+            }
         }
 
         bool InteractCraphClick(EMouseButton btn, Vector2 mousePos)
@@ -698,8 +764,13 @@ namespace DevilEditor
             }
             else if (btn == EMouseButton.right)
             {
+                if (RaycastNode != null && !mSelection.Contains(RaycastNode))
+                    ClearSelection();
+                mContextNode = RaycastNode;
+                mContextPos = AIGraph.CalculateLocalPosition(mousePos);
                 if (Application.isPlaying)
                 {
+                    DisplayDebugMenu(new Rect(mousePos, Vector2.zero));
                     //EditorUtility.DisplayCustomMenu(new Rect(mousePos, Vector2.zero), mRuntimeMenu, -1, OnRuntimeMenuSelected, null);
                 }
                 else if (IsRequestParentOrChild)
@@ -708,24 +779,48 @@ namespace DevilEditor
                 }
                 else
                 {
-                    if (RaycastNode != null && !mSelection.Contains(RaycastNode))
-                        ClearSelection();
-                    mContextNode = RaycastNode;
-                    mContextPos = AIGraph.CalculateLocalPosition(mousePos);
-                    BTEditorMenu menu ;// = mAssetBinder.targetTree == null ? sNewTreeMenu : (mContextNode != null && mContextNode.GetContext() != null ? sContextMenu : sTreeMenu);
-                    if (mAssetBinder.targetTree == null)
-                        menu = sNewTreeMenu;
-                    else if (mContextNode == null || mContextNode.GetContext() == null)
-                        menu = sTreeMenu;
-                    else if (mContextNode.GetContext().isCondition)
-                        menu = sConditionMenu;
-                    else
-                        menu = sContextMenu;
-                    menu.Display(this, new Rect(mousePos, Vector2.zero));
+                    DisplayEditMenu(new Rect(mousePos, Vector2.zero));
                 }
                 return true;
             }
             return false;
+        }
+
+        void DisplayDebugMenu(Rect pos)
+        {
+            var node = mContextNode == null ? null : mContextNode.GetRuntimeNode();
+            if (node == null)
+                return;
+            BehaviourTreeRunner.AssetBinder subtree = null;
+            if (node != null && node.Asset != null && TargetRunner != null)
+                subtree = TargetRunner.GetBinder((x) => x.Name == node.Asset.GetInstanceID().ToString("x"));
+            if (subtree != null && subtree.RuntimeTree != null)
+            {
+                sDebugMenu.AddItem("打开子行为树", (menu, index, data) =>
+                {
+                    mAssetBinder.SetBehaviourBinder(data as BehaviourTreeRunner.AssetBinder);
+                    mContextNode = null;
+                }, subtree);
+            }
+            else
+            {
+                sDebugMenu.RemoveItem("打开子行为树");
+            }
+            sDebugMenu.Display(this, pos);
+        }
+
+        void DisplayEditMenu(Rect pos)
+        {
+            BTEditorMenu menu;
+            if (mAssetBinder.targetTree == null)
+                menu = sNewTreeMenu;
+            else if (mContextNode == null || mContextNode.GetContext() == null)
+                menu = sTreeMenu;
+            else if (mContextNode.GetContext().isCondition)
+                menu = sConditionMenu;
+            else
+                menu = sContextMenu;
+            menu.Display(this, pos);
         }
         
         public void AddNewNode(AIModules.Module mod)
@@ -735,7 +830,7 @@ namespace DevilEditor
 
         public void AddNewNode(AIModules.Module mod, BTNode context, Vector2 contextPos)
         {
-            var todo = BTEditableDO.New<AddNode>(this);
+            var todo = BTEditableDO.New<BTAddNode>(this);
             todo.context = context;
             todo.position = contextPos;
             todo.mod = mod;
@@ -784,18 +879,29 @@ namespace DevilEditor
             return false;
         }
 
+        public void CopySelection()
+        {
+            if (mSelection.Count == 0 && RaycastNode != null)
+                mSelection.Add(RaycastNode);
+            if (mSelection.Count == 0)
+                return;
+            if (mCopyDo == null)
+                mCopyDo = BTEditableDO.New<BTCopy>(this);
+            mCopyDo.SetSelection(mSelection);
+        }
+
+        public void PasteSelection()
+        {
+            if (mCopyDo == null)
+                return;
+            var pos = mCopyDo.GetSelectionPositin();
+            mCopyDo.deltaPosition = AIGraph.CalculateLocalPosition(GlobalMousePosition) - pos;
+            DoEdit(mCopyDo);
+        }
+
         public void DeleteSelections()
         {
-            for (int i = SelectionNodes.Count - 1; i >= 0; i--)
-            {
-                var t = SelectionNodes[i].GetNode();
-                if (t != null)
-                {
-                    mAssetBinder.targetTree.EditorDeleteNode(t);
-                    AIGraph.RemoveElement(SelectionNodes[i]);
-                }
-            }
-            var del = BTEditableDO.New<DeleteNode>(this);
+            var del = BTEditableDO.New<BTDeleteNode>(this);
             del.SetSelection(SelectionNodes);
             mSelection.Clear();
             mSelectionAssets.Clear();
@@ -809,9 +915,9 @@ namespace DevilEditor
             var t = node.GetContext();
             if (t != null)
             {
+                mAssetBinder.targetTree.EditorDeleteNode(t);
                 if (t.Asset is BTNodeAsset)
                     AddDelayTask(ACT_UPDATE_WIRES, mWires.UpdateWires);
-                mAssetBinder.targetTree.EditorDeleteNode(t);
                 if (node != RootNode && node.GetNode() == null)
                     AIGraph.RemoveElement(node);
                 else
@@ -826,14 +932,13 @@ namespace DevilEditor
                 DeleteSelections();
                 return true;
             }
-            //else if (key == KeyCode.Z && Event.current.control && mUndoStack.Count > 0)
-            //{
-            //    var undo = mUndoStack[mUndoStack.Count - 1];
-            //    mUndoStack.RemoveAt(mUndoStack.Count - 1);
-            //    undo.UndoEdit();
-            //    return true;
-            //}
-            else if(!Application.isPlaying && !Event.current.alt && !Event.current.control && !Event.current.shift && mAssetBinder != null && mAssetBinder.targetTree != null)
+            else if(key == KeyCode.C && Event.current.control)
+            {
+                CopySelection();
+                return true;
+            }
+            else if(!Application.isPlaying && !Event.current.alt && !Event.current.control && !Event.current.shift 
+                && mAssetBinder != null && mAssetBinder.targetTree != null)
             {
                 mContextNode = RaycastNode;
                 mContextPos = AIGraph.CalculateLocalPosition(GlobalMousePosition);

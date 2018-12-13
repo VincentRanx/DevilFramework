@@ -46,7 +46,7 @@ namespace DevilEditor
             var rect = new Rect(10, 10, 230, 20);
             EditorGUI.SelectableLabel(rect, "Animation Clips");
             rect = new Rect(10, 30, 230, 130);
-            clips = DevilEditorUtility.TextField(rect, clips, " List-out Animation Clips");
+            clips = DevilEditorUtility.TextArea(rect, clips, " List-out Animation Clips");
             rect = new Rect(40, 165, 80, 30);
             if (GUI.Button(rect, "Create"))
             {

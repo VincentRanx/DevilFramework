@@ -299,17 +299,16 @@
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourTreeAssetInspector.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourTreeEditor.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BehaviourTreeRunnerInspector.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BlackboardAssetInspector.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BlackboardEditor.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BlackboardMonitorGUI.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTBlackboardPropertyDrawer.cs" />
+    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BlackboardVariableDrawer.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTEditableDO.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTEditorMenu.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTHotkeyMenu.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTNodeGUI.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTNodeInspector.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTRootNodeGUI.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTSubTreeDrawer.cs" />
+    <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTVariableReferenceDrawer.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\BTWireGUI.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AIDesigner\TipBox.cs" />
     <Compile Include="Assets\DevilFramework\Editor\AssetProcessor\AssetPostProcessorHandler.cs" />
@@ -321,7 +320,6 @@
     <Compile Include="Assets\DevilFramework\Editor\CustomFieldDrawer\SortingLayerFieldDrawer.cs" />
     <Compile Include="Assets\DevilFramework\Editor\CustomFieldDrawer\TextRefDrawer.cs" />
     <Compile Include="Assets\DevilFramework\Editor\CustomInspectors\CameraPostProcessingInspector.cs" />
-    <Compile Include="Assets\DevilFramework\Editor\CustomInspectors\CurvePathInspector.cs" />
     <Compile Include="Assets\DevilFramework\Editor\CustomInspectors\EmojiAnimsInspector.cs" />
     <Compile Include="Assets\DevilFramework\Editor\CustomInspectors\FreePolygonInspector.cs" />
     <Compile Include="Assets\DevilFramework\Editor\CustomInspectors\FStateMachineInspector.cs" />
@@ -336,28 +334,28 @@
     <Compile Include="Assets\DevilFramework\Editor\EditorSelection.cs" />
     <Compile Include="Assets\DevilFramework\Editor\GameSimulation.cs" />
     <Compile Include="Assets\DevilFramework\Editor\GUISkinPreview.cs" />
+    <Compile Include="Assets\DevilFramework\Editor\InputDialog.cs" />
     <Compile Include="Assets\DevilFramework\Editor\Installizer.cs" />
     <Compile Include="Assets\DevilFramework\Editor\QuickGUI.cs" />
     <Compile Include="Assets\DevilFramework\Editor\TablesForEditor.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\DevilFramework\Backup\Emission-normal.shader" />
-    <None Include="Assets\DevilFramework\Backup\ImageBlendEffect.shader" />
-    <None Include="Assets\DevilFramework\Backup\RefractionNormal-transport.shader" />
-    <None Include="Assets\DevilFramework\Core\Command\notepadstyle.xml" />
-    <None Include="Assets\DevilFramework\Core\Command\rts.init.txt" />
     <None Include="Assets\DevilFramework\Core\DevilFramework.Core.asmdef" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework-Cfg-Default.xml" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework-Cfg.xml" />
     <None Include="Assets\DevilFramework\Editor\DevilFramework.Editor.asmdef" />
     <None Include="Assets\DevilFramework\GamePlay\Editor\DevilFramework.GamePlay.Editor.asmdef" />
     <None Include="Assets\DevilFramework\GamePlay\Runtime\DevilFramework.GamePlay.asmdef" />
+    <None Include="Assets\DevilFramework\RTSVM\Command\notepadstyle.xml" />
+    <None Include="Assets\DevilFramework\RTSVM\Command\rts.init.txt" />
+    <None Include="Assets\DevilFramework\RTSVM\RTSVM.asmdef" />
     <None Include="Assets\DevilFramework\Resources\Shaders\BlitImg.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\DevilCG.cginc" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-BlurScreen.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-ColorAsChannel.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-EmojiFont.shader" />
     <None Include="Assets\DevilFramework\Resources\Shaders\UI-Transition.shader" />
+    <None Include="Assets\Scenes\WorldCreater\test.xml" />
     <None Include="Assets\Test\Scripts\Test.asmdef" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

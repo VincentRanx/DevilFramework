@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Devil.Utility;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -38,28 +39,59 @@ namespace DevilEditor
         protected GUIContent[] mContents;
         bool isDirty;
 
+        public bool IsExist(string item)
+        {
+            return GlobalUtil.FindIndex(mItems, (x) => x.content.text == item) != -1;
+        }
+
         public void AddItem(Item item)
         {
             mItems.Add(item);
             isDirty = true;
         }
 
-        public void AddItem(GUIContent content, OnItemSelected selector, object data = null)
+        public void AddItem(string content, OnItemSelected selector, object data = null)
         {
-            mItems.Add(NewItem(content, selector, data));
-            isDirty = true;
+            var index = GlobalUtil.FindIndex(mItems, (x) => x.content.text == content);
+            if (index == -1)
+            {
+                mItems.Add(NewItem(content, selector, data));
+                isDirty = true;
+            }
+            else
+            {
+                var item = mItems[index];
+                item.content.text = content;
+                item.selectedCallback = selector;
+                item.data = data;
+            }
         }
-
-        public void AddItem(string txt, OnItemSelected selector, object data = null)
-        {
-            mItems.Add(NewItem(txt, selector, data));
-            isDirty = true;
-        }
-
+        
         public void AddItems(params Item[] items)
         {
             mItems.AddRange(items);
             isDirty = true;
+        }
+
+        public void RemoveItem(string name)
+        {
+            var id = GlobalUtil.FindIndex(mItems, (x) => x.content.text == name);
+            if(id != -1)
+            {
+                mItems.RemoveAt(id);
+                isDirty = true;
+            }
+        }
+
+        public bool RenameItem(string oldName, string newName)
+        {
+            var index = GlobalUtil.FindIndex(mItems, (x) => x.content.text == oldName);
+            if(index >= 0)
+            {
+                mItems[index].content.text = newName;
+                return true;
+            }
+            return false;
         }
 
         public void SetItems(ICollection<Item> items)
@@ -92,6 +124,8 @@ namespace DevilEditor
 
         void OnSelected(object userData, string[] options, int selected)
         {
+            if (isDirty)
+                return;
             var item = mItems[selected];
             if (item.selectedCallback != null)
             {

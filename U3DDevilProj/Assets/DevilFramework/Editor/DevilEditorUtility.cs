@@ -171,6 +171,24 @@ namespace DevilEditor
             }
         }
 
+        public static GUIStyle NormalStyle(string style)
+        {
+            DoLoadGUI();
+            return styles[style].style;
+        }
+
+        public static GUIStyle HintStyle(string style)
+        {
+            DoLoadGUI();
+            return styles[style].hint;
+        }
+
+        public static Style StyleDefine(string style)
+        {
+            DoLoadGUI();
+            return styles[style];
+        }
+
         public static SerializedProperty FindRelativeProperty(SerializedProperty pro, string path)
         {
             if (path.IndexOf('/') == 0)
@@ -191,50 +209,72 @@ namespace DevilEditor
             EditorGUI.SelectableLabel(rect, hint, sty.hint);
         }
 
-        public static void TextField(Rect rect, SerializedProperty prop, string style = "textarea")
+        public static void TextArea(Rect rect, SerializedProperty prop, string style = "textarea")
         {
-            DoLoadGUI();
-            var sty = styles[style];
-            var s = EditorGUI.TextArea(rect, prop.stringValue, sty.style);
-            prop.stringValue = s;
-            if (string.IsNullOrEmpty(s))
-                Hint(rect, prop.displayName);
+            prop.stringValue = TextArea(rect, prop.stringValue, prop.displayName, style);
         }
 
-        public static string TextField(Rect rect, string txt, string hint, string style = "textarea")
+        public static string TextArea(Rect rect, string txt, string hint, string style = "textarea")
         {
             DoLoadGUI();
             var sty = styles[style];
             bool dohint = string.IsNullOrEmpty(txt);
-            var s = EditorGUI.TextArea(rect, txt, dohint ? sty.hint : sty.style);
-            if (string.IsNullOrEmpty(s))
-                Hint(rect, hint);
-            return s;
+            var s = EditorGUI.TextArea(rect, dohint ? hint : txt, dohint ? sty.hint : sty.style);
+            if (s == hint)
+                return "";
+            else
+                return s;
         }
 
-        public static string StringField(string txt, string hint, string style = "textfield")
+        public static void TextArea(SerializedProperty prop, string style = "textarea", params GUILayoutOption[] options)
+        {
+            prop.stringValue = TextArea(prop.stringValue, prop.displayName, style, options);
+        }
+
+        public static string TextArea(string txt, string hint, string style = "textarea", params GUILayoutOption[] options)
         {
             DoLoadGUI();
             var sty = styles[style];
             bool dohint = string.IsNullOrEmpty(txt);
-            var s = EditorGUILayout.TextField(dohint ? hint : txt, dohint ? sty.hint : sty.style);
+            var s = EditorGUILayout.TextArea(dohint ? hint : txt, dohint ? sty.hint : sty.style, options);
+            if (s == hint)
+                return "";
+            else
+                return s;
+        }
+
+        public static void TextField(SerializedProperty prop, string style = "textfield", params GUILayoutOption[] options)
+        {
+            prop.stringValue = TextField(prop.stringValue, prop.displayName, style, options);
+        }
+
+        public static string TextField(string txt, string hint, string style = "textfield", params GUILayoutOption[] options)
+        {
+            DoLoadGUI();
+            var sty = styles[style];
+            bool dohint = string.IsNullOrEmpty(txt);
+            var s = EditorGUILayout.TextField(dohint ? hint : txt, dohint ? sty.hint : sty.style, options);
             if (s != hint)
                 return s;
             else
                 return "";
         }
 
-        public static void StringField(Rect rect, SerializedProperty prop, string style = "textfield")
+        public static void TextField(Rect rect, SerializedProperty prop, string style = "textfield")
+        {
+            prop.stringValue = TextField(rect, prop.stringValue, prop.displayName, style);
+        }
+
+        public static string TextField(Rect rect, string txt, string hint, string style = "textfield")
         {
             DoLoadGUI();
             var sty = styles[style];
-            bool dohint = string.IsNullOrEmpty(prop.stringValue);
-
-            var s = EditorGUI.TextField(rect, dohint ? prop.displayName : prop.stringValue, dohint ? sty.hint : sty.style);
-            if (s != prop.displayName)
-                prop.stringValue = s;
+            bool dohint = string.IsNullOrEmpty(txt);
+            var s = EditorGUI.TextField(rect, dohint ? hint : txt, dohint ? sty.hint : sty.style);
+            if (s != hint)
+                return s;
             else
-                prop.stringValue = "";
+                return "";
         }
         
         public static void IntField(Rect rect, SerializedProperty prop, string style = "textfield")
@@ -251,15 +291,31 @@ namespace DevilEditor
                 prop.intValue = int.Parse(s);
         }
 
-        public static int IntField(string prefix, string hint, int value, string style = "textfield")
+        public static int IntField(Rect rect, int value, string hint, string style = "textfield")
+        {
+            DoLoadGUI();
+            var sty = styles[style];
+            bool dohint = value == 0;
+
+            var old = value.ToString();
+            string s = EditorGUI.TextField(rect, dohint ? hint : old, dohint ? sty.hint : sty.style);
+            if (string.IsNullOrEmpty(s) || s == hint)
+                return 0;
+            else if (old != s && Regex.IsMatch(s, intPattern))
+                return int.Parse(s);
+            else
+                return value;
+        }
+
+        public static int IntField(string prefix, string hint, int value, string style = "textfield", params GUILayoutOption[] options)
         {
             DoLoadGUI();
             var sty = styles[style];
             bool dohint = value == 0;
             var old = value.ToString();
             var hintstr = string.IsNullOrEmpty(hint) ? prefix : hint;
-            var s = EditorGUILayout.TextField(prefix, dohint ? hintstr : old, dohint ? sty.hint : sty.style);
-            if (string.IsNullOrEmpty(s))
+            var s = EditorGUILayout.TextField(prefix, dohint ? hintstr : old, dohint ? sty.hint : sty.style, options);
+            if (string.IsNullOrEmpty(s) || s == hintstr)
                 return 0;
             else if (old != s && Regex.IsMatch(s, intPattern))
                 return int.Parse(s);
@@ -277,7 +333,7 @@ namespace DevilEditor
             var old = prop.intValue.ToString();
             var hintsr = string.IsNullOrEmpty(hint) ? prop.displayName : hint;
             var s = EditorGUILayout.TextField(dohint ? hintsr : old, dohint ? sty.hint : sty.style);
-            if (string.IsNullOrEmpty(s))
+            if (string.IsNullOrEmpty(s) || s == hintsr)
                 prop.intValue = 0;
             else if (old != s && Regex.IsMatch(s, intPattern))
                 prop.intValue = int.Parse(s);
