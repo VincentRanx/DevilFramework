@@ -12,6 +12,7 @@ namespace Devil.AI
     
     public abstract class BTControllerAsset : BTNodeAsset , IBTController
     {
+        public bool m_SuccessForAbort;
         private EBTState mState;
         public override EBTState State { get { return mState; } }
         public override bool IsController { get { return true; } }
@@ -32,8 +33,8 @@ namespace Devil.AI
         public override void Abort()
         {
             mState = OnAbort();
-            if (mState <= EBTState.running)
-                mState = EBTState.failed;
+            if (mState <= EBTState.running || m_SuccessForAbort)
+                mState = m_SuccessForAbort ? EBTState.success : EBTState.failed;
         }
 
         public override void Start()
@@ -43,10 +44,12 @@ namespace Devil.AI
                 Debug.Break();
 #endif
             mState = OnStart();
+            StartDecorator();
         }
 
         public override void Stop()
         {
+            StopDecorator();
             OnStop();
         }
         

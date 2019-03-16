@@ -29,23 +29,43 @@ namespace Devil.AI
         public int m_ResultFromChildIndex;
         public bool m_Random;
 
-        int mVisitIndex;
         EBTState mLastState;
+        int[] mExecIndex;
+        int mExecI;
+        bool mRandom;
 
         public override string DisplayContent
         {
             get
             {
-                return string.Format("{0} => {1}", m_LoopCondition, m_LoopResult);
+                return string.Format("{0} =>\n {1}", m_LoopCondition, m_LoopResult);
             }
         }
 
+        public override void OnPrepare(BehaviourTreeRunner.AssetBinder asset, BTNode node)
+        {
+            base.OnPrepare(asset, node);
+            Init();
+        }
+
+        void Init()
+        {
+            mRandom = m_Random && mChildren.Length > 0;
+            if (mRandom)
+            {
+                if (mExecIndex == null || mExecIndex.Length != mChildren.Length)
+                    mExecIndex = new int[mChildren.Length];
+                for (int i = 0; i < mExecIndex.Length; i++)
+                {
+                    mExecIndex[i] = i;
+                }
+            }
+            mExecI = 0;
+        }
         public override IBTNode GetNextChildTask()
         {
-            if ( mVisitIndex < mChildren.Length)
-                return mChildren[mVisitIndex];
-            else
-                return null;
+            var i = mRandom ? AIUtility.GetRandomIndex(mExecIndex, mExecI) : mExecI;
+            return mChildren[i];
         }
 
         public override EBTState OnReturn(EBTState state)
@@ -55,15 +75,19 @@ namespace Devil.AI
                 return GetResult(true);
             if (m_LoopCondition == ELoopMode.UntilFailed && state == EBTState.failed)
                 return GetResult(true);
-            mVisitIndex++;
-            if (mVisitIndex >= mChildren.Length)
-                mVisitIndex = 0;
+            mExecI++;
+            if (mExecI >= mChildren.Length)
+                mExecI = 0;
             return EBTState.running;
         }
 
         public override EBTState OnStart()
         {
-            mVisitIndex = 0;
+#if UNITY_EDITOR
+            if (mRandom ^ (m_Random && mChildren.Length > 0))
+                Init();
+#endif
+            mExecI = 0;
             mLastState = EBTState.inactive;
             return mChildren.Length > 0 ? EBTState.running : EBTState.failed;
         }

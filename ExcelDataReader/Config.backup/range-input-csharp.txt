@@ -1,1 +1,0 @@
-{name} = (GameDefine.EImpactRange){input}.Value<int>("{name}");

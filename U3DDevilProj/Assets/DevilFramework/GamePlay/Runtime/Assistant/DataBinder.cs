@@ -1,6 +1,6 @@
 ﻿namespace Devil.GamePlay.Assistant
 {
-    public sealed class DataBinder<T> : IDataBinder<T> where T : class
+    public sealed class DataBinder<T> : IDataBinder<T>, System.IDisposable where T : class
     {
         public System.Action<T> OnValidateData;
         public System.Action<T> OnBindData;
@@ -101,6 +101,16 @@
                 else
                     self.OnRefreshData(mData);
             }
+        }
+
+        public void Dispose()
+        {
+            Data = null;
+            mRefresh = false;
+            OnValidateData = null;
+            OnBindData = null;
+            OnUnbindData = null;
+            self = null;
         }
 
         void IDataBinder<T>.OnRefreshData(T data) { if (OnValidateData != null) OnValidateData(data); }

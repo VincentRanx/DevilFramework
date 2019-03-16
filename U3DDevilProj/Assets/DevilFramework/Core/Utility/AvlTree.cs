@@ -314,7 +314,7 @@ namespace Devil.Utility
             }
             return false;
         }
-
+        
         public bool Remove(T item)
         {
             return RemoveById(mIdentifier(item));

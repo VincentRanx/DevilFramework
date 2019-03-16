@@ -192,7 +192,7 @@ namespace Devil.Utility
         }
 
         /// <summary>
-        /// 从右边查找最接近目标 id 的对象
+        /// 从右边查找最接近目标 id 的对象 (查找结果 ≧ 目标)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
@@ -245,7 +245,7 @@ namespace Devil.Utility
         }
 
         /// <summary>
-        /// 从左边查找最接近目标 id 的对象
+        /// 从左边查找最接近目标 id 的对象 (查找结果 ≦ 目标)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
@@ -618,7 +618,9 @@ namespace Devil.Utility
             float v = curve.Evaluate(lerp);
             tmin = GetStartValue(curve);
             tmax = GetEndValue(curve);
-            float len = tmax - tmin;
+            float len = Mathf.Abs(tmax - tmin);
+            if (tmin > tmax)
+                tmin = tmax;
             return len == 0 ? v : (v - tmin) / len;
         }
 

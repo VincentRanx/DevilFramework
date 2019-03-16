@@ -1,6 +1,5 @@
 using Devil.Utility;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using LitJson;
 using System.Collections.Generic;
 
 namespace Devil.ContentProvider
@@ -121,6 +120,7 @@ namespace Devil.ContentProvider
             }
         }
 
+        // notify load complete.
         public static void LoadComplete(TableSet<T> table, bool merge)
         {
             if(table != null && table.IsLoading)
@@ -191,14 +191,14 @@ namespace Devil.ContentProvider
                 tab.TableName = tablename;
                 tab.mMerged.Clear();
                 tab.mMerged.Add(HashTable(tablename));
-                JArray arr = JsonConvert.DeserializeObject<JArray>(text);
+                JsonData arr = JsonMapper.ToObject(text);
+                //JArray arr = JsonConvert.DeserializeObject<JArray>(text);
                 if (tab.m_Datas == null || tab.m_Datas.Length != arr.Count)
                     tab.m_Datas = new T[arr.Count];
                 for (int i = 0; i < arr.Count; i++)
                 {
-                    JObject obj = arr[i] as JObject;
                     T table = new T();
-                    table.Init(obj);
+                    table.Init(arr[i]);
                     tab.m_Datas[i] = table;
                 }
                 tab.IsLoading = false;

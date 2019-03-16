@@ -42,23 +42,15 @@ namespace Devil.GamePlay
                 if (PanelManager.HasAnyPanelClosing)
                     return;
                 mOpenPanel = false;
-                IPanelIntent req = null;
-                if (m_SendRequest)
-                {
-                    PanelIntent intent;
-                    intent.requestId = m_RequestId;
-                    intent.requestData = this;
-                    intent.handler = null;
-                    req = intent;
-                }
+
                 if (mUseId)
                 {
-                    var panel = PanelManager.OpenPanel(mPanelId, req);
+                    var panel = PanelManager.OpenPanel(mPanelId);
                     if (panel != null)
                         m_PanelName = panel.name;
                 }
                 else if (!string.IsNullOrEmpty(m_PanelName))
-                    PanelManager.OpenPanel(m_PanelName, req);
+                    PanelManager.OpenPanel(m_PanelName);
             }
         }
     }

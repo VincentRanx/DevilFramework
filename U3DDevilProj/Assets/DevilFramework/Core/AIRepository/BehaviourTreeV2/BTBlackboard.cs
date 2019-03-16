@@ -7,7 +7,7 @@ namespace Devil.AI
     public interface IBlackboardProperty
     {
         bool IsList { get; }
-        System.Type TypeDefine { get; }
+        Type TypeDefine { get; }
         void GatherData(ICollection<object> collection);
     }
 
@@ -55,11 +55,22 @@ namespace Devil.AI
 
             public void CopyValue(ICopy copyTo)
             {
-                var p = copyTo as PValue<T>;
-                if (p == null)
-                    return;
-                p.mValue = mValue;
-                p.mIsSet = mIsSet;
+                if (copyTo.IsList)
+                {
+                    var l = copyTo as PList<T>;
+                    if (mIsSet)
+                        l.Add(mValue);
+                    else
+                        l.Remove(mValue);
+                }
+                else
+                {
+                    var p = copyTo as PValue<T>;
+                    if (p == null)
+                        return;
+                    p.mValue = mValue;
+                    p.mIsSet = mIsSet;
+                }
             }
 
             public void GatherData(ICollection<object> collection)
@@ -85,6 +96,13 @@ namespace Devil.AI
                 mValue = default(T);
                 mIsSet = false;
             }
+
+#if UNITY_EDITOR
+            public override string ToString()
+            {
+                return IsSet ? string.Format("[{0}] {1}", mValue == null ? "NULL" : TypeDefine.Name, mValue) : "NOT SET";
+            }
+#endif
         }
 
         class PList<T> : List<T>, IBlackboardList<T>, ICopy
@@ -123,6 +141,13 @@ namespace Devil.AI
             }
 
             public void ClearAll() { Clear(); }
+
+#if UNITY_EDITOR
+            public override string ToString()
+            {
+                return string.Format("[{0} List] size:{1}", TypeDefine.Name, Count);
+            }
+#endif
         }
 
         BlackboardAsset.VariableDefine[] mPropertyDefines;
@@ -166,6 +191,22 @@ namespace Devil.AI
             if (isList ^ mPropertyDefines[index].isList || typeof(T).FullName != mPropertyDefines[index].typeDef)
                 return false;
             return true;
+        }
+
+        public void CopyValue(int from, int to)
+        {
+            var f = mProperties[from];
+            if (f == null)
+                return;
+            var t = mProperties[to];
+            if(t == null)
+            {
+                mProperties[to] = f.CopyThis();
+            }
+            else
+            {
+                f.CopyValue(t);
+            }
         }
 
         public IBlackboardValue<T> Value<T>(int index)

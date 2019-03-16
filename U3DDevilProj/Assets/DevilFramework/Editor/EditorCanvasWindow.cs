@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using LitJson;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -123,11 +122,11 @@ namespace DevilEditor
             string str = EditorPrefs.GetString(mSerializeKey);
             if (!string.IsNullOrEmpty(str))
             {
-                JObject obj = JsonConvert.DeserializeObject<JObject>(str);
-                ScaledCanvas.LocalScale = obj.Value<float>("scale");
+                var obj = JsonMapper.ToObject(str);// JsonConvert.DeserializeObject<JObject>(str);
+                ScaledCanvas.LocalScale = (float)obj["scale"];
                 Rect rect = GraphCanvas.LocalRect;
-                rect.x = Mathf.Clamp(obj.Value<float>("x"), -100000, 100000);
-                rect.y = Mathf.Clamp(obj.Value<float>("y"), -100000, 100000);
+                rect.x = Mathf.Clamp((float)obj["x"], -100000, 100000);
+                rect.y = Mathf.Clamp((float)obj["y"], -100000, 100000);
                 GraphCanvas.LocalRect = rect;
                 OnReadCustomData(obj);
             }
@@ -137,16 +136,16 @@ namespace DevilEditor
         {
             if (string.IsNullOrEmpty(mSerializeKey))
                 mSerializeKey = GetSerializeKey();
-            JObject obj = new JObject();
+            JsonData obj = new JsonData();
             OnSaveCustomData(obj);
             obj["scale"] = ScaledCanvas.LocalScale;
             obj["x"] = GraphCanvas.LocalRect.x;
             obj["y"] = GraphCanvas.LocalRect.y;
-            EditorPrefs.SetString(mSerializeKey, JsonConvert.SerializeObject(obj));
+            EditorPrefs.SetString(mSerializeKey, JsonMapper.ToJson(obj));
         }
 
-        protected virtual void OnReadCustomData(JObject data) { }
-        protected virtual void OnSaveCustomData(JObject data) { }
+        protected virtual void OnReadCustomData(JsonData data) { }
+        protected virtual void OnSaveCustomData(JsonData data) { }
 
         protected virtual void OnCanvasStart()
         {
@@ -314,11 +313,17 @@ namespace DevilEditor
                 Event.current.Use();
             }
         }
+        
+        protected virtual bool EnableDropAssets() { return false; }
+
+        protected virtual void OnAcceptDrop() { }
 
         // 响应鼠标事件
         void ProcessEvent()
         {
             InterceptMouse = clipRect.Contains(Event.current.mousePosition);
+            if (InterceptMouse && focusedWindow == this)
+                DragAndDrop.visualMode = EnableDropAssets() ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.None;
             if (!InterceptMouse)
             {
                 return;
@@ -379,6 +384,11 @@ namespace DevilEditor
                     GraphCanvas.LocalRect = r;
                 }
                 UpdateStateInfo();
+            }
+
+            if (DragAndDrop.visualMode != DragAndDropVisualMode.None && Event.current.type == EventType.DragPerform)
+            {
+                OnAcceptDrop();
             }
         }
 

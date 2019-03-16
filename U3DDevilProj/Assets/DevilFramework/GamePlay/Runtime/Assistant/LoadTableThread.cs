@@ -91,8 +91,14 @@ namespace Devil.GamePlay.Assistant
 
         public LoadTableThread(string tableFolder = "Assets/Tables/", string tableExtension = ".txt", string name= "default table loader")
         {
-            mTableFolder = tableFolder;
-            mTableExtension = tableExtension;
+            if (tableFolder.EndsWith("/"))
+                mTableFolder = tableFolder;
+            else
+                mTableFolder = StringUtil.Concat(tableFolder, "/");
+            if (tableExtension.StartsWith(".") || string.IsNullOrEmpty(tableExtension))
+                mTableExtension = tableExtension;
+            else
+                mTableExtension = StringUtil.Concat(".", tableExtension);
             mThreadState = new ThreadPoolState();
             mThreadState.name = name;
         }
@@ -192,11 +198,6 @@ namespace Devil.GamePlay.Assistant
         public float Progress { get; private set; }
         public void Start()
         {
-            //if (mThread == null && mTaskQueue.Count > 0)
-            //{
-            //    mThread = new Thread(OnTableThread);
-            //    mThread.Start();
-            //}
             if (!MainThread.IsInitilized)
             {
                 RTLog.LogErrorFormat(LogCat.Table, "Can't start Table Loader \"{0}\" becaouse of no MainThread installized.", mThreadState.name);

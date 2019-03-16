@@ -7,7 +7,8 @@ namespace Devil.ContentProvider
     public struct TextRef : System.IEquatable<TextRef>
     {
         public int id;
-        public string txt;
+        [SerializeField]
+        private string txt;
 
         public TextRef(int id)
         {
@@ -22,6 +23,20 @@ namespace Devil.ContentProvider
         }
 
         public TextRes Res { get { return id == 0 ? null : TableSet<TextRes>.Instance[id]; } }
+
+        public string AudioRes
+        {
+            get
+            {
+                if (id != 0)
+                {
+                    var res = TableSet<TextRes>.Instance[id];
+                    return res.voice;
+                }
+                else
+                    return null;
+            }
+        }
 
         public static implicit operator string(TextRef txt)
         {

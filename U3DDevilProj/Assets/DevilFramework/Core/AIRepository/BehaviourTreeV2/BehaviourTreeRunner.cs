@@ -211,7 +211,7 @@ namespace Devil.AI
         }
 
         [SerializeField]
-        EResetMode m_LoopMode = EResetMode.ResetWhenLoopEnd;
+        protected EResetMode m_LoopMode = EResetMode.ResetWhenLoopEnd;
         [Range(1,8)]
         [SerializeField]
         int m_MaxSubTreeDeep = 4;
@@ -222,7 +222,10 @@ namespace Devil.AI
 
         [SerializeField]
         BlackboardAsset m_Blackboard;
-        public BlackboardAsset BlackboardAsset { get { return m_Blackboard; } }
+        public BlackboardAsset BlackboardAsset
+        {
+            get { return m_Blackboard; }
+        }
 
         BTBlackboard mBlackboard;
         public BTBlackboard Blackboard { get { if (mBlackboard == null) mBlackboard = new BTBlackboard(m_Blackboard); return mBlackboard; } }
@@ -281,12 +284,14 @@ namespace Devil.AI
         
         protected virtual void OnEnable()
         {
+            AIManager.Instance.Add(this);
             if (m_LoopMode == EResetMode.ResetWhenBegin && mAssetBinder != null && mAssetBinder.RuntimeTree != null)
                 mAssetBinder.Looper.Reset();
         }
 
         protected virtual void OnDisable()
         {
+            AIManager.Instance.Remove(this);
             if(m_LoopMode == EResetMode.AlwaysReset && mAssetBinder != null && mAssetBinder.RuntimeTree != null)
             {
                 mAssetBinder.StopService();
@@ -299,11 +304,11 @@ namespace Devil.AI
             SetAsset(m_BehaviourAsset);
         }
 
-        protected virtual void Update()
+        protected virtual void FixedUpdate()
         {
             if(mAssetBinder != null && mAssetBinder.RuntimeTree != null)
             {
-                var t = Time.deltaTime;
+                var t = Time.fixedDeltaTime;
                 mAssetBinder.UpdateLooper(t);
                 mAssetBinder.UpdateService(t);
                 BehaviourTime += t;

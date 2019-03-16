@@ -91,21 +91,21 @@ namespace DevilEditor
                 EditorGUI.indentLevel = 0;
 
 
-                var rect = new Rect(position.x, position.y, position.width, 15);
+                var rect = new Rect(position.x, position.y, position.width, 18);
                 var index = mSelectedIndex;
-                mSelectedIndex = EditorGUI.Popup(rect, mSelectedIndex, mPopNames);
+                mSelectedIndex = EditorGUI.Popup(rect, mSelectedIndex, mPopNames, (GUIStyle)"ExposablePopupMenu");
                 if (mSelectedIndex > 0)
                 {
                     property.stringValue = mPopNames[mSelectedIndex].text;
-                    rect = new Rect(position.x, position.y + 20, position.width, 18);
+                    rect = new Rect(position.x, position.y + 18, position.width, 20);
                     EditorGUI.LabelField(rect, mVars[mSelectedIndex - 1].comment, DevilEditorUtility.HintStyle("label"));
                 }
                 else
                 {
                     if (index > 0)
                         mCusCache = "";
-                    rect = new Rect(position.x, position.y + 18, position.width, 20);
-                    mCusCache = EditorGUI.TextField(rect, mCusCache);
+                    rect = new Rect(position.x, position.y + 18, position.width, 18);
+                    mCusCache = EditorGUI.TextField(rect, mCusCache, (GUIStyle)"helpbox");
                     property.stringValue = mCusCache;
                 }
 

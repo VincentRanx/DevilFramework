@@ -6,13 +6,12 @@ namespace Devil.AI
     [BTComposite(Title = "开关？(G)", HotKey = KeyCode.G)]
     public class BTGateway : BTConditionAsset
     {
-        [BTVariableReference]
+        [BTVariableReference(typeof(bool), EVarType.Variable)]
         public string m_UseBlackboard;
-
-        public bool m_IsTrue;
-
         IBlackboardValue<bool> mBlackboardValue;
 
+        public bool m_IsTrue;
+        
         public override string DisplayName
         {
             get
@@ -32,7 +31,7 @@ namespace Devil.AI
             get
             {
                 if (mBlackboardValue != null)
-                    return m_IsTrue == mBlackboardValue.Value && mBlackboardValue.Value;
+                    return m_IsTrue == mBlackboardValue.Value;
                 else
                     return m_IsTrue;
             }

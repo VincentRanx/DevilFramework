@@ -55,6 +55,7 @@ namespace Devil.GamePlay.Assistant
                     mSelfPartcle.Stop(m_ActiveChildParticle);
                 }
                 isAlive = false;
+                EffectsManager.UnSpawnEffect(this);
             }
         }
 

@@ -314,6 +314,28 @@ namespace Devil.Utility
             return hash;
         }
 
+        public static int IgnoreCaseToHash(char[] sequence, int offset, int len)
+        {
+            int hash = 0;
+            int end = offset + len;
+            for(int i= offset; i < end; i++)
+            {
+                hash = hash * 31 + ToLower(sequence[i]);
+            }
+            return hash;
+        }
+
+        public static int ToHash(char[] sequence, int offset, int len)
+        {
+            int hash = 0;
+            int end = offset + len;
+            for (int i = offset; i < end; i++)
+            {
+                hash = hash * 31 + sequence[i];
+            }
+            return hash;
+        }
+
         public static char GetCharIgnoreCase(string str, int index)
         {
             char c = str[index];
@@ -345,6 +367,20 @@ namespace Devil.Utility
             for (int i = len - 1; i >= 0; i--)
             {
                 if (GetCharIgnoreCase(str, off + i) != GetCharIgnoreCase(pattern, i))
+                    return false;
+            }
+            return true;
+        }
+
+        public static bool EqualIgnoreCase(string a, string b)
+        {
+            int la = a == null ? 0 : a.Length;
+            int lb = b == null ? 0 : b.Length;
+            if (la != lb)
+                return false;
+            for (int i = 0; i < la; i++)
+            {
+                if (ToLower(a[i]) != ToLower(b[i]))
                     return false;
             }
             return true;
@@ -737,6 +773,22 @@ namespace Devil.Utility
             return ReleaseBuilder(s);
         }
 
+
+        public static string ToMask(int value, string connector, string[] names)
+        {
+            var buf = GetBuilder();
+            int n = 1;
+            for (int i = 0; i < Mathf.Min(32, names.Length); i++)
+            {
+                if ((value & (1 << i)) != 0)
+                {
+                    if (buf.Length > 0)
+                        buf.Append(connector);
+                    buf.Append(names[i]);
+                }
+            }
+            return ReleaseBuilder(buf);
+        }
     }
 
 }

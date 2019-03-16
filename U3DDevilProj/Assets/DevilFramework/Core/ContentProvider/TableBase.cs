@@ -1,6 +1,5 @@
 ﻿using Devil.Utility;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using LitJson;
 
 namespace Devil.ContentProvider
 {
@@ -20,7 +19,7 @@ namespace Devil.ContentProvider
 #endif
         }
 
-        public virtual void Init(JObject jobj)
+        public virtual void Init(JsonData jobj)
         {
 #if UNITY_EDITOR
             if (jobj == null)
@@ -28,19 +27,9 @@ namespace Devil.ContentProvider
                 RTLog.LogError(LogCat.Table, string.Format("{0}.Init(JObject) must has an instance of JObject parameter", GetType()));
                 return;
             }
-            mFormatString = string.Format("<{0}>{1}", GetType().Name, JsonConvert.SerializeObject(jobj));
+            mFormatString = string.Format("<{0}>{1}", GetType().Name, jobj.ToJson());
 #endif
-            JToken tok;
-            if (jobj.TryGetValue("id", out tok))
-            {
-                _id = tok.ToObject<int>();
-            }
-#if UNITY_EDITOR
-            else
-            {
-                RTLog.LogError(LogCat.Table, string.Format("\"id\" is required for table base.\njson: {0}", jobj));
-            }
-#endif
+            _id = (int)jobj["id"];
         }
 
 #if UNITY_EDITOR

@@ -1,1 +1,0 @@
-{name} = (GameDefine.ESex){input}.Value<int>("{name}");

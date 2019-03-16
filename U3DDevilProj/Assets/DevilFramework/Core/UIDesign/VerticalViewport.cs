@@ -10,7 +10,7 @@ namespace Devil.UI
     using LayoutInfo = LayoutData.LayoutInfo;
     public delegate int DataComparesion(object a, object b);
 
-    public class VerticalViewport : UIBehaviour, List, ILayoutSelfController
+    public class VerticalViewport : UIBehaviour, IDataList, ILayoutSelfController
     {
         public enum Align
         {

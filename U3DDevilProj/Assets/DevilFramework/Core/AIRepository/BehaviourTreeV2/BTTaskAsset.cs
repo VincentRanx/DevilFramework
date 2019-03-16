@@ -12,6 +12,7 @@ namespace Devil.AI
 
     public abstract class BTTaskAsset : BTNodeAsset , IBTTask
 	{
+        public bool m_SuccessForAbort;
         EBTState mState;
         public override EBTState State { get { return mState; } }
 
@@ -22,8 +23,8 @@ namespace Devil.AI
         public override void Abort()
         {
             mState = OnAbort();
-            if (mState <= EBTState.running)
-                mState = EBTState.failed;
+            if (mState <= EBTState.running || m_SuccessForAbort)
+                mState = m_SuccessForAbort ? EBTState.success : EBTState.failed;
         }
 
         public override void Start()
@@ -34,12 +35,14 @@ namespace Devil.AI
                 Debug.Break();
 #endif
             mState = OnStart();
+            StartDecorator();
         }
 
         public override IBTNode GetNextChildTask() { return null; }
 
         public override void Stop()
         {
+            StopDecorator();
             OnStop();
         }
 
@@ -56,7 +59,7 @@ namespace Devil.AI
         public abstract EBTState OnStart();
         public abstract EBTState OnUpdate(float deltaTime);
         public abstract EBTState OnAbort();
-        public virtual void OnStop() { }
+        public abstract void OnStop();
 
 #if UNITY_EDITOR
         public float EditorDebugTime { get; private set; }

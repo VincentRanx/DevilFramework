@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using Devil.AI;
+using Devil.Utility;
 
 namespace DevilEditor
 {
@@ -160,7 +161,6 @@ namespace DevilEditor
             var root = editor.TargetTree == null ? null : editor.TargetTree.GetNodeById(editor.TargetTree.RootId);
             if(root != null)
             {
-                //p0 = new Vector2(editor.RootNode.GlobalRect.center.x, editor.RootNode.GlobalRect.yMax);
                 p1 = editor.AIGraph.CalculateGlobalPosition(root.position);
                 Link(editor.RootNode.GlobalRect, p1, size * 1.5f, LINE_CONFIRM_COLOR * 0.8f);
             }

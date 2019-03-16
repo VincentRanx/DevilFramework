@@ -366,12 +366,27 @@ namespace Devil.AI
             if (string.IsNullOrEmpty(path))
                 return;
             var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(path);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] == null)
+                {
+                    Object.DestroyImmediate(assets[i], true);
+                    assets[i] = null;
+                }
+            }
+            List<BTNode> toclean = new List<BTNode>();
             foreach(var t in m_BTNodes)
             {
                 if(t.Asset == null)
                 {
                     t.EditorResovleAsset(assets);
                 }
+                if (t.Asset == null)
+                    toclean.Add(t);
+            }
+            foreach(var t in toclean)
+            {
+                EditorDeleteNode(t);
             }
             UnityEditor.EditorUtility.SetDirty(this);
         }

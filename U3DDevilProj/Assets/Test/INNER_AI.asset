@@ -3,14 +3,16 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 103884db07ec0b043ab7a1bd73dc1a44, type: 3}
   m_Name: INNER_AI
   m_EditorClassIdentifier: 
+  m_Comment: 
   m_RootId: 4
   m_BTNodes:
   - id: 1
@@ -60,8 +62,9 @@ MonoBehaviour:
 --- !u!114 &114020380086376934
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
@@ -71,11 +74,14 @@ MonoBehaviour:
   m_TreeAsset: {fileID: 11400000}
   m_Comment: 
   m_ConditionIds: 
+  m_ConditionLogic: 0
+  m_SuccessForAbort: 0
 --- !u!114 &114348597546985762
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
@@ -85,13 +91,17 @@ MonoBehaviour:
   m_TreeAsset: {fileID: 11400000}
   m_Comment: 
   m_ConditionIds: 
+  m_ConditionLogic: 0
+  m_SuccessForAbort: 0
+  m_WaitForever: 0
   m_MinTime: 1
   m_MaxTime: 2
 --- !u!114 &114451777759118980
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
@@ -102,8 +112,9 @@ MonoBehaviour:
 --- !u!114 &114653948948812070
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
@@ -113,13 +124,17 @@ MonoBehaviour:
   m_TreeAsset: {fileID: 11400000}
   m_Comment: "\u7B49\u5F85\u5B8C\u6210 32 \u79D2"
   m_ConditionIds: 
+  m_ConditionLogic: 0
+  m_SuccessForAbort: 0
+  m_WaitForever: 0
   m_MinTime: 1
   m_MaxTime: 2
 --- !u!114 &114760628243944124
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
@@ -129,11 +144,14 @@ MonoBehaviour:
   m_TreeAsset: {fileID: 11400000}
   m_Comment: 
   m_ConditionIds: 
+  m_ConditionLogic: 0
+  m_SuccessForAbort: 0
 --- !u!114 &114787743191394386
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
@@ -143,13 +161,17 @@ MonoBehaviour:
   m_TreeAsset: {fileID: 11400000}
   m_Comment: 
   m_ConditionIds: 06000000
+  m_ConditionLogic: 0
+  m_SuccessForAbort: 0
+  m_WaitForever: 0
   m_MinTime: 1
   m_MaxTime: 2
 --- !u!114 &114798765584233676
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0

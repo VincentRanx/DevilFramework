@@ -15,7 +15,7 @@ namespace Devil.AI
 
         public override EBTState OnAbort()
         {
-            return EBTState.failed;
+            return m_SuccessForAbort ? EBTState.success : EBTState.failed;
         }
 
         public override EBTState OnReturn(EBTState state)

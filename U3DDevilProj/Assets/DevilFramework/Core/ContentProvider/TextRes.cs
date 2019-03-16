@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using LitJson;
 namespace Devil.ContentProvider
 {
     public class TextRes : TableBase
 	{
 		public string text {get; private set;}
 		public string voice {get; private set;}
-		public override void Init(JObject obj)
+		public override void Init(JsonData obj)
 		{
 			base.Init(obj);
-			text = obj.Value<string>("text");
-			voice = obj.Value<string>("voice");
+			text = (string)obj["text"];
+			voice = (string)obj["voice"];
 		}
 	}
 }

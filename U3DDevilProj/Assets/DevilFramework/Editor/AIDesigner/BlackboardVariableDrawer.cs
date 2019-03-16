@@ -15,6 +15,7 @@ namespace DevilEditor
         readonly int p_lst = 3;
 
         readonly string comHint = "Edit Comment...";
+        readonly string[] dtType = { "Data Type", "List Type"};
 
         static SerializedProperty sEditTarget;
 
@@ -36,7 +37,7 @@ namespace DevilEditor
             var lv = EditorGUI.indentLevel;
             EditorGUI.BeginDisabledGroup(Application.isPlaying);
 
-            EditorGUI.LabelField(position, DevilEditorUtility.EmptyContent, (GUIStyle)"grey_border");
+            EditorGUI.LabelField(position, DevilEditorUtility.EmptyContent, (GUIStyle)"helpbox");
             var row = new Rect(position.x + 3, position.y + 5, position.width - 6, 18);
             //EditorGUI.LabelField(row, DevilEditorUtility.EmptyContent, "helpbox");
             var s = Prop(p_comment).stringValue;
@@ -47,22 +48,27 @@ namespace DevilEditor
             label.text = " Varialbe Name";
             row.y += 20;
             var pos = EditorGUI.PrefixLabel(row, label);
+            float size = pos.x - row.x;
             EditorGUI.indentLevel = 0;
             Prop(p_name).stringValue = EditorGUI.TextField(pos, Prop(p_name).stringValue);
 
             EditorGUI.indentLevel = lv;
             row.y += 20;
-            label.text = " Data Type";
-            pos = EditorGUI.PrefixLabel(row, label);
+            //label.text = " Data Type";
+            pos = new Rect(row.x, row.y, size - 5, row.height);
+            Prop(p_lst).boolValue = EditorGUI.Popup(pos, Prop(p_lst).boolValue ? 1 : 0, dtType, (GUIStyle)"ShurikenPopup") != 0;
+            //pos = EditorGUI.PrefixLabel(row, label);
+            pos = new Rect(row.x + size, row.y, row.width - size, row.height);
+
             EditorGUI.indentLevel = 0;
             var sel = GlobalUtil.FindIndex(AIModules.SharedTypeNames, (x) => x == Prop(p_type).stringValue);
             if (sel == -1)
                 sel = 0;
-            pos.width -= 20;
-            sel = EditorGUI.Popup(pos, sel, AIModules.SharedTypeNames, (GUIStyle)"ShurikenPopup");
+            //pos.width -= 20;
+            sel = EditorGUI.Popup(pos, sel, AIModules.SharedTypeNames, (GUIStyle)"ExposablePopupMenu"); 
             Prop(p_type).stringValue = AIModules.SharedTypeNames[sel];
-            pos = new Rect(pos.xMax + 3, pos.y, 15, 15);
-            Prop(p_lst).boolValue = EditorGUI.Toggle(pos, Prop(p_lst).boolValue, (GUIStyle)"ListToggle");
+            //pos = new Rect(pos.xMax + 3, pos.y, 15, 15);
+            //Prop(p_lst).boolValue = EditorGUI.Toggle(pos, Prop(p_lst).boolValue, (GUIStyle)"MuteToggle");
 
             EditorGUI.indentLevel = lv;
             EditorGUI.EndDisabledGroup();

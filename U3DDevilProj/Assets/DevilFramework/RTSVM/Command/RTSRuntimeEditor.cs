@@ -183,7 +183,6 @@ namespace Devil.Command
         protected override void Awake()
         {
             base.Awake();
-            mEngine.addLinker("jobj", new RTSTypeL(RTSJsonType.JSON));
             ireader = new InputReader();
             pColors = new string[] { "orange", "cyan", "lightblue", "teal", "green", "olive" };
 

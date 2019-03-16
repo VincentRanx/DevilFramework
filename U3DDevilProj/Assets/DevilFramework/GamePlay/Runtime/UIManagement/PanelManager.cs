@@ -7,32 +7,6 @@ using UnityEngine.UI;
 
 namespace Devil.GamePlay
 {
-    public struct PanelIntent : IPanelIntent
-    {
-        public int requestId;
-        public int RequestId { get { return requestId; } set { requestId = value; } }
-
-        public object requestData;
-        public object RequestData { get { return requestData; } set { requestData = value; } }
-
-        public System.Action<int, object> handler;
-        public System.Action<int, object> Handler { get { return handler; } set { handler = value; } } // <requestid, result>
-
-        public void HandleResult(object data)
-        {
-            if (Handler != null)
-                Handler(RequestId, data);
-        }
-
-        public static PanelIntent Instantiate(int reqId, object request)
-        {
-            PanelIntent sender = new PanelIntent();
-            sender.RequestId = reqId;
-            sender.RequestData = request;
-            return sender;
-        }
-    }
-
     [DefaultExecutionOrder(-300)]
     public sealed class PanelManager : MonoBehaviour
     {
@@ -253,7 +227,7 @@ namespace Devil.GamePlay
         };
         public event System.Action<Panel> OnPanelBecomeBackground = (x) => {
 #if UNITY_EDITOR
-        RTLog.LogFormat(LogCat.UI, "'{0}' become backgroud.", x.name);
+            RTLog.LogFormat(LogCat.UI, "'{0}' become backgroud.", x.name);
 #endif
         };
         public event System.Action<Panel> OnPanelOpened = (x) => {
@@ -287,6 +261,11 @@ namespace Devil.GamePlay
                     m_EventMask.Reset();
                 if (m_DontDestroyOnLoad)
                     DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                gameObject.SetActive(false);
+                name = name + "-unused";
             }
         }
 
@@ -369,10 +348,10 @@ namespace Devil.GamePlay
 
         void ClearPanelForAsset(PanelAsset asset, List<PanelStub> panels)
         {
-            for(int i = panels.Count - 1; i >= 0; i--)
+            for (int i = panels.Count - 1; i >= 0; i--)
             {
                 PanelStub stub = panels[i];
-                if(stub.Asset == asset)
+                if (stub.Asset == asset)
                 {
                     if (mFocusStub == stub)
                     {
@@ -413,7 +392,7 @@ namespace Devil.GamePlay
 
         public PanelAsset GetAsset(string assetName)
         {
-            for(int i = 0; i < mAssets.Count; i++)
+            for (int i = 0; i < mAssets.Count; i++)
             {
                 PanelAsset asset = mAssets[i];
                 if (asset.Name == assetName)
@@ -422,38 +401,51 @@ namespace Devil.GamePlay
             return null;
         }
 
-        Panel OpenPanelAsStatus(PanelAsset asset, IPanelIntent request)
+        Panel OpenPanelAsStatus<T>(PanelAsset asset, T request)
         {
-            return OpenPanelFor(mStatus, asset.Mode == EPanelMode.Status ? m_StatusSortingLayer : m_TopStatusSortingLayer, asset, request, false);
+            return OpenPanelFor<T>(mStatus, asset.Mode == EPanelMode.Status ? m_StatusSortingLayer : m_TopStatusSortingLayer, asset, request, false);
         }
 
-        Panel OpenPanelAsDialog(PanelAsset asset, IPanelIntent request)
+        Panel OpenPanelAsDialog<T>(PanelAsset asset, T request)
         {
-            return OpenPanelFor(mDialogs, m_DialogSortingLayer, asset, request, true);
+            return OpenPanelFor<T>(mDialogs, m_DialogSortingLayer, asset, request, true);
         }
 
-        Panel OpenPanelAsNormal(PanelAsset asset, IPanelIntent request)
+        Panel OpenPanelAsNormal<T>(PanelAsset asset, T request)
         {
             if (mDialogs.Count > 0)
                 return null;
-            return OpenPanelFor(mPanels, m_NormalSortingLayer, asset, request, true);
+            return OpenPanelFor<T>(mPanels, m_NormalSortingLayer, asset, request, true);
         }
-        
+
         // asset must be usable.
-        Panel OpenPanelFor(List<PanelStub> list, int sortLayer, PanelAsset asset, IPanelIntent request, bool useFocus)
+        Panel OpenPanelFor<T>(List<PanelStub> list, int sortLayer, PanelAsset asset, T request, bool useFocus)
         {
             Panel panel = asset.InstantiateAsset();
             if (panel == null || panel.IsClosing())
                 return null;
             bool open;
-            if (request != null)
-                open = panel.OpenPanelForResult(request);
+            bool handint = false;
+            if (!PanelIntentData.NONE.Equals(request))
+            {
+                if (panel is IPanelIntent<T>)
+                {
+                    handint = true;
+                    open = panel.OpenPanel();
+                }
+                else
+                    open = false;
+            }
             else
                 open = panel.OpenPanel();
             if (!open)
             {
                 asset.UnuseAsset(panel);
                 return null;
+            }
+            else if(handint)
+            {
+                ((IPanelIntent<T>)panel).HandleIntent(request);
             }
             panel.OnPanelOpened();
             OnPanelOpened(panel);
@@ -484,11 +476,6 @@ namespace Devil.GamePlay
                     mFocusStub.HasFocus = false;
                     mFocusStub = null;
                 }
-                //else
-                //{
-                //    mFocusStub = stub;
-                //    mFocusStub.HasFocus = true;
-                //}
                 mFindFocusWindow = true;
             }
             if (asset.IsUseMask)
@@ -543,7 +530,7 @@ namespace Devil.GamePlay
         {
             bool useMask = false;
             int num = 0;
-            for(int i = list.Count - 1; i >= 0; i--)
+            for (int i = list.Count - 1; i >= 0; i--)
             {
                 PanelStub stub = list[i];
                 if (!filter(stub))
@@ -570,7 +557,7 @@ namespace Devil.GamePlay
                 else
                     stub.Asset.UnuseAsset(stub.Instance);
                 num++;
-                
+
                 useMask |= stub.Asset.IsUseMask;
             }
             if (useMask)
@@ -611,13 +598,13 @@ namespace Devil.GamePlay
             if (startIndex >= list.Count)
                 return;
             int order = 1;
-            if(startIndex > 0)
+            if (startIndex > 0)
             {
                 var can = list[startIndex - 1].Instance.GetCanvas();
                 if (can != null)
                     order = can.sortingOrder + 2;
             }
-            for(int i = startIndex; i < list.Count; i++)
+            for (int i = startIndex; i < list.Count; i++)
             {
                 var stub = list[i];
                 var can = stub.Instance.GetCanvas();
@@ -633,7 +620,7 @@ namespace Devil.GamePlay
         {
             if (m_EventMask.m_RootCanvas == null)
                 return;
-            
+
             Panel basepanel = GetMaskPanel(mDialogs);
             if (basepanel == null)
                 basepanel = GetMaskPanel(mPanels);
@@ -658,7 +645,7 @@ namespace Devil.GamePlay
             for (int i = mClosing.Count - 1; i >= 0; i--)
             {
                 PanelStub stub = mClosing[i];
-                if(!stub.Instance.IsClosing())
+                if (!stub.Instance.IsClosing())
                 {
                     mClosing.RemoveAt(i);
                     stub.Asset.UnuseAsset(stub.Instance);
@@ -705,7 +692,7 @@ namespace Devil.GamePlay
                     return;
                 }
             }
-            for(int i= mPanels.Count - 1; i >= 0; i--)
+            for (int i = mPanels.Count - 1; i >= 0; i--)
             {
                 var p = mPanels[i];
                 if (p.Instance.InteractCancel())
@@ -760,7 +747,7 @@ namespace Devil.GamePlay
             PanelManager inst = Instance;
             if (inst == null)
                 return;
-            for(int i = 0; i < inst.mAssets.Count; i++)
+            for (int i = 0; i < inst.mAssets.Count; i++)
             {
                 PanelAsset asset = inst.mAssets[i];
                 asset.Release();
@@ -819,7 +806,25 @@ namespace Devil.GamePlay
             return null;
         }
 
-        public static Panel OpenPanel(int id, IPanelIntent request = null)
+        public static Panel OpenPanel(int id)
+        {
+            PanelManager inst = Instance;
+            if (inst == null)
+                return null;
+            PanelAsset asset = inst.GetAsset(id);
+            if (asset == null || !asset.IsUsable)
+                return null;
+            else if (asset.Mode == EPanelMode.Dialog)
+                return inst.OpenPanelAsDialog(asset, PanelIntentData.NONE);
+            else if (asset.Mode == EPanelMode.Status || asset.Mode == EPanelMode.TopStatus)
+                return inst.OpenPanelAsStatus(asset, PanelIntentData.NONE);
+            else if (asset.Mode == EPanelMode.Normal)
+                return inst.OpenPanelAsNormal(asset, PanelIntentData.NONE);
+            else
+                return null;
+        }
+
+        public static Panel OpenPanel<T>(int id, T request)
         {
             PanelManager inst = Instance;
             if (inst == null)
@@ -837,7 +842,26 @@ namespace Devil.GamePlay
                 return null;
         }
 
-        public static Panel OpenPanel(string panelName, IPanelIntent request = null)
+        public static Panel OpenPanel(string panelName)
+        {
+            PanelManager inst = Instance;
+            if (inst == null)
+                return null;
+            PanelAsset asset = inst.GetAsset(panelName);
+            if (asset == null || !asset.IsUsable)
+                return null;
+            else if (asset.Mode == EPanelMode.Dialog)
+                return inst.OpenPanelAsDialog(asset, PanelIntentData.NONE);
+            else if (asset.Mode == EPanelMode.Status || asset.Mode == EPanelMode.TopStatus)
+                return inst.OpenPanelAsStatus(asset, PanelIntentData.NONE);
+            else if (asset.Mode == EPanelMode.Normal)
+                return inst.OpenPanelAsNormal(asset, PanelIntentData.NONE);
+            else
+                return null;
+        }
+
+
+        public static Panel OpenPanel<T>(string panelName, T request)
         {
             PanelManager inst = Instance;
             if (inst == null)

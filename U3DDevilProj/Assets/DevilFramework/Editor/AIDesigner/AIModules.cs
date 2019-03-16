@@ -1,7 +1,9 @@
 ﻿using Devil.AI;
 using Devil.Utility;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace DevilEditor
@@ -67,7 +69,7 @@ namespace DevilEditor
 
             public static Module GetModule(System.Type type)
             {
-                if (type == null)
+                if (type == null || type.IsAbstract)
                     return null;
                 if (type.IsSubclassOf(typeof(BTTaskAsset)))
                 {
@@ -210,25 +212,24 @@ namespace DevilEditor
                 sModules[i] = new List<Module>();
             }
             sAllModules.Clear();
-            var assets = AssetDatabase.FindAssets("t:script");
-            foreach (var t in assets)
+
+            List<System.Type> lst = new List<System.Type>();
+            Ref.GetAssemblyTypes(lst);
+            foreach(var tp in lst)
             {
-                var mono = AssetDatabase.LoadAssetAtPath<MonoScript>(AssetDatabase.GUIDToAssetPath(t));
-                var tp = mono == null ? null : mono.GetClass();
-                if (tp != null)
+                var mod = Module.GetModule(tp);
+                if (mod != null)
                 {
-                    var mod = Module.GetModule(tp);
-                    if (mod != null)
-                    {
-                        sAllModules.Add(mod);
-                        sModules[mod.CategoryId].Add(mod);
-                    }
-                    var bts = Ref.GetCustomAttribute<BTSharedTypeAttribute>(tp);
-                    if (bts != null)
-                        sSharedTypes.Add(tp);
+                    sAllModules.Add(mod);
+                    sModules[mod.CategoryId].Add(mod);
+                }
+                var bts = Ref.GetCustomAttribute<BTSharedTypeAttribute>(tp);
+                if (bts != null)
+                {
+                    sSharedTypes.Add(tp);
                 }
             }
-
+            
             sSharedTypes.Add(typeof(object));
             sSharedTypeNames = new string[sSharedTypes.Count];
             for (int i = 0; i < sSharedTypeNames.Length; i++)

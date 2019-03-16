@@ -121,6 +121,11 @@ namespace Devil.GamePlay.Assistant
                 if (m_DontDestroyOnLoad)
                     DontDestroyOnLoad(gameObject);
             }
+            else
+            {
+                gameObject.SetActive(false);
+                name = name + "-unused";
+            }
         }
 
         public void AddPrefabs(PreloadAssets assets)
@@ -222,7 +227,9 @@ namespace Devil.GamePlay.Assistant
             public void DestroyPrefabInstance(IManagedEffect effect)
             {
                 if (effect != null)
+                {
                     GameObject.Destroy(effect.gameObject);
+                }
             }
 
             public IManagedEffect Get()

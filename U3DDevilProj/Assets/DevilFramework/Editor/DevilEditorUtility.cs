@@ -209,6 +209,35 @@ namespace DevilEditor
             EditorGUI.SelectableLabel(rect, hint, sty.hint);
         }
 
+        public static int MaskGUI(Rect rect, int mask, string[] names)
+        {
+            int len = Mathf.Min(names.Length, 32);
+            if (len == 0)
+                return mask;
+            if (len == 1)
+            {
+                var tog = GUI.Toggle(rect, (mask & 1) != 0, names[0], "button");
+                if (tog)
+                    mask |= 1;
+                else
+                    mask &= ~1;
+                return mask;
+            }
+            float w = rect.width / (float)len;
+            for (int i = 0; i < len; i++)
+            {
+                int n = 1 << i;
+                var style = i == 0 ? "buttonleft" : (i == len - 1 ? "buttonright" : "buttonmid");
+                var tog = GUI.Toggle(new Rect(rect.x + i * w, rect.y, w, rect.height),
+                    (mask & n) != 0, names[i], style);
+                if (tog)
+                    mask |= n;
+                else
+                    mask &= ~n;
+            }
+            return mask;
+        }
+
         public static void TextArea(Rect rect, SerializedProperty prop, string style = "textarea")
         {
             prop.stringValue = TextArea(rect, prop.stringValue, prop.displayName, style);
@@ -254,6 +283,18 @@ namespace DevilEditor
             var sty = styles[style];
             bool dohint = string.IsNullOrEmpty(txt);
             var s = EditorGUILayout.TextField(dohint ? hint : txt, dohint ? sty.hint : sty.style, options);
+            if (s != hint)
+                return s;
+            else
+                return "";
+        }
+
+        public static string TextField(string prefix, string txt, string hint, string style, params GUILayoutOption[] options)
+        {
+            DoLoadGUI();
+            var sty = styles[style];
+            bool dohint = string.IsNullOrEmpty(txt);
+            var s = EditorGUILayout.TextField(prefix, dohint ? hint : txt, dohint ? sty.hint : sty.style, options);
             if (s != hint)
                 return s;
             else
@@ -323,13 +364,30 @@ namespace DevilEditor
                 return value;
         }
 
+        public static int IntField(string hint, int value, string style = "textfield", params GUILayoutOption[] options)
+        {
+            DoLoadGUI();
+            var sty = styles[style];
+            bool dohint = value == 0;
+            var old = value.ToString();
+            var s = EditorGUILayout.TextField(dohint ? hint : old, dohint ? sty.hint : sty.style, options);
+            if (string.IsNullOrEmpty(s) || s == hint)
+                return 0;
+            else if (old != s && Regex.IsMatch(s, intPattern))
+                return int.Parse(s);
+            else
+                return value;
+        }
+
         public static void IntField(SerializedProperty prop, string hint, string style = "textfield")
         {
             DoLoadGUI();
             var sty = styles[style];
+            var lv = EditorGUI.indentLevel;
             bool dohint = prop.intValue == 0;
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PrefixLabel(prop.displayName);
+            EditorGUI.indentLevel = 0;
             var old = prop.intValue.ToString();
             var hintsr = string.IsNullOrEmpty(hint) ? prop.displayName : hint;
             var s = EditorGUILayout.TextField(dohint ? hintsr : old, dohint ? sty.hint : sty.style);
@@ -337,6 +395,7 @@ namespace DevilEditor
                 prop.intValue = 0;
             else if (old != s && Regex.IsMatch(s, intPattern))
                 prop.intValue = int.Parse(s);
+            EditorGUI.indentLevel = lv;
             EditorGUILayout.EndHorizontal();
         }
 
@@ -352,6 +411,86 @@ namespace DevilEditor
                 prop.floatValue = 0;
             else if (old != s && Regex.IsMatch(s, floatPattern))
                 prop.floatValue = float.Parse(s);
+        }
+
+        public static float FloatField(Rect rect, string hint, float value, string style = "textfield")
+        {
+            DoLoadGUI();
+            var sty = styles[style];
+            bool dohint = value == 0;
+
+            var old = value.ToString();
+            string s = EditorGUI.TextField(rect, dohint ? hint : old, dohint ? sty.hint : sty.style);
+            if (string.IsNullOrEmpty(s))
+                return 0;
+            else if (old != s && Regex.IsMatch(s, floatPattern))
+                return float.Parse(s);
+            else
+                return value;
+        }
+
+        // size:箭头粗细 arrowScale: 箭头大小/线条粗细
+        public static void DrawArrow(Vector3 p0, Vector3 p1, Color color, float size, float arrowScale = 4)
+        {
+            var dir = p1 - p0;
+            var length = dir.magnitude;
+            if (length < 0.1f)
+                return;
+            dir /= length;
+            var dir2 = Vector3.Cross(Vector3.forward, dir);
+            Handles.color = color;
+            if (length > size * arrowScale)
+            {
+                var a = p0 + dir2 * size * 0.5f;
+                var b = p0 - dir2 * size * 0.5f;
+                var c = b + dir * (length - size * arrowScale);
+                var d = c - dir2 * size * (arrowScale * 0.5f - 0.5f);
+                var e = p1;
+                var f = d + dir2 * size * arrowScale;
+                var g = c + dir2 * size;
+                Handles.DrawAAConvexPolygon(a, b, c, g);
+                Handles.DrawAAConvexPolygon(d, e, f);
+            }
+            else
+            {
+                var a = p1 - dir * length - dir2 * length * 0.5f;
+                var b = p1;
+                var c = a + dir2 * length;
+                Handles.DrawAAConvexPolygon(a, b, c);
+            }
+        }
+
+        public static void Draw2SideArrow(Vector3 p0, Vector3 p1, Color color, float size, float arrowScale = 4)
+        {
+            var dir = p1 - p0;
+            var length = dir.magnitude;
+            if (length < 0.1f)
+                return;
+            dir /= length;
+            var dir2 = Vector3.Cross(Vector3.forward, dir);
+            Handles.color = color;
+            if (length > size * arrowScale * 2f) // <--------->
+            {
+                var a = p0 + dir2 * size * 0.5f + dir * size * arrowScale;
+                var b = a - dir2 * size;
+                var c = b + dir * (length - size * arrowScale * 2f);
+                var d = c + dir2 * size;
+                Handles.DrawAAConvexPolygon(a, b, c, d);
+                var e = a + dir2 * size * (arrowScale * 0.5f - 0.5f);
+                var f = p0;
+                var g = e - dir2 * size * arrowScale;
+                Handles.DrawAAConvexPolygon(e, f, g);
+                e = c - dir2 * size * (arrowScale * 0.5f - 0.5f);
+                f = p1;
+                g = e + dir2 * size * arrowScale;
+                Handles.DrawAAConvexPolygon(e, f, g);
+            }
+            else // <>
+            {
+                var a = (p0 + p1) * 0.5f - dir2 * length * 0.25f;
+                var b = a + dir2 * length * 0.5f;
+                Handles.DrawAAConvexPolygon(p0, a, p1, b);
+            }
         }
 
         #endregion

@@ -327,7 +327,7 @@ namespace Devil
             //Last 4 verts are always a new line... (\n)
             int vertCount = verts.Count - 4;
 
-            Vector2 roundingOffset = new Vector2(verts[0].position.x, verts[0].position.y) * unitsPerPixel;
+            Vector2 roundingOffset = verts.Count == 0 ? Vector2.zero : new Vector2(verts[0].position.x, verts[0].position.y) * unitsPerPixel;
             roundingOffset = PixelAdjustPoint(roundingOffset) - roundingOffset;
             toFill.Clear();
             if (roundingOffset != Vector2.zero)

@@ -34,13 +34,15 @@ namespace DevilEditor
                 mPool = null;
             }
 
-            GUILayout.BeginVertical("box");
+            EditorGUILayout.BeginVertical("helpbox");
+            int num = 0;
             if (mPool != null)
             {
                 foreach (var pool in mPool)
                 {
+                    num++;
                     var str = string.Format("\"{0}\"(id:{1}) caches:{2}/{3}", pool.Name, pool.PoolId, pool.Length, pool.Capacity);
-                    GUILayout.Label(str);
+                    EditorGUILayout.SelectableLabel(str, GUILayout.Height(20));
                 }
             }
             else
@@ -56,11 +58,14 @@ namespace DevilEditor
                         if (go == null)
                             continue;
                         var str = string.Format("\"{0}\"(id:{1}) caches:{2}/{3}", go.name, EffectsManager.StringToId(go.name), asset.m_WarmUpNum, asset.m_CacheSize);
-                        GUILayout.Label(str);
+                        EditorGUILayout.SelectableLabel(str, GUILayout.Height(20));
+                        num++;
                     }
                 }
             }
-            GUILayout.EndVertical();
+            if (num == 0)
+                EditorGUILayout.LabelField("No Preload asset.", GUILayout.Height(30));
+            EditorGUILayout.EndVertical();
         }
     }
 }

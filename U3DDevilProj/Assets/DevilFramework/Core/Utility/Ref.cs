@@ -545,13 +545,6 @@ namespace Devil.Utility
 #if USE_REFLECTION
             MemberInfo field = memberInfo as MemberInfo;
             return System.Attribute.GetCustomAttribute(field, typeof(T)) as T;
-            //object[] attr = field.GetCustomAttributes(true);
-            //for (int i = 0; i < attr.Length; i++)
-            //{
-            //    if (attr[i] is T)
-            //        return attr[i] as T;
-            //}
-            //return null;
 #else
             Debug.LogWarning("Reflection is not supported but \"Ref.GetCustomAttribute<T>(MemberInfo)\" require it!");
             return null;
@@ -624,5 +617,47 @@ namespace Devil.Utility
             return false;
 #endif
         }
+
+#if UNITY_EDITOR
+        public static void GetAssemblyTypes(ICollection<System.Type> types, FilterDelegate<System.Type> filter = null)
+        {
+
+#if UNITY_2017 || UNITY_2018
+            var asmdefs = UnityEditor.AssetDatabase.FindAssets("t:asmdef");
+            foreach (var asm in asmdefs)
+            {
+                try
+                {
+                    var asd = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditorInternal.AssemblyDefinitionAsset>(UnityEditor.AssetDatabase.GUIDToAssetPath(asm));
+                    AssemblyName aname = new AssemblyName(asd.name);
+                    var assembly = Assembly.Load(aname);
+                    var asmtypes = assembly.GetTypes();
+                    foreach (var tp in asmtypes)
+                    {
+                        if (filter == null || filter(tp))
+                            types.Add(tp);
+                    }
+                }
+                catch
+                {
+                }
+            }
+#else
+
+            var assets = UnityEditor.AssetDatabase.FindAssets("t:script");
+            foreach (var t in assets)
+            {
+                var mono = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEditor.MonoScript>(UnityEditor.AssetDatabase.GUIDToAssetPath(t));
+                var tp = mono == null ? null : mono.GetClass();
+                if (tp != null)
+                {
+                    if (filter == null || filter(tp))
+                        types.Add(tp);
+                }
+            }
+#endif
+
+        }
+#endif
     }
 }

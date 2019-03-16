@@ -72,7 +72,7 @@ namespace DevilEditor
 
         public static void DrawBox(Rect rect, Color color, Color borderColor, float borderSize = 1, bool outlineBorder = false)
         {
-#if UNITY_2017
+#if UNITY_2017 || UNITY_2018
             if (!boxTex)
                 boxTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.Combine(Installizer.InstallRoot, "DevilFramework/Gizmos/box.png"));
             if (color.a > 0)

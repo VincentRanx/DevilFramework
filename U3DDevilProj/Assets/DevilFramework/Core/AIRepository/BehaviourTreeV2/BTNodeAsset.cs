@@ -13,6 +13,12 @@ namespace Devil.AI
         failed,
     }
 
+    public interface IBTNodeDecorator
+    {
+        void OnStart(IBTNode node);
+        void OnStop(IBTNode node);
+    }
+
     public interface IBTNode : ITick, IIdentified
     {
         IBTNode Parent { get; }
@@ -45,6 +51,7 @@ namespace Devil.AI
 
         public int Identify { get; private set; }
         protected List<ICondition> mConditions = new List<ICondition>();
+        protected List<IBTNodeDecorator> mDecorators = new List<IBTNodeDecorator>();
         public virtual string DisplayContent { get { return null; } }
 
         public IBTNode Parent { get; private set; }
@@ -79,12 +86,16 @@ namespace Devil.AI
             Identify = node.Identify;
             var p = node.Parent; // TreeAsset.GetNodeById(node.parentId);
             Parent = p == null ? null : p.Asset as IBTNode;
-            mConditions.Clear();
             for (int i = 0; i < m_ConditionIds.Count; i++)
             {
                 var cond = TreeAsset.GetNodeById(m_ConditionIds[i]);
                 if (cond != null)
+                {
                     mConditions.Add(cond.Asset as ICondition);
+                    var decor = cond.Asset as IBTNodeDecorator;
+                    if (decor != null)
+                        mDecorators.Add(decor);
+                }
             }
         }
 
@@ -96,6 +107,20 @@ namespace Devil.AI
         public abstract void OnTick(float deltaTime);
         public abstract EBTState State { get; }
         public abstract bool IsController { get; }
+        protected virtual void StartDecorator()
+        {
+            for (int i = 0; i < mDecorators.Count; i++)
+            {
+                mDecorators[i].OnStart(this);
+            }
+        }
+        protected virtual void StopDecorator()
+        {
+            for (int i = 0; i < mDecorators.Count; i++)
+            {
+                mDecorators[i].OnStop(this);
+            }
+        }
 
 #if UNITY_EDITOR
         public bool EditorConditionResult(int index)

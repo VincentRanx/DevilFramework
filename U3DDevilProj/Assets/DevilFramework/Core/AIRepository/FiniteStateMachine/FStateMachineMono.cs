@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using Devil.Utility;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace Devil.AI
 {
@@ -10,14 +12,18 @@ namespace Devil.AI
         [SerializeField]
         [Range(0,100)]
         protected int m_StackSize = 10;
+
         [HideInInspector]
         [SerializeField]
         protected FiniteState[] m_States;
+
         [HideInInspector]
         [SerializeField]
         protected FiniteStateTransition[] m_Transitions;
+
         [SerializeField]
         protected MonoBehaviour m_OtherImplement;
+
         [SerializeField]
         protected bool m_IsSubStateMachine;
         public bool IsSubStateMachine { get { return m_IsSubStateMachine; } set { m_IsSubStateMachine = value; } }
@@ -51,6 +57,7 @@ namespace Devil.AI
 
         protected virtual void Awake()
         {
+            //GenerateFSM();
             InitFSM();
         }
 
@@ -105,23 +112,59 @@ namespace Devil.AI
         public MonoBehaviour Implement
         {
             get { return m_OtherImplement ?? this; }
-            set
-            {
-                if (m_OtherImplement != value)
-                {
-                    bool isactive = false;
-                    if (m_StateMachine != null)
-                    {
-                        isactive = m_StateMachine.IsFSMActive;
-                        m_StateMachine.Release();
-                        m_StateMachine = null;
-                    }
-                    m_OtherImplement = value;
-                    var fsm = FSM;
-                    if (isactive)
-                        fsm.OnBegin();
-                }
-            }
         }
+
+        //void GenerateFSM()
+        //{
+        //    List<FiniteState> states = new List<FiniteState>();
+        //    List<FiniteStateTransition> transitions = new List<FiniteStateTransition>();
+        //    var impl = Implement;
+        //    var mtds = impl.GetType().GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+        //    FStateAttribute stat;
+        //    FStateTransitionAttribute tran;
+        //    for(int i = 0; i < mtds.Length; i++)
+        //    {
+        //        var ret = mtds[i].ReturnType;
+        //        var stats = ret == typeof(void) ? mtds[i].GetCustomAttributes(typeof(FStateAttribute), true) : null;
+        //        if (stats != null)
+        //        {
+        //            for (int j = 0; j < stats.Length; j++)
+        //            {
+        //                stat = (FStateAttribute)stats[j];
+        //                var s = GlobalUtil.Find(states, (x) => x.m_StateName == stat.Name);
+        //                if (s == null)
+        //                {
+        //                    s = new FiniteState();
+        //                    s.m_StateName = stat.Name;
+        //                    states.Add(s);
+        //                }
+        //                if ((stat.Event & EStateEvent.OnBegin) != 0)
+        //                    s.m_BeginMethod = mtds[i].Name;
+        //                if ((stat.Event & EStateEvent.OnTick) != 0)
+        //                    s.m_TickMethod = mtds[i].Name;
+        //                if ((stat.Event & EStateEvent.OnEnd) != 0)
+        //                    s.m_EndMethod = mtds[i].Name;
+        //                s.m_IsDefaultState |= stat.IsDefault;
+        //                s.m_KeepInStack |= stat.KeepInStack;
+        //                s.m_UseSubState |= stat.IsSubState;
+        //            }
+        //        }
+        //        var trans = ret == typeof(bool) ? mtds[i].GetCustomAttributes(typeof(FStateTransitionAttribute), true) : null;
+        //        if(trans != null)
+        //        {
+        //            for(int j = 0;j < trans.Length; j++)
+        //            {
+        //                tran = (FStateTransitionAttribute)trans[j];
+        //                FiniteStateTransition t = new FiniteStateTransition();
+        //                t.m_FromState = tran.From;
+        //                t.m_ToState = tran.To;
+        //                t.m_ConditionMethod = mtds[i].Name;
+        //                transitions.Add(t);
+        //            }
+        //        }
+        //    }
+        //    m_States = states.ToArray();
+        //    m_Transitions = transitions.ToArray();
+        //}
     }
 }

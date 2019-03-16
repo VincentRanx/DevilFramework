@@ -114,5 +114,35 @@ namespace Devil.Utility
             return b;
         }
 
+        public static bool CrossRectEdge(Rect a, Rect b, ref Vector2 pa, ref Vector2 pb)
+        {
+            if (a.Overlaps(b, true))
+                return false;
+            var dir = b.center - a.center;
+            if(dir.y == 0)
+            {
+                pa = new Vector2(dir.x > 0 ? a.xMax : a.xMin, a.center.y);
+                pb = new Vector2(dir.x > 0 ? b.xMin : b.xMax, pa.y);
+            }
+            else if(dir.x == 0)
+            {
+                pa = new Vector2(a.center.x, dir.y > 0 ? a.yMax : a.yMin);
+                pa = new Vector2(pa.x, dir.y > 0 ? b.yMin : b.yMax);
+            }
+            else
+            {
+                float k = Mathf.Abs(dir.y / dir.x);
+                if (a.width * k < a.height)
+                    pa = dir * Mathf.Abs(a.width * 0.5f / dir.x) + a.center;
+                else
+                    pa = dir * Mathf.Abs(a.height * 0.5f / dir.y) + a.center;
+
+                if (b.width * k < b.height)
+                    pb = -dir * Mathf.Abs(b.width * 0.5f / dir.x) + b.center;
+                else
+                    pb = -dir * Mathf.Abs(b.height * 0.5f / dir.y) + b.center;
+            }
+            return true;
+        }
     }
 }

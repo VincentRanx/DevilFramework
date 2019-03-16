@@ -6,7 +6,7 @@ using Devil.Utility;
 using UnityEditor;
 #endif
 
-namespace Devil.GamePlay
+namespace Devil
 {
     public class BakedLightmapData : ScriptableObject
     {

@@ -83,6 +83,18 @@ namespace DevilEditor
             }
         }
 
+        public void RemoveRange(string startName, int offset)
+        {
+            int i0;
+            var index = string.IsNullOrEmpty(startName) ? 0 : GlobalUtil.FindIndex(mItems, (x) => x.content.text == startName);
+            i0 = index + offset;
+            if (i0 < mItems.Count - 1 && i0 >= 0)
+            {
+                mItems.RemoveRange(i0, mItems.Count - i0);
+                isDirty = true;
+            }
+        }
+
         public bool RenameItem(string oldName, string newName)
         {
             var index = GlobalUtil.FindIndex(mItems, (x) => x.content.text == oldName);

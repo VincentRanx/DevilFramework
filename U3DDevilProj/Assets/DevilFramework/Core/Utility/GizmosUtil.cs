@@ -119,72 +119,75 @@ namespace Devil.Utility
             }
         }
 
-        public static void DrawCapsuleCollider(CapsuleCollider cap)
+        public static void DrawCapsuleCollider(CapsuleCollider cap, float scale = 1)
         {
             float cylen = cap.height - cap.radius * 2;
+            float radius = cap.radius;
+            cylen *= scale;
+            radius *= scale;
             Vector3 p0, p1, p2, p3;
             switch(cap.direction)
             {
                 case 0:
-                    p0 = cap.center - Vector3.right * cylen * 0.5f + Vector3.up * cap.radius;
+                    p0 = cap.center - Vector3.right * cylen * 0.5f + Vector3.up * radius;
                     p1 = p0 + cylen * Vector3.right;
-                    p2 = p0 + Vector3.down * cap.radius * 2;
+                    p2 = p0 + Vector3.down * radius * 2;
                     p3 = p2 + cylen * Vector3.right;
                     Gizmos.DrawLine(p0, p1);
                     Gizmos.DrawLine(p2, p3);
-                    DrawArc(p0 + Vector3.down * cap.radius, p0, p2, Vector3.forward, 5, false);
-                    DrawArc(p1 + Vector3.down * cap.radius, p1, p3, Vector3.back, 5, false);
+                    DrawArc(p0 + Vector3.down * radius, p0, p2, Vector3.forward, 5, false);
+                    DrawArc(p1 + Vector3.down * radius, p1, p3, Vector3.back, 5, false);
 
-                    p0 = cap.center - Vector3.right * cylen * 0.5f + Vector3.forward * cap.radius;
+                    p0 = cap.center - Vector3.right * cylen * 0.5f + Vector3.forward * radius;
                     p1 = p0 + cylen * Vector3.right;
-                    p2 = p0 + Vector3.back * cap.radius * 2;
+                    p2 = p0 + Vector3.back * radius * 2;
                     p3 = p2 + cylen * Vector3.right;
                     Gizmos.DrawLine(p0, p1);
                     Gizmos.DrawLine(p2, p3);
-                    DrawArc(p0 + Vector3.back * cap.radius, p0, p2, Vector3.down, 5, false);
-                    DrawArc(p1 + Vector3.back * cap.radius, p1, p3, Vector3.up, 5, false);
+                    DrawArc(p0 + Vector3.back * radius, p0, p2, Vector3.down, 5, false);
+                    DrawArc(p1 + Vector3.back * radius, p1, p3, Vector3.up, 5, false);
                     break;
                 case 1:
-                    p0 = cap.center + Vector3.down * cylen * 0.5f + Vector3.left * cap.radius;
+                    p0 = cap.center + Vector3.down * cylen * 0.5f + Vector3.left * radius;
                     p1 = p0 + cylen * Vector3.up;
 
-                    p2 = p0 + Vector3.right * cap.radius * 2;
+                    p2 = p0 + Vector3.right * radius * 2;
                     p3 = p2 + cylen * Vector3.up;
                     Gizmos.DrawLine(p0, p1);
                     Gizmos.DrawLine(p2, p3);
-                    DrawArc(p0 + Vector3.right * cap.radius, p0, p2, Vector3.forward, 5, false);
-                    DrawArc(p1 + Vector3.right * cap.radius, p1, p3, Vector3.back, 5, false);
+                    DrawArc(p0 + Vector3.right * radius, p0, p2, Vector3.forward, 5, false);
+                    DrawArc(p1 + Vector3.right * radius, p1, p3, Vector3.back, 5, false);
 
-                    p0 = cap.center + Vector3.down * cylen * 0.5f + Vector3.back * cap.radius;
+                    p0 = cap.center + Vector3.down * cylen * 0.5f + Vector3.back * radius;
                     p1 = p0 + cylen * Vector3.up;
 
-                    p2 = p0 + Vector3.forward * cap.radius * 2;
+                    p2 = p0 + Vector3.forward * radius * 2;
                     p3 = p2 + cylen * Vector3.up;
                     Gizmos.DrawLine(p0, p1);
                     Gizmos.DrawLine(p2, p3);
-                    DrawArc(p0 + Vector3.forward * cap.radius, p0, p2, Vector3.left, 5, false);
-                    DrawArc(p1 + Vector3.forward * cap.radius, p1, p3, Vector3.right, 5, false);
+                    DrawArc(p0 + Vector3.forward * radius, p0, p2, Vector3.left, 5, false);
+                    DrawArc(p1 + Vector3.forward * radius, p1, p3, Vector3.right, 5, false);
                     break;
                 case 2:
-                    p0 = cap.center + Vector3.back * cylen * 0.5f + Vector3.left * cap.radius;
+                    p0 = cap.center + Vector3.back * cylen * 0.5f + Vector3.left * radius;
                     p1 = p0 + cylen * Vector3.forward;
 
-                    p2 = p0 + Vector3.right * cap.radius * 2;
+                    p2 = p0 + Vector3.right * radius * 2;
                     p3 = p2 + cylen * Vector3.forward;
                     Gizmos.DrawLine(p0, p1);
                     Gizmos.DrawLine(p2, p3);
-                    DrawArc(p0 + Vector3.right * cap.radius, p0, p2, Vector3.down, 5, false);
-                    DrawArc(p1 + Vector3.right * cap.radius, p1, p3, Vector3.up, 5, false);
+                    DrawArc(p0 + Vector3.right * radius, p0, p2, Vector3.down, 5, false);
+                    DrawArc(p1 + Vector3.right * radius, p1, p3, Vector3.up, 5, false);
 
-                    p0 = cap.center + Vector3.back * cylen * 0.5f + Vector3.down * cap.radius;
+                    p0 = cap.center + Vector3.back * cylen * 0.5f + Vector3.down * radius;
                     p1 = p0 + cylen * Vector3.forward;
 
-                    p2 = p0 + Vector3.up * cap.radius * 2;
+                    p2 = p0 + Vector3.up * radius * 2;
                     p3 = p2 + cylen * Vector3.forward;
                     Gizmos.DrawLine(p0, p1);
                     Gizmos.DrawLine(p2, p3);
-                    DrawArc(p0 + Vector3.up * cap.radius, p0, p2, Vector3.right, 5, false);
-                    DrawArc(p1 + Vector3.up * cap.radius, p1, p3, Vector3.left, 5, false);
+                    DrawArc(p0 + Vector3.up * radius, p0, p2, Vector3.right, 5, false);
+                    DrawArc(p1 + Vector3.up * radius, p1, p3, Vector3.left, 5, false);
                     break;
                 default:
                     break;

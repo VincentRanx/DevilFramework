@@ -20,23 +20,16 @@ namespace Devil.GamePlay
         FullScreen = 8, // 全屏
     }
 
-    public interface IPanelIntent
+    public interface IPanelIntent<T>
     {
-        /// <summary>
-        /// 请求id
-        /// </summary>
-        int RequestId { get; }
-
-        /// <summary>
-        /// 请求数据
-        /// </summary>
-        object RequestData { get; }
-
-        /// <summary>
-        /// 请求结果处理
-        /// </summary>
-        /// <param name="data"></param>
-        void HandleResult(object data);
+        // 处理消息数据
+        void HandleIntent(T intent);
+    }
+    
+    public class PanelIntentData
+    {
+        private PanelIntentData() { }
+        public static readonly PanelIntentData NONE = new PanelIntentData();
     }
 
     public interface IPanelEvent
@@ -47,14 +40,7 @@ namespace Devil.GamePlay
         /// </summary>
         /// <returns>当可以打开时，返回 true，否则返回 false</returns>
         bool OpenPanel();
-
-        /// <summary>
-        /// 窗口接收消息
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="arg"></param>
-        bool OpenPanelForResult(IPanelIntent sender);
-
+        
         /// <summary>
         /// 关闭窗口回调
         /// </summary>
@@ -183,8 +169,6 @@ namespace Devil.GamePlay
         System.Action mLostAssetHandler;
         bool mGetHandles;
 
-        public IPanelIntent PresentMsg { get; protected set; }
-
         public bool HasAnyProperty(EPanelProperty prorety)
         {
             return (m_Properties & prorety) != 0;
@@ -247,19 +231,6 @@ namespace Devil.GamePlay
         }
 
         /// <summary>
-        /// 窗口接收消息
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="arg"></param>
-        public virtual bool OpenPanelForResult(IPanelIntent sender)
-        {
-            GetEventHandlers();
-            PresentMsg = sender;
-            PanelManager.SetPanelActive(this, true);
-            return true;
-        }
-
-        /// <summary>
         /// 关闭窗口回调
         /// </summary>
         /// <returns>当可以关闭时，返回 true，否则返回 false</returns>
@@ -277,7 +248,6 @@ namespace Devil.GamePlay
         {
             if (mOpenedHandler != null)
                 mOpenedHandler();
-            PresentMsg = null;
         }
 
         public virtual void OnPanelGainFoucs()

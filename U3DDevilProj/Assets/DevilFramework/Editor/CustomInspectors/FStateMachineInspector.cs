@@ -2,12 +2,214 @@
 using UnityEditor;
 using Devil.AI;
 using System.Text;
+using Devil.Utility;
+using System;
+using System.Collections.Generic;
+using UnityEditor.SceneManagement;
 
 namespace DevilEditor
 {
     [CustomEditor(typeof(FStateMachineMono), true)]
     public class FStateMachineInspector : Editor
     {
+        public class Arrow
+        {
+            public int from;
+            public int to;
+            public bool twoSide;
+        }
+        
+        public static void CopyStateToSerializedField(FiniteState stat, SerializedProperty property)
+        {
+            var prop = property.FindPropertyRelative("m_StateName");
+            prop.stringValue = stat.m_StateName;
+            prop = property.FindPropertyRelative("m_IsDefaultState");
+            prop.boolValue = stat.m_IsDefaultState;
+            prop = property.FindPropertyRelative("m_KeepInStack");
+            prop.boolValue = stat.m_KeepInStack;
+            prop = property.FindPropertyRelative("m_BeginMethod");
+            prop.stringValue = stat.m_BeginMethod;
+            prop = property.FindPropertyRelative("m_TickMethod");
+            prop.stringValue = stat.m_TickMethod;
+            prop = property.FindPropertyRelative("m_EndMethod");
+            prop.stringValue = stat.m_EndMethod;
+            prop = property.FindPropertyRelative("m_UseSubState");
+            prop.boolValue = stat.m_UseSubState;
+        }
+
+        public static void CopySerializedField(SerializedProperty property, FiniteState stat)
+        {
+            var prop = property.FindPropertyRelative("m_StateName");
+            stat.m_StateName = prop.stringValue;
+            prop = property.FindPropertyRelative("m_IsDefaultState");
+            stat.m_IsDefaultState = prop.boolValue;
+            prop = property.FindPropertyRelative("m_KeepInStack");
+            stat.m_KeepInStack = prop.boolValue;
+            prop = property.FindPropertyRelative("m_BeginMethod");
+            stat.m_BeginMethod = prop.stringValue;
+            prop = property.FindPropertyRelative("m_TickMethod");
+            stat.m_TickMethod = prop.stringValue;
+            prop = property.FindPropertyRelative("m_EndMethod");
+            stat.m_EndMethod = prop.stringValue;
+            prop = property.FindPropertyRelative("m_UseSubState");
+            stat.m_UseSubState = prop.boolValue;
+        }
+
+        public static void CopyTransitionToSerializedField(FiniteStateTransition trans, SerializedProperty property)
+        {
+            var prop = property.FindPropertyRelative("m_ConditionMethod");
+            prop.stringValue = trans.m_ConditionMethod;
+            prop = property.FindPropertyRelative("m_FromState");
+            prop.stringValue = trans.m_FromState;
+            prop = property.FindPropertyRelative("m_ToState");
+            prop.stringValue = trans.m_ToState;
+        }
+
+        public static void CopySerializedField(SerializedProperty property, FiniteStateTransition trans)
+        {
+            var prop = property.FindPropertyRelative("m_ConditionMethod");
+            trans.m_ConditionMethod = prop.stringValue;
+            prop = property.FindPropertyRelative("m_FromState");
+            trans.m_FromState = prop.stringValue;
+            prop = property.FindPropertyRelative("m_ToState");
+            trans.m_ToState = prop.stringValue;
+        }
+
+        private static void GenerateStates(SerializedObject target, Type type)
+        {
+            var prop = target.FindProperty("m_States");
+            object[] methods = Ref.GetMethodsWithAttribute<FStateAttribute>(type, true);
+            if (methods == null)
+            {
+                prop.ClearArray();
+                return;
+            }
+            FiniteState tmp;
+            FiniteState defaultState = null;
+            FiniteState firstState = null;
+            Dictionary<string, FiniteState> allstates = new Dictionary<string, FiniteState>();
+            for (int i = 0; i < methods.Length; i++)
+            {
+                System.Reflection.MethodInfo mtd = methods[i] as System.Reflection.MethodInfo;
+                if (!Ref.MatchMethodRetAndParams(mtd, typeof(void), null))
+                {
+                    RTLog.LogError(LogCat.AI, string.Format("{0} 不能作为状态方法，因为类型不能和 \" void Method() \" 匹配.", mtd.Name));
+                    continue;
+                }
+                object[] states = mtd.GetCustomAttributes(typeof(FStateAttribute), true);
+                for (int j = 0; j < states.Length; j++)
+                {
+                    FStateAttribute state = states[j] as FStateAttribute;
+                    string sname = state.Name;
+                    if (string.IsNullOrEmpty(sname))
+                    {
+                        sname = mtd.Name;
+                    }
+                    if (!allstates.TryGetValue(sname, out tmp))
+                    {
+                        tmp = new FiniteState();
+                        tmp.m_StateName = sname;
+                        allstates[sname] = tmp;
+                    }
+                    if (firstState == null)
+                    {
+                        firstState = tmp;
+                    }
+                    if (state.IsDefault)
+                    {
+                        tmp.m_IsDefaultState = true;
+                        if (defaultState != null)
+                            defaultState.m_IsDefaultState = false;
+                        defaultState = tmp;
+                    }
+                    if (state.KeepInStack)
+                        tmp.m_KeepInStack = true;
+                    if (state.IsSubState)
+                        tmp.m_UseSubState = true;
+                    if ((state.Event & EStateEvent.OnBegin) != 0)
+                    {
+                        tmp.m_BeginMethod = mtd.Name;
+                    }
+                    if ((state.Event & EStateEvent.OnTick) != 0)
+                    {
+                        tmp.m_TickMethod = mtd.Name;
+                    }
+                    if ((state.Event & EStateEvent.OnEnd) != 0)
+                    {
+                        tmp.m_EndMethod = mtd.Name;
+                    }
+                }
+            }
+            if (defaultState == null && firstState != null)
+                firstState.m_IsDefaultState = true;
+            prop.arraySize = allstates.Count;
+            int num = 0;
+            foreach (var stat in allstates.Values)
+            {
+                var p = prop.GetArrayElementAtIndex(num++);
+                CopyStateToSerializedField(stat, p);
+            }
+        }
+
+        private static void GenerateTransitions(SerializedObject target, Type type)
+        {
+            var fsm = target.targetObject as FStateMachineMono;
+            var prop = target.FindProperty("m_Transitions");
+            object[] methods = Ref.GetMethodsWithAttribute<FStateTransitionAttribute>(type, true);
+            if (methods == null)
+            {
+                prop.ClearArray();
+                return;
+            }
+            List<FiniteStateTransition> transitions = new List<FiniteStateTransition>();
+            for (int i = 0; i < methods.Length; i++)
+            {
+                System.Reflection.MethodInfo mtd = methods[i] as System.Reflection.MethodInfo;
+                if (!Ref.MatchMethodRetAndParams(mtd, typeof(bool), null))
+                {
+                    RTLog.LogError(LogCat.AI, string.Format("{0} 不能作为状态方法，因为类型不能和 \" bool Method() \" 匹配.", mtd.Name));
+                    continue;
+                }
+                object[] trans = mtd.GetCustomAttributes(typeof(FStateTransitionAttribute), true);
+                for (int j = 0; j < trans.Length; j++)
+                {
+                    FStateTransitionAttribute t = trans[j] as FStateTransitionAttribute;
+                    FiniteStateTransition ft = new FiniteStateTransition();
+                    ft.m_FromState = t.From ?? "";
+                    //if (!string.IsNullOrEmpty(ft.m_FromState) && !fsm.HasState(ft.m_FromState))
+                    //    continue;
+                    ft.m_ToState = t.To ?? "";
+                    //if (!string.IsNullOrEmpty(ft.m_ToState) && !fsm.HasState(ft.m_ToState))
+                    //    continue;
+                    ft.m_ConditionMethod = mtd.Name ?? "";
+                    transitions.Add(ft);
+                }
+            }
+            GlobalUtil.Sort(transitions, (x, y) => string.IsNullOrEmpty(x.m_FromState) || string.IsNullOrEmpty(x.m_ToState) ? 1 : -1);
+            prop.arraySize = transitions.Count;
+            for (int i = 0; i < transitions.Count; i++)
+            {
+                var p = prop.GetArrayElementAtIndex(i);
+                CopyTransitionToSerializedField(transitions[i], p);
+            }
+        }
+
+        public static void GenerateStateMachine(SerializedObject target)
+        {
+            var t = target.FindProperty("m_OtherImplement");
+            var impl = (t.objectReferenceValue == null ? target.targetObject : t.objectReferenceValue);
+            Type type = impl.GetType();
+            GenerateStates(target, type);
+            GenerateTransitions(target, type);
+            target.ApplyModifiedProperties();
+            EditorUtility.SetDirty(target.targetObject);
+
+            var go = target.targetObject as FStateMachineMono;
+            if(go != null && go.gameObject.activeInHierarchy)
+            {
+                EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            }
+        }
 
         [MenuItem("GameObject/Utils/Update FSM", priority = -1)]
         public static void UpdateFSM()
@@ -18,27 +220,17 @@ namespace DevilEditor
             var fsms = go.GetComponentsInChildren<FStateMachineMono>(true);
             foreach(var fsm in fsms)
             {
-                fsm.GenerateStateMachine();
+                var ser = new SerializedObject(fsm);
+                GenerateStateMachine(ser);
+                ser.ApplyModifiedProperties();
                 Debug.Log("Update FSM: " + fsm, fsm);
             }
-        }
-
-        public void Reposition(FStateMachineMono fsm)
-        {
-            stateRects = new Rect[fsm.StateLength];
-            float deltaRad = 2f * Mathf.PI / fsm.StateLength ;
-            float xdy = (defaultCellSize.x / defaultCellSize.y + 1.6f) * 0.5f;
-            Vector2 stateCellSize = defaultCellSize * cellScale;
-            float r = Mathf.Max(50f * cellScale, stateCellSize.x * fsm.StateLength * 0.4f / Mathf.PI);
-            for (int i = 0; i < stateRects.Length; i++)
+            if (go.activeInHierarchy)
             {
-                float rad = i * deltaRad - Mathf.PI * 0.5f;
-                Vector2 center = new Vector2(r * Mathf.Cos(rad) * xdy, r * Mathf.Sin(rad));
-                Rect rect = new Rect(center - stateCellSize * 0.5f, stateCellSize);
-                stateRects[i] = rect;
+                EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             }
         }
-
+        
         FStateMachineMono fsm;
         FStateMachine fsmImpl;
         Rect[] stateRects;
@@ -56,15 +248,80 @@ namespace DevilEditor
         bool mouseDrag;
         bool focusCenter;
         bool repaint;
-
+        
         StringBuilder strbuffer = new StringBuilder();
 
         int interceptedState = -1;
         Vector2 interaceptPos;
 
+        SerializedProperty m_States;
+        FiniteState[] m_StateCopys;
+        SerializedProperty m_Transitions;
+        FiniteStateTransition[] m_TransitionCopys;
+        List<Arrow> m_TransArrows = new List<Arrow>();
+        SerializedProperty m_OtherImplement;
+        bool focusGraph;
+
         private void OnEnable()
         {
             cellScale = EditorPrefs.GetFloat("fsmScale", 1);
+            m_States = serializedObject.FindProperty("m_States");
+            m_Transitions = serializedObject.FindProperty("m_Transitions");
+            m_OtherImplement = serializedObject.FindProperty("m_OtherImplement");
+            GetCopys();
+        }
+
+        void GetCopys()
+        {
+            m_StateCopys = new FiniteState[m_States.arraySize];
+            for (int i = 0; i < m_StateCopys.Length; i++)
+            {
+                m_StateCopys[i] = new FiniteState();
+                CopySerializedField(m_States.GetArrayElementAtIndex(i), m_StateCopys[i]);
+            }
+            m_TransitionCopys = new FiniteStateTransition[m_Transitions.arraySize];
+            for (int i = 0; i < m_TransitionCopys.Length; i++)
+            {
+                m_TransitionCopys[i] = new FiniteStateTransition();
+                CopySerializedField(m_Transitions.GetArrayElementAtIndex(i), m_TransitionCopys[i]);
+            }
+
+            m_TransArrows.Clear();
+            HashSet<int> execlude = new HashSet<int>();
+            for(int i = 0; i < m_TransitionCopys.Length; i++)
+            {
+                if (execlude.Contains(i))
+                    continue;
+                var arrow = new Arrow();
+                var trans = m_TransitionCopys[i];
+                arrow.from = GlobalUtil.FindIndex(m_StateCopys, (x) => x.m_StateName == trans.m_FromState);
+                arrow.to = GlobalUtil.FindIndex(m_StateCopys, (x) => x.m_StateName == trans.m_ToState);
+                var reverse = arrow.from == -1 || arrow.to == -1 ? -1 : GlobalUtil.FindIndex(m_TransitionCopys, (x) => x.m_FromState == trans.m_ToState && x.m_ToState == trans.m_FromState);
+                if (reverse != -1)
+                {
+                    execlude.Add(reverse);
+                    arrow.twoSide = true;
+                }
+                m_TransArrows.Add(arrow);
+            }
+
+            Reposition();
+        }
+
+        void Reposition()
+        {
+            stateRects = new Rect[m_StateCopys.Length];
+            float deltaRad = 2f * Mathf.PI / m_StateCopys.Length;
+            float xdy = (defaultCellSize.x / defaultCellSize.y + 1.6f) * 0.5f;
+            Vector2 stateCellSize = defaultCellSize * cellScale;
+            float r = Mathf.Max(50f * cellScale, stateCellSize.x * m_StateCopys.Length * 0.4f / Mathf.PI);
+            for (int i = 0; i < stateRects.Length; i++)
+            {
+                float rad = i * deltaRad - Mathf.PI * 0.5f;
+                Vector2 center = new Vector2(r * Mathf.Cos(rad) * xdy, r * Mathf.Sin(rad));
+                Rect rect = new Rect(center - stateCellSize * 0.5f, stateCellSize);
+                stateRects[i] = rect;
+            }
         }
 
         private void OnDisable()
@@ -74,18 +331,31 @@ namespace DevilEditor
 
         public override void OnInspectorGUI()
         {
-            base.OnInspectorGUI();
+            fsm = target as FStateMachineMono;
+            fsmImpl = fsm.FSM;
 
-            repaint = false;
+            base.OnInspectorGUI();
+            bool repos = false;
+            bool regen = false;
+
             ProcessMouseDeltaPos();
-            DrawFSMGraph();
-            ProcessMouseEvent();
+            DrawFSMGraph(ref regen, ref repos);
+            ProcessMouseEvent(ref regen, ref repos);
             ProcessFocusCenter();
             serializedObject.ApplyModifiedProperties();
-            if (repaint || Application.isPlaying)
+            if (regen)
             {
-                repaint = false;
+                GenerateStateMachine(serializedObject);
+                GetCopys();
+            }
+            else if (repos)
+            {
+                GetCopys();
+            }
+            if (repaint || regen || repos || Application.isPlaying)
+            {
                 Repaint();
+                repaint = false;
             }
         }
 
@@ -110,23 +380,28 @@ namespace DevilEditor
         }
 
         // 响应鼠标事件
-        void ProcessMouseEvent()
+        void ProcessMouseEvent(ref bool regen, ref bool repos)
         {
             bool intercept = stateClipRect.Contains(Event.current.mousePosition);
             if (!intercept)
             {
+                focusGraph = false;
                 return;
             }
+            if (Event.current.type == EventType.MouseDown)
+                focusGraph = true;
             if (Event.current.type == EventType.ContextClick)
             {
                 Event.current.Use();
                 focusCenter = true;
+                focusGraph = true;
                 repaint |= true;
                 return;
             }
             if (Event.current.type == EventType.MouseDown && Event.current.button == 2)
             {
                 mouseDrag = true;
+                repaint |= true;
             }
             else if (mouseDrag && Event.current.type == EventType.MouseDrag)
             {
@@ -138,6 +413,16 @@ namespace DevilEditor
             else if (Event.current.type == EventType.MouseUp)
             {
                 mouseDrag = false;
+                repaint |= true;
+            }
+            else if(focusGraph && Event.current.type == EventType.ScrollWheel )
+            {
+                float f = Mathf.Clamp(cellScale - Event.current.delta.y * cellScale * 0.05f, 0.1f, 2f);
+                if ((f < 1 && cellScale > 1) || (f > 1 && cellScale < 1))
+                    f = 1;
+                cellScale = f;
+                repos |= true;
+                Event.current.Use();
             }
         }
 
@@ -155,66 +440,41 @@ namespace DevilEditor
             }
         }
 
-        void DrawFSMGraph()
+        void DrawFSMGraph(ref bool regen, ref bool repos)
         {
-            FStateMachineMono f = target as FStateMachineMono;
-            fsmImpl = f.FSM;
-            if (fsm != f)
-            {
-                fsm = f;
-                fsm.IsDirty = true;
-            }
-            if (fsm.IsDirty)
-            {
-                Reposition(fsm);
-                fsm.IsDirty = false;
-            }
             foldoutStates = QuickGUI.DrawHeader("状态预览图", "foldout", false);
             if (foldoutStates)
             {
                 QuickGUI.BeginContents(50);
-                GUILayout.Space(10);
-                EditorGUILayout.BeginHorizontal();
-                float scale = EditorGUILayout.Slider("滑动缩放视图", cellScale, 0.5f, 3f);
-                EditorGUI.BeginDisabledGroup(Application.isPlaying);
-                bool regen = GUILayout.Button("刷新", GUILayout.Height(20));
-                EditorGUI.EndDisabledGroup();
-                EditorGUILayout.EndHorizontal();
+                //EditorGUILayout.BeginVertical("helpbox");
 
-                if (regen )
-                {
-                    fsm.GenerateStateMachine();
-                    //reloaded = false;
-                }
-                if (Mathf.Abs(scale - cellScale) > 0.01f)
-                {
-                    cellScale = scale;
-                    fsm.IsDirty = true;
-                }
-                if (fsm.IsDirty)
-                {
-                    Reposition(fsm);
-                    fsm.IsDirty = false;
-                    serializedObject.Update();
-                }
+                //EditorGUILayout.BeginHorizontal();
+                //EditorGUILayout.EndHorizontal();
+                
                 QuickGUI.ReportView(ref stateClipRect, stateViewPos, OnDrawFSMGraphCallback, Mathf.Max(350f, stateClipRect.width * 0.75f), 80);
                 stateClipRectCenter = stateClipRect.size * 0.5f;
 
-                QuickGUI.EndContents();
-            }
-            if (fsm.IsDirty)
-            {
-                Reposition(fsm);
-                fsm.IsDirty = false;
-            }
+                EditorGUI.BeginDisabledGroup(Application.isPlaying);
 
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Space(40);
+                regen |= GUILayout.Button("Rebuild State Machine");
+                GUILayout.Space(40);
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUI.EndDisabledGroup();
+
+                QuickGUI.EndContents();
+                //EditorGUILayout.EndVertical();
+            }
+            
         }
 
         int GetStateIndex(string state)
         {
-            for (int i = 0; i < fsm.StateLength; i++)
+            for (int i = 0; i < m_StateCopys.Length; i++)
             {
-                if (fsm.States[i].m_StateName == state)
+                if (m_StateCopys[i].m_StateName == state)
                     return i;
             }
             return -1;
@@ -266,16 +526,21 @@ namespace DevilEditor
             Handles.DrawLine(tmp1, to);
             Vector2 tmp2 = to - (nor + normal);
             Handles.DrawLine(tmp2, to);
+            
         }
 
-        void HandleTransition(Rect from, Rect to, Color baseColor)
+        void HandleTransition(Rect from, Rect to, Color baseColor, bool twoside)
         {
             Vector2 dir = to.center - from.center;
             Vector2 p0 = GetCollidePoint(from, dir);
             Vector2 p1 = GetCollidePoint(to, -dir);
 
-            Handles.color = baseColor;
-            DrawArrow(p0, p1);
+            if (twoside)
+                DevilEditorUtility.Draw2SideArrow(p0, p1, baseColor, 3 * cellScale);
+            else
+                DevilEditorUtility.DrawArrow(p0, p1, baseColor, 3 * cellScale);
+            //Handles.color = baseColor;
+            //DrawArrow(p0, p1);
 
         }
 
@@ -305,45 +570,29 @@ namespace DevilEditor
         {
             string current = fsmImpl == null ? null : fsmImpl.CurrentStateName;
             int currentIndex = GetStateIndex(current);
-            int from, to;
+            //int from, to;
             Rect fromRect, toRect;
-            for(int i = 0; i < fsm.TransitionLength; i++)
+            for (int i = 0; i < m_TransArrows.Count; i++)
             {
-                FiniteStateTransition trans = fsm.Transitions[i];
-                to = GetStateIndex(trans.m_ToState);
-                from = GetStateIndex(trans.m_FromState);
-                if (to == -1 && from == -1)
+                var arrow = m_TransArrows[i];
+                if(arrow.from == -1 && arrow.to == -1)
                 {
-                    for (int j = 0; j < stateRects.Length; j++)
-                    {
-                        if (activeTrans ^ (Application.isPlaying && currentIndex == j))
-                            continue;
-                        fromRect = stateRects[j];
-                        fromRect.y += fromRect.height;
-                        fromRect.x -= (defaultCellSize.x * cellScale * 0.5f - 10);
-                        toRect = fromRect;
-                        toRect.y -= fromRect.height * 2f;
-                        fromRect.position -= stateViewPos - stateClipRectCenter;
-                        toRect.position -= stateViewPos - stateClipRectCenter;
-                        HandleTransition(fromRect, toRect, activeTrans ? Color.green : Color.red);
-                    }
+                    continue;
                 }
-                else if (to != -1 && from != -1)
+                if(arrow.from != -1 && arrow.to != -1)
                 {
-                    if (activeTrans ^ (Application.isPlaying && currentIndex == from))
-                        continue;
-                    fromRect = stateRects[from];
-                    toRect = stateRects[to];
+                    bool active = activeTrans && (arrow.from == currentIndex || arrow.to == currentIndex);
+                    fromRect = stateRects[arrow.from];
+                    toRect = stateRects[arrow.to];
                     fromRect.position -= stateViewPos - stateClipRectCenter;
                     toRect.position -= stateViewPos - stateClipRectCenter;
-                    HandleTransition(fromRect, toRect, activeTrans ? Color.green : Color.red);
+                    HandleTransition(fromRect, toRect, active ? Color.green : Color.red, arrow.twoSide);
                 }
                 else
                 {
-                    int p = from != -1 ? from : to;
-                    if (activeTrans ^ (Application.isPlaying && (currentIndex == from || from == -1)))
-                        continue;
-                    float sign = p == from ? -1 : 1;
+                    int p = arrow.from != -1 ? arrow.from : arrow.to;
+                    float sign = p == arrow.from ? -1 : 1;
+                    bool active = p == currentIndex && activeTrans;
                     fromRect = stateRects[p];
                     fromRect.y -= fromRect.height * sign;
                     fromRect.x += (defaultCellSize.x * cellScale * 0.5f - 10) * sign;
@@ -351,23 +600,23 @@ namespace DevilEditor
                     toRect.y += fromRect.height * 2f * sign;
                     fromRect.position -= stateViewPos - stateClipRectCenter;
                     toRect.position -= stateViewPos - stateClipRectCenter;
-                    HandleTransition(fromRect, toRect, activeTrans ? Color.green : Color.red);
+                    HandleTransition(fromRect, toRect, active ? Color.green : Color.red, arrow.twoSide);
                 }
             }
+            
         }
 
         void DrawStates()
         {
             bool click = Event.current.type == EventType.MouseDown && Event.current.button == 0;
-            //bool release = Event.current.type == EventType.mouseUp && Event.current.button == 0;
             if (click)
             {
                 interceptedState = -1;
                 repaint = true;
             }
-            for (int i = 0; i < fsm.StateLength; i++)
+            for (int i = 0; i < m_StateCopys.Length; i++)
             {
-                FiniteState state = fsm.States[i];
+                FiniteState state = m_StateCopys[i];
                 bool act;
                 if (Application.isPlaying && fsmImpl.IsFSMActive)
                     act = fsmImpl == null ? false : fsmImpl.CurrentStateName == state.m_StateName;
@@ -391,7 +640,7 @@ namespace DevilEditor
                 GUI.Label(rect, "", style);
                 Installizer.contentContent.text = state.m_StateName;
                 Installizer.contentStyle.normal.textColor = Color.white;
-                Installizer.contentStyle.fontSize = (int)((rect.height - 10) * cellScale);
+                Installizer.contentStyle.fontSize = Mathf.Max(1, (int)((rect.height - 10) * cellScale));
                 Installizer.contentStyle.alignment = TextAnchor.MiddleCenter;
                 GUI.Label(rect, Installizer.contentContent, Installizer.contentStyle);
 
@@ -407,7 +656,7 @@ namespace DevilEditor
                 //pos -= stateViewPos - stateClipRectCenter;
                 rect = new Rect(pos, new Vector2(stateClipRect.width - 20, stateClipRect.height - 20));
                 GUI.skin.label.richText = true;
-                FiniteState state = fsm.States[interceptedState];
+                FiniteState state = m_StateCopys[interceptedState];
                 strbuffer.Remove(0, strbuffer.Length);
                 strbuffer.Append("State: ").Append(state.m_StateName).Append('\n');
                 strbuffer.Append("Keep In Stack: ").Append(state.m_KeepInStack).Append('\n');
@@ -429,7 +678,7 @@ namespace DevilEditor
                 strbuffer.Append('\n');
                 for (int i = 0; i < fsm.TransitionLength; i++)
                 {
-                    FiniteStateTransition trans = fsm.Transitions[i];
+                    FiniteStateTransition trans = m_TransitionCopys[i];
                     if (trans.m_ToState == state.m_StateName)
                     {
                         strbuffer.Append("\nFROM \"")
@@ -442,7 +691,7 @@ namespace DevilEditor
                 strbuffer.Append('\n');
                 for (int i = 0; i < fsm.TransitionLength; i++)
                 {
-                    FiniteStateTransition trans = fsm.Transitions[i];
+                    FiniteStateTransition trans = m_TransitionCopys[i];
                     if (trans.m_FromState == state.m_StateName || string.IsNullOrEmpty(trans.m_FromState) && trans.m_ToState != state.m_StateName)
                     {
                         strbuffer.Append("\nTO \"")
@@ -470,9 +719,9 @@ namespace DevilEditor
         void OnDrawFSMGraphCallback()
         {
             DrawStates();
-            DrawTransition(false);
-            if (Application.isPlaying)
-                DrawTransition(true);
+            DrawTransition(Application.isPlaying);
+            //if (Application.isPlaying)
+            //    DrawTransition(true);
             DrawStateStack();
             DrawStateInfo();
         }

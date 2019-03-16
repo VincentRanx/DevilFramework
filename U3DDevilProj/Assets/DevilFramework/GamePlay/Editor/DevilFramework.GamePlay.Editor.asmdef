@@ -2,7 +2,8 @@
     "name": "DevilFramework.GamePlay.Editor",
     "references": [
         "DevilFramework.Core",
-        "DevilFramework.GamePlay"
+        "DevilFramework.GamePlay",
+        "DevilFramework.Editor"
     ],
     "includePlatforms": [
         "Editor"

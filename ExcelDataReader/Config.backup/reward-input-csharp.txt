@@ -1,1 +1,0 @@
-{name} = (GameDefine.EReward){input}.Value<int>("{name}");

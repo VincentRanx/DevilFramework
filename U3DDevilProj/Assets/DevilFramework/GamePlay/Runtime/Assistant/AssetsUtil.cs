@@ -51,7 +51,7 @@ namespace Devil.GamePlay.Assistant
 
         #region asset operate
 
-        public const string DEFAULT_ATLAS = "Assets/Prefabs/Atlas/Common.spriteatlas";
+        public const string DEFAULT_ATLAS = "Assets/ArtRes/Sprites/Common.spriteatlas";
 
         public static Sprite GetSprite(string spriteName)
         {
@@ -93,6 +93,19 @@ namespace Devil.GamePlay.Assistant
             }
             GetAssetAsync<SpriteAtlas>(atlas, (x) => {
                 var sprite = x.GetSprite(spr);
+                if (sprite != null)
+                    handler(sprite);
+                else if (errorhandler != null)
+                    errorhandler(StringUtil.Concat(spriteName, " doesn't exist."));
+            }, errorhandler);
+        }
+
+        public static void GetSpriteAsync(string atlas, string spriteName, AssetHandler<Sprite> handler, ErrorHandler errorhandler = null)
+        {
+            if (handler == null)
+                return;
+            GetAssetAsync<SpriteAtlas>(atlas, (x) => {
+                var sprite = x.GetSprite(spriteName);
                 if (sprite != null)
                     handler(sprite);
                 else if (errorhandler != null)

@@ -1,1 +1,0 @@
-{name} = new HugeNumber({input}.Value<string>("{name}"));

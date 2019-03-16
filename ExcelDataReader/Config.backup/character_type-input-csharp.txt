@@ -1,1 +1,0 @@
-{name} = (GameDefine.ECharacter){input}.Value<int>("{name}");

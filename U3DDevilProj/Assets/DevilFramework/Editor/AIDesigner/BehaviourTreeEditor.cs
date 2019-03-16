@@ -3,7 +3,7 @@ using System.IO;
 using Devil;
 using Devil.AI;
 using Devil.Utility;
-using Newtonsoft.Json.Linq;
+using LitJson;
 using UnityEditor;
 using UnityEngine;
 
@@ -414,7 +414,7 @@ namespace DevilEditor
             base.OnCanvasStart();
         }
 
-        bool EnableDropAssets()
+        protected override bool EnableDropAssets()
         {
             foreach (var asset in DragAndDrop.objectReferences)
             {
@@ -446,58 +446,51 @@ namespace DevilEditor
         protected override void OnCanvasGUI()
         {
             base.OnCanvasGUI();
-            if (InterceptMouse)
-                DragAndDrop.visualMode = EnableDropAssets() ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.None;
             BehaviourNode.SetFontScale(GraphCanvas.GlobalScale);
         }
 
-        protected override void OnPostGUI()
+        protected override void OnAcceptDrop()
         {
-            base.OnPostGUI();
-
-            if (InterceptMouse && Event.current.type == EventType.DragPerform && mAssetBinder != null)
+            bool act = false;
+            foreach (var obj in DragAndDrop.objectReferences)
             {
-                bool act = false;
-                foreach (var obj in DragAndDrop.objectReferences)
+                if (obj is GameObject)
                 {
-                    if (obj is GameObject)
+                    var tree = ((GameObject)obj).GetComponent<BehaviourTreeRunner>();
+                    if (tree != null)
                     {
-                        var tree = ((GameObject)obj).GetComponent<BehaviourTreeRunner>();
-                        if (tree != null)
-                        {
-                            mAssetBinder.SetBehaviourTreeRunner(tree);
-                            act = true;
-                            break;
-                        }
-                    }
-                    else if (obj is BehaviourTreeAsset)
-                    {
-                        mAssetBinder.SetBehaviourTreeAsset((BehaviourTreeAsset)obj);
-                        act = true;
-                        break;
-                    }
-                    else if (obj is BTAsset)
-                    {
-                        var owner = ((BTAsset)obj).TreeAsset;
-                        if (owner != null)
-                        {
-                            mAssetBinder.SetBehaviourTreeAsset(owner);
-                            act = true;
-                            break;
-                        }
-                    }
-                    else if(obj is BlackboardAsset)
-                    {
-                        sUsedBlackboard = obj as BlackboardAsset;
+                        mAssetBinder.SetBehaviourTreeRunner(tree);
                         act = true;
                         break;
                     }
                 }
-                DragAndDrop.AcceptDrag();
-                if (!act)
+                else if (obj is BehaviourTreeAsset)
                 {
-                    EditorUtility.DisplayDialog("Error", "没有可用的行为树资源.", "OK");
+                    mAssetBinder.SetBehaviourTreeAsset((BehaviourTreeAsset)obj);
+                    act = true;
+                    break;
                 }
+                else if (obj is BTAsset)
+                {
+                    var owner = ((BTAsset)obj).TreeAsset;
+                    if (owner != null)
+                    {
+                        mAssetBinder.SetBehaviourTreeAsset(owner);
+                        act = true;
+                        break;
+                    }
+                }
+                else if (obj is BlackboardAsset)
+                {
+                    sUsedBlackboard = obj as BlackboardAsset;
+                    act = true;
+                    break;
+                }
+            }
+            DragAndDrop.AcceptDrag();
+            if (!act)
+            {
+                EditorUtility.DisplayDialog("Error", "没有可用的行为树资源.", "OK");
             }
         }
 
@@ -540,22 +533,22 @@ namespace DevilEditor
             }
         }
 
-        protected override void OnReadCustomData(JObject data)
+        protected override void OnReadCustomData(JsonData data)
         {
             base.OnReadCustomData(data);
-            HelpBox.Visible = data.Value<bool>("help");
-            var his = data.Value<string>("history");
+            HelpBox.Visible = (bool)data["help"];
+            var his = (string)data["history"];
             if (!string.IsNullOrEmpty(his))
             {
                 mHistory.Clear();
                 StringUtil.ParseArray(his, mHistory, '\n');
             }
-            var black = data.Value<string>("black");
+            var black = (string)data["black"];
             if (sUsedBlackboard == null && !string.IsNullOrEmpty(black))
                 sUsedBlackboard = AssetDatabase.LoadAssetAtPath<BlackboardAsset>(black);
         }
 
-        protected override void OnSaveCustomData(JObject data)
+        protected override void OnSaveCustomData(JsonData data)
         {
             base.OnSaveCustomData(data);
             data["help"] = HelpBox.Visible;
@@ -566,6 +559,8 @@ namespace DevilEditor
 
         protected override void OnTitleGUI()
         {
+            if (mAssetBinder == null)
+                return;
             HelpBox.Visible = GUILayout.Toggle(HelpBox.Visible, "<b>?</b>", "TE toolbarbutton", GUILayout.Width(20));
             if (mHistory.Count > 0 && GUILayout.Button("历史", "TE toolbarbutton", GUILayout.Width(45)))
             {
@@ -754,7 +749,7 @@ namespace DevilEditor
                 {
                     mContextNode = RaycastNode;
                     mContextPos = AIGraph.CalculateLocalPosition(mousePos);
-                    sNodeMenu.Display(this, new Rect(mousePos, Vector2.zero));
+                    sNodeMenu.Display(this, new Rect(Event.current.mousePosition, Vector2.zero));
                 }
                 else
                 {
@@ -770,7 +765,7 @@ namespace DevilEditor
                 mContextPos = AIGraph.CalculateLocalPosition(mousePos);
                 if (Application.isPlaying)
                 {
-                    DisplayDebugMenu(new Rect(mousePos, Vector2.zero));
+                    DisplayDebugMenu(new Rect(Event.current.mousePosition, Vector2.zero));
                     //EditorUtility.DisplayCustomMenu(new Rect(mousePos, Vector2.zero), mRuntimeMenu, -1, OnRuntimeMenuSelected, null);
                 }
                 else if (IsRequestParentOrChild)
@@ -779,7 +774,7 @@ namespace DevilEditor
                 }
                 else
                 {
-                    DisplayEditMenu(new Rect(mousePos, Vector2.zero));
+                    DisplayEditMenu(new Rect(Event.current.mousePosition, Vector2.zero));
                 }
                 return true;
             }

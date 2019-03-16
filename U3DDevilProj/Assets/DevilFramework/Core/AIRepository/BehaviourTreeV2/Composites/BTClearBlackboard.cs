@@ -2,7 +2,7 @@
 
 namespace Devil.AI
 {
-    [BTComposite(Title = "清除黑板数据 (C)", HotKey = KeyCode.C)]
+    [BTComposite(Title = "清除黑板数据 (C)", HotKey = KeyCode.C, color = "#004040")]
     public class BTClearBlackboard : BTTaskAsset
     {
         [BTVariableReference]
@@ -36,6 +36,10 @@ namespace Devil.AI
         public override EBTState OnStart()
         {
             return EBTState.running;
+        }
+
+        public override void OnStop()
+        {
         }
 
         public override EBTState OnUpdate(float deltaTime)

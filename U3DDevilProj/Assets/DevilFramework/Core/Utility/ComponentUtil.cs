@@ -148,5 +148,22 @@ namespace Devil.Utility
             return false;
 #endif
         }
+
+#if UNITY_EDITOR
+        public static void CreateAssetAt<T>(string path, string name) where T : ScriptableObject
+        {
+            var t = ScriptableObject.CreateInstance<T>();
+            t.name = name;
+            if (System.IO.File.Exists(path))
+            {
+                UnityEditor.AssetDatabase.AddObjectToAsset(t, path);
+            }
+            else
+            {
+                UnityEditor.AssetDatabase.CreateAsset(t, path);
+            }
+            UnityEditor.AssetDatabase.ImportAsset(path);
+        }
+#endif
     }
 }

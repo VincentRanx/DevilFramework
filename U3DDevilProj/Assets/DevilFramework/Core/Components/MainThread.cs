@@ -166,7 +166,7 @@ namespace Devil
             else
             {
 #if UNITY_EDITOR
-                if (!sInitilized)
+                if (!sInitilized && Application.isPlaying)
                     RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
                 return null;
@@ -183,7 +183,7 @@ namespace Devil
                 }
             }
 #if UNITY_EDITOR
-            else if (!sInitilized)
+            else if (!sInitilized && Application.isPlaying)
                 RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
         }
@@ -195,7 +195,7 @@ namespace Devil
                 sInstance.mLoopers.Remove(looper);
             }
 #if UNITY_EDITOR
-            else if (!sInitilized)
+            else if (!sInitilized && Application.isPlaying)
                 RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
         }
@@ -224,7 +224,7 @@ namespace Devil
                 }
             }
 #if UNITY_EDITOR
-            else if (!sInitilized)
+            else if (!sInitilized && Application.isPlaying)
                 RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
             return false;
@@ -245,7 +245,7 @@ namespace Devil
                 }
             }
 #if UNITY_EDITOR
-            else if (!sInitilized)
+            else if (!sInitilized && Application.isPlaying)
                 RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
         }
@@ -266,7 +266,7 @@ namespace Devil
                 }
             }
 #if UNITY_EDITOR
-            else if (!sInitilized)
+            else if (!sInitilized && Application.isPlaying)
                 RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
         }
@@ -288,7 +288,7 @@ namespace Devil
                 }
             }
 #if UNITY_EDITOR
-            else if (!sInitilized)
+            else if (!sInitilized && Application.isPlaying)
                 RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
         }
@@ -302,7 +302,7 @@ namespace Devil
             else
             {
 #if UNITY_EDITOR
-                if (!sInitilized)
+                if (!sInitilized && Application.isPlaying)
                     RTLog.LogError(LogCat.Game, "MainThread not initialized.");
 #endif
                 return null;

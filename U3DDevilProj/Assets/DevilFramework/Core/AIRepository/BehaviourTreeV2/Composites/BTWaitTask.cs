@@ -3,9 +3,10 @@ using UnityEngine;
 
 namespace Devil.AI
 {
-    [BTComposite(Title = "等待 (W)", HotKey = KeyCode.W)]
+    [BTComposite(Title = "等待 (W)", IconPath = "Assets/DevilFramework/Gizmos/AI Icons/loop.png", HotKey = KeyCode.W)]
     public class BTWaitTask : BTTaskAsset
     {
+        public bool m_WaitForever = false;
         public float m_MinTime = 1;
         public float m_MaxTime = 2;
 
@@ -46,6 +47,8 @@ namespace Devil.AI
 
         public override EBTState OnUpdate(float deltaTime)
         {
+            if (m_WaitForever)
+                return EBTState.running;
             mTime -= deltaTime;
             return mTime <= 0 ? EBTState.success : EBTState.running;
         }

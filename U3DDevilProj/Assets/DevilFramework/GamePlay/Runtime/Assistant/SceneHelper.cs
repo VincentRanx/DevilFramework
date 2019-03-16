@@ -9,7 +9,7 @@ namespace Devil.GamePlay.Assistant
     {
         public static SceneHelper Instance { get; private set; }
 
-        public class LoadSceneTask : DependenceTask
+        public class LoadSceneTask : DependenceAsyncTask
         {
             AsyncOperation mLoading;
             float mRatio;

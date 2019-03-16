@@ -2,6 +2,10 @@
 using System.IO;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Devil.GamePlay.Assistant
 {
     public static class LocalFileUtil
@@ -15,7 +19,7 @@ namespace Devil.GamePlay.Assistant
     static string sExtractResFolder = Application.persistentDataPath + "/RESOURCE";
 #endif
 
-        static string sPrefabPath = "Assets/ArtRes/Prefabs";
+        static string sPrefabPath = "Assets/Prefabs";
         public static string ExtractResPath { get { return sExtractResFolder; } }
 
         public static string ABFolderName
@@ -91,14 +95,14 @@ namespace Devil.GamePlay.Assistant
             get
             {
                 string folder;
-                var t = UnityEditor.Selection.activeObject;
+                var t = Selection.activeObject;
                 if (t == null)
                 {
                     folder = "Asset";
                 }
                 else
                 {
-                    folder = UnityEditor.AssetDatabase.GetAssetPath(t);
+                    folder = AssetDatabase.GetAssetPath(t);
                     if (File.Exists(folder))
                     {
                         var index = folder.LastIndexOf('/');
@@ -107,6 +111,30 @@ namespace Devil.GamePlay.Assistant
                 }
                 return folder;
             }
+        }
+
+        public static void CreateAsset<T>(string name) where T : ScriptableObject
+        {
+            var newasset = ScriptableObject.CreateInstance<T>();
+            newasset.name = name;
+            var asset = Selection.activeObject as ScriptableObject;
+            if (asset != null && AssetDatabase.Contains(asset))
+            {
+                AssetDatabase.AddObjectToAsset(newasset, asset);
+            }
+            else
+            {
+                var path = ActiveProjectFolder;
+                path = StringUtil.Concat(path, "/", name);
+                AssetDatabase.CreateAsset(newasset, path);
+            }
+        }
+
+        public static void DeleteAsset<T>(string path) where T: ScriptableObject
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset != null)
+                Object.DestroyImmediate(asset, true);
         }
 #endif
     }

@@ -6,12 +6,21 @@ namespace Devil.AI
         IconPath = "Assets/DevilFramework/Gizmos/AI Icons/sequence.png", HotKey = KeyCode.S)]
     public class BTScheduled : BTControllerAsset
     {
-        public bool m_RandomSequence;
+        public enum ELoopMode
+        {
+            Repeat,
+            PingPong,
+            Random,
+        }
+
+        public ELoopMode m_LoopMode;
+
         public bool m_ResetWhenAbort;
 
         int mExecI;
         int[] mExecIndex;
         bool mRandom;
+        bool mRevert;
 
         public override void OnPrepare(BehaviourTreeRunner.AssetBinder asset, BTNode node)
         {
@@ -21,7 +30,7 @@ namespace Devil.AI
 
         void Init()
         {
-            mRandom = m_RandomSequence && mChildren.Length > 0;
+            mRandom = m_LoopMode == ELoopMode.Random && mChildren.Length > 0;
             if (mRandom)
             {
                 if (mExecIndex == null || mExecIndex.Length != mChildren.Length)
@@ -37,7 +46,10 @@ namespace Devil.AI
         public override IBTNode GetNextChildTask()
         {
             var i = mRandom ? AIUtility.GetRandomIndex(mExecIndex, mExecI) : mExecI;
-            return mChildren[i];
+            if (mRevert)
+                return mChildren[mChildren.Length - 1 - i];
+            else
+                return mChildren[i];
         }
 
         public override EBTState OnAbort()
@@ -45,21 +57,29 @@ namespace Devil.AI
             if (m_ResetWhenAbort)
             {
                 mExecI = 0;
+                mRevert = false;
             }
             return EBTState.failed;
         }
 
         public override EBTState OnReturn(EBTState state)
         {
-            if(mChildren.Length > 0)
+            if (mChildren.Length > 0)
+            {
                 mExecI = (mExecI + 1) % mChildren.Length;
+                if (mExecI == 0 && m_LoopMode == ELoopMode.PingPong && mChildren.Length > 2)
+                {
+                    mRevert = !mRevert;
+                    mExecI++;
+                }
+            }
             return state;
         }
 
         public override EBTState OnStart()
         {
 #if UNITY_EDITOR
-            if (mRandom ^ (m_RandomSequence && mChildren.Length > 0))
+            if (mRandom ^ (m_LoopMode == ELoopMode.Random && mChildren.Length > 0))
                 Init();
 #endif
             if (mChildren.Length > 0)

@@ -191,6 +191,17 @@ namespace DevilEditor
             Elements.Clear();
         }
 
+        public PaintElement GetRaycastNode(Vector2 globalPos)
+        {
+            for (int i = ElementCount - 1; i >= 0; i--)
+            {
+                var node = Elements[i];
+                if (node != null && node.Visible && node.GlobalRect.Contains(globalPos))
+                    return node;
+            }
+            return null;
+        }
+
         public void Resort(bool recursive)
         {
             GlobalUtil.Sort(Elements, (x, y) => x.SortOrder > y.SortOrder ? 1 : -1);

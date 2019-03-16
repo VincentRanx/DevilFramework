@@ -14,7 +14,7 @@ namespace Devil.AI
         public KeyCode HotKey { get; set; }
     }
     
-    [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Interface, AllowMultiple = false, Inherited = false)]
+    [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Struct | System.AttributeTargets.Interface, AllowMultiple = false, Inherited = false)]
     public class BTSharedTypeAttribute : System.Attribute
     {
     }
@@ -48,5 +48,4 @@ namespace Devil.AI
             this.VarType = vartype;
         }
     }
-
 }

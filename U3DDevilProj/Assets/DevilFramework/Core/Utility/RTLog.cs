@@ -25,7 +25,7 @@ namespace Devil.Utility
     {
         static RTLog sInstance;
 
-        [MaskField]
+        [MaskField(IsToggle = false)]
         [SerializeField]
         LogCat m_Categories = (LogCat)(-1);
 

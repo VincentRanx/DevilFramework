@@ -1,6 +1,4 @@
-﻿
-using Devil.Utility;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Devil.AI
 {
@@ -8,6 +6,11 @@ namespace Devil.AI
         "以一棵行为树作为任务", HotKey = KeyCode.S, IconPath = "Assets/DevilFramework/Gizmos/AI Icons/BehaviourTree Icon.png")]
     public class BTSubTreeTask : BTTaskAsset
     {
+        public static string NameSubtree(Object node)
+        {
+            return node.GetInstanceID().ToString("x");
+        }
+
         public BehaviourTreeRunner.EResetMode m_ResetMode = BehaviourTreeRunner.EResetMode.ResetWhenLoopEnd;
         public bool m_SubTreeStandalone;
         public BehaviourTreeAsset m_BehaviourTree;
@@ -34,23 +37,16 @@ namespace Devil.AI
                 mBinder = BehaviourTreeRunner.AssetBinder.NewSubBinder(binder);
                 if (mBinder != null)
                 {
-                    mBinder.Name = GetInstanceID().ToString("x");
+                    mBinder.Name = NameSubtree(this);
                 }
             }
         }
 
         public override EBTState OnAbort()
         {
-            if(mBinder != null && mBinder.IsAvailable)
-            {
-                if (!m_SubTreeStandalone && !mBinder.Looper.IsComplate)
-                    mBinder.Looper.Abort();
-                return mBinder.Looper.State;
-            }
-            else
-            {
-                return EBTState.failed;
-            }
+            if (mBinder != null && !m_SubTreeStandalone && mBinder.IsAvailable && !mBinder.Looper.IsComplate)
+                mBinder.Looper.Abort();
+            return EBTState.failed;
         }
 
         public override EBTState OnStart()

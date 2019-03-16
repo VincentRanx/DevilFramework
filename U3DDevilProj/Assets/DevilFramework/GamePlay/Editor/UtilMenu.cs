@@ -9,7 +9,7 @@ namespace DevilEditor
 {
     public static class UtilMenu
     {
-        [MenuItem("Assets/Utils/Create Preload Assets")]
+        [MenuItem("Assets/Utils/Create(Add To) Preload Assets")]
         static void CreatePreloadAssets()
         {
             List<GameObject> lst = new List<GameObject>();
@@ -49,6 +49,40 @@ namespace DevilEditor
                     MergeAssetsTo(assets, file);
                 }
             }
+        }
+
+        [MenuItem("Assets/Utils/Combine Assets")]
+        static void CombineAsset()
+        {
+            var sel = Selection.objects;
+            List<Object> assets = new List<Object>();
+            foreach(var t in sel)
+            {
+                if (!(t is ScriptableObject))
+                    continue;
+                if (AssetDatabase.Contains(t))
+                    assets.Add(Object.Instantiate(t));
+                else
+                    assets.Add(t);
+            }
+            if (assets.Count == 0)
+                return;
+            var file = EditorUtility.SaveFilePanelInProject("Save Combined Asset", "CombinedAsset", "asset", "It's going to save combine asset",
+                    LocalFileUtil.ActiveProjectFolder);
+            if (string.IsNullOrEmpty(file))
+                return;
+            if (File.Exists(file))
+                AssetDatabase.DeleteAsset(file);
+            var n = Path.GetFileName(file);
+            if (n.EndsWith(".asset"))
+                n = n.Substring(0, n.Length - 6);
+            assets[0].name = n;
+            AssetDatabase.CreateAsset(assets[0], file);
+            for (int i = 1; i < assets.Count; i++)
+            {
+                AssetDatabase.AddObjectToAsset(assets[i], file);
+            }
+            AssetDatabase.ImportAsset(file);
         }
 
         public static void MergeAssetsTo(List<PreloadAssets> assets, string tofile)
@@ -93,5 +127,21 @@ namespace DevilEditor
             }
             AssetDatabase.Refresh();
         }
+        
+        public static void CreateAssetAt<T>(string path, string name) where T : ScriptableObject
+        {
+            var t = ScriptableObject.CreateInstance<T>();
+            t.name = name;
+            if (File.Exists(path))
+            {
+                AssetDatabase.AddObjectToAsset(t, path);
+            }
+            else
+            {
+                AssetDatabase.CreateAsset(t, path);
+            }
+            AssetDatabase.ImportAsset(path);
+        }
+        
     }
 }

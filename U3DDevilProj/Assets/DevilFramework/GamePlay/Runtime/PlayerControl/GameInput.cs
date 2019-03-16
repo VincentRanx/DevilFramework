@@ -100,7 +100,7 @@ namespace Devil.GamePlay
 
         private void Awake()
         {
-            if (sActiveInst == null)
+            if (sActiveInst == null || sActiveInst == this)
             {
                 sActiveInst = this;
                 if(m_DontDestroyOnLoad)

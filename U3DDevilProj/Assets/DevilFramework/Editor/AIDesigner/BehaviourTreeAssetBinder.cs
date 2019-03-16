@@ -288,7 +288,7 @@ namespace DevilEditor
                 }
                 AssetDatabase.ImportAsset(path);
             }
-            AssetDatabase.SaveAssets();
+            //AssetDatabase.SaveAssets();
         }
         
     }

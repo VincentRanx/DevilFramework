@@ -135,9 +135,9 @@ namespace Devil.AI
             if(asset == null)
             {
                 var aname = StringUtil.Concat(moduleName, "_", Identify);
-                var t = GlobalUtil.Find(assets, (x) => x.name == aname);
+                var t = GlobalUtil.Find(assets, (x) => x != null && x.name == aname);
                 asset = t as BTAsset;
-            }
+            }   
         }
 #endif
     }

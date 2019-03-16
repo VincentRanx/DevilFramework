@@ -21,7 +21,7 @@ namespace Devil
         void OnUnbindDataEvents(T data);
     }
 
-    public interface List : IEnumerable
+    public interface IDataList : IEnumerable
     {
         int DataCount { get; }
         void ClearData();

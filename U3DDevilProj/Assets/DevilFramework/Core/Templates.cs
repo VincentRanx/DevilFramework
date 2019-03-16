@@ -44,11 +44,6 @@ namespace Devil
     {
         void OnTick(float deltaTime);
     }
-
-    public interface INamed
-    {
-        string Name { get; }
-    }
     
     public interface IIdentified
     {
@@ -65,7 +60,7 @@ namespace Devil
         GEqual = 4,
         LEqual = 5,
     }
-
+    
     // 条件接口
     public interface ICondition
     {

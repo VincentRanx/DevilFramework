@@ -6,7 +6,18 @@ namespace Devil.AI
         HotKey = KeyCode.P, IconPath = "Assets/DevilFramework/Gizmos/AI Icons/parralel.png")]
     public class BTParralel : BTTaskAsset
     {
-        public BehaviourTreeRunner.EResetMode m_LoopMode = BehaviourTreeRunner.EResetMode.ResetWhenLoopEnd;
+        public enum EResult
+        {
+            Success,
+            MainTaskResult,
+            AnySubTask,
+            AllSubTask,
+        }
+
+        public int m_MainTask = 0;
+        public EResult m_ResultFrom;
+        
+        public bool m_WaitAllTaskDone = false;
         BehaviourLooper[] mLoopers;
 
         public override bool EnableChild { get { return true; } }
@@ -22,52 +33,95 @@ namespace Devil.AI
             }
         }
 
+        EBTState GetResult()
+        {
+            if (m_ResultFrom == EResult.Success)
+            {
+                return EBTState.success;
+            }
+            else if (m_ResultFrom == EResult.MainTaskResult)
+            {
+                return mLoopers[m_MainTask].State;
+            }
+            else if (m_ResultFrom == EResult.AnySubTask)
+            {
+                for (int i = 0; i < mLoopers.Length; i++)
+                {
+                    if (mLoopers[i].State == EBTState.success)
+                        return EBTState.success;
+                }
+                return EBTState.failed;
+            }
+            else if (m_ResultFrom == EResult.AllSubTask)
+            {
+                for (int i = 0; i < mLoopers.Length; i++)
+                {
+                    if (mLoopers[i].State == EBTState.failed)
+                        return EBTState.failed;
+                }
+                return EBTState.success;
+            }
+            else
+            {
+                return EBTState.failed;
+            }
+        }
+
         public override EBTState OnAbort()
         {
-            if (mLoopers.Length == 0)
+            if (mLoopers == null || mLoopers.Length == 0)
                 return EBTState.failed;
             for (int i = 0; i < mLoopers.Length; i++)
             {
                 if (mLoopers[i].State == EBTState.running)
                     mLoopers[i].Abort();
             }
-            return mLoopers[0].State;
+#if UNITY_EDITOR
+            if (m_MainTask < 0 || m_MainTask >= mLoopers.Length)
+                m_MainTask = 0;
+#endif
+            return GetResult();
         }
 
         public override EBTState OnStart()
         {
             if (mLoopers.Length == 0)
-                return EBTState.failed;
-            if(m_LoopMode == BehaviourTreeRunner.EResetMode.ResetWhenBegin)
+                return m_ResultFrom == EResult.Success || m_ResultFrom == EResult.AllSubTask ? EBTState.success : EBTState.failed;
+            if (m_MainTask < 0 || m_MainTask >= mLoopers.Length)
+                m_MainTask = 0;
+            for (int i = 0; i < mLoopers.Length; i++)
             {
-                for (int i = 0; i < mLoopers.Length; i++)
-                {
-                    mLoopers[i].Reset();
-                }
+                mLoopers[i].Reset();
             }
             return EBTState.running;
         }
 
         public override void OnStop()
         {
-            if (m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset)
+            for (int i = 0; i < mLoopers.Length; i++)
             {
-                for (int i = 0; i < mLoopers.Length; i++)
-                {
-                    mLoopers[i].Reset();
-                }
+                if (!mLoopers[i].IsComplate)
+                    mLoopers[i].Abort();
             }
         }
 
         public override EBTState OnUpdate(float deltaTime)
         {
+            int exe = 0;
             for (int i = 0; i < mLoopers.Length; i++)
             {
-                if ((m_LoopMode == BehaviourTreeRunner.EResetMode.AlwaysReset || m_LoopMode == BehaviourTreeRunner.EResetMode.ResetWhenLoopEnd) && mLoopers[i].IsComplate)
-                    mLoopers[i].Reset();
-                mLoopers[i].Update(deltaTime);
+                if (!mLoopers[i].IsComplate)
+                {
+                    exe++;
+                    mLoopers[i].Update(deltaTime);
+                }
             }
-            return mLoopers[0].State;
+#if UNITY_EDITOR
+            if (m_MainTask < 0 || m_MainTask >= mLoopers.Length)
+                m_MainTask = 0;
+#endif
+            bool waitall = m_WaitAllTaskDone || m_ResultFrom == EResult.AnySubTask || m_ResultFrom == EResult.AllSubTask;
+            return exe == 0 || !waitall ? GetResult() : EBTState.running;
         }
 
         private void OnDisable()

@@ -9,12 +9,13 @@ namespace Devil.AI
         public EBTState State { get; private set; }
         public BehaviourTreeRunner Runner { get; private set; }
         IBTNode mRoot;
-        IBTNode mRuntime;
+        Stack<IBTNode> mExecuting;
         
         public BehaviourLooper(BehaviourTreeRunner runner)
         {
             Runner = runner;
             IsComplate = true;
+            mExecuting = new Stack<IBTNode>(8);
         }
 
         public BehaviourLooper CreateSubLooper()
@@ -26,46 +27,34 @@ namespace Devil.AI
 
         public void SetBehaviuor(IBTNode root)
         {
+            Abort();
             mRoot = root;
             IsComplate = Runner != null && mRoot == null;
-            mRuntime = null;
         }
 
         public void Reset()
         {
-            var t = mRuntime;
-            while(t != null)
+            while (mExecuting.Count > 0)
             {
-                t.Stop();
-                if (t == mRoot)
-                    break;
-                t = t.Parent;
+                var node = mExecuting.Pop();
+                node.Stop();
             }
             IsComplate = mRoot == null;
-            mRuntime = null;
             State = EBTState.inactive;
 #if UNITY_EDITOR
             EditorClearAccess();
 #endif
         }
-        
+
         public void Abort()
         {
-            if(mRuntime == null)
+            while (mExecuting.Count > 0)
             {
-                State = EBTState.inactive;
-                return;
-            }
-            var node = mRuntime;
-            while(node != null)
-            {
+                var node = mExecuting.Pop();
                 node.Abort();
-                if (node == mRoot)
-                    break;
-                node = node.Parent;
+                node.Stop();
             }
             State = mRoot == null ? EBTState.failed : mRoot.State;
-            mRuntime = null;
             IsComplate = true;
 #if UNITY_EDITOR
             EditorClearAccess();
@@ -76,69 +65,77 @@ namespace Devil.AI
         {
             if (IsComplate)
                 return;
-            if (mRuntime == null)
+            if (mExecuting.Count == 0)
             {
-                mRuntime = mRoot;
-                mRuntime.Start();
+                State = EBTState.running;
 #if UNITY_EDITOR
-                EditorAccess(mRuntime);
+                EditorAccess(mRoot);
 #endif
-            }
-            mRuntime = Visit(mRuntime);
-            if (mRuntime == null)
-                IsComplate = true;
-            else
-                mRuntime.OnTick(deltaTime);
-            State = mRoot.State;
-        }
-
-        // 返回 running 状态的节点
-        IBTNode Visit(IBTNode root)
-        {
-            var tmp = root;
-            while(tmp != null)
-            {
-                if (tmp.State == EBTState.running && !tmp.IsOnCondition)
-                    tmp.Abort();
-                if (tmp.IsController)
+                if (mRoot.IsOnCondition)
                 {
-                    var child = tmp.State == EBTState.running ? tmp.GetNextChildTask() : null;
-                    if(child != null)
+                    mRoot.Start();
+                    mExecuting.Push(mRoot);
+                }
+                else
+                {
+                    mRoot.Abort();
+                    State = mRoot.State;
+                    IsComplate = true;
+                    return;
+                }
+            }
+            while (mExecuting.Count > 0)
+            {
+                var current = mExecuting.Peek();
+                if (current.State == EBTState.running && !current.IsOnCondition)
+                    current.Abort();
+                if (current.State == EBTState.running)
+                {
+                    if (current.IsController)
                     {
-                        child.Start();
-                        tmp = child;
+                        var child = current.GetNextChildTask();
 #if UNITY_EDITOR
-                        EditorAccess(child);
+                        if (child != null)
+                            EditorAccess(child);
 #endif
+                        if (child == null)
+                        {
+                            current.ReturnState(EBTState.failed);
+                        }
+                        else if (child.IsOnCondition)
+                        {
+                            child.Start();
+                            mExecuting.Push(child);
+                        }
+                        else
+                        {
+                            child.Abort();
+                            current.ReturnState(child.State);
+                        }
                     }
                     else
                     {
-                        tmp.Stop();
-                        var parent = tmp == mRoot ? null : tmp.Parent;
-                        if (parent != null)
-                            parent.ReturnState(tmp.State);
-                        tmp = parent;
+                        current.OnTick(deltaTime);
+                        return;
                     }
                 }
                 else
                 {
-                    if (tmp.State == EBTState.running)
-                        return tmp;
-                    tmp.Stop();
-                    var parent = tmp == mRoot ? null : tmp.Parent;
-                    if (parent != null)
-                        parent.ReturnState(tmp.State);
-                    tmp = parent;
+                    var child = mExecuting.Pop();
+                    child.Stop();
+                    current = mExecuting.Count > 0 ? mExecuting.Peek() : null;
+                    if (current != null)
+                        current.ReturnState(child.State);
                 }
             }
-            return null;
+            State = mRoot.State;
+            IsComplate = true;
         }
-        
+
         public void Dispose()
         {
+            Abort();
             Parent = null;
-            IsComplate = true;
-            mRuntime = null;
             mRoot = null;
             Runner = null;
         }
@@ -155,9 +152,12 @@ namespace Devil.AI
             while(p != null)
             {
                 p.mEditorAccessedDeep.Add(node);
+                if (p == mRoot)
+                    break;
                 p = p.Parent;
             }
         }
+
         void EditorClearAccess()
         {
             foreach (var t in mEditorAccessed)
