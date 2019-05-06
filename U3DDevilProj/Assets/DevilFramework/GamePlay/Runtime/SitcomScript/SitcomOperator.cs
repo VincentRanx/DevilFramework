@@ -12,6 +12,16 @@ namespace Devil.GamePlay
         Operator,
     }
 
+    //public interface ISitcomSequence
+    //{
+    //    bool NextCmd();
+    //    bool NextKeyword();
+    //    bool NextContent();
+    //    SitcomFile.Keyword keyword { get; }
+    //    void SetNextMark(int mark);
+    //    void SetNextMark(string mark);
+    //}
+    
     public interface ISitcomOper: IIdentified , ISitcomExec
     {
         int Priority { get; }

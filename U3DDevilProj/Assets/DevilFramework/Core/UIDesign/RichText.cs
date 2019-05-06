@@ -15,7 +15,7 @@ namespace Devil
         static readonly string prop_dx = "dx=";
         static readonly string prop_dy = "dy=";
         static readonly string prop_click = "click=";
-        static readonly string emojiPattern = @"<quad=[a-zA-Z0-9_]+[ a-z0-9\-=]*( /)?>";
+        static readonly string emojiPattern = @"<quad=[a-zA-Z0-9_]+[ a-z0-9\-=.]*( /)?>";
 
         public struct Emoji
         {
@@ -60,8 +60,7 @@ namespace Devil
 
         int mTexId;
         List<Emoji> mEmojies = new List<Emoji>();
-
-        Material mMatInst;
+        
         readonly UIVertex[] m_TempVerts = new UIVertex[4];
         List<string> mEmojiProperties = new List<string>();
 
@@ -214,28 +213,13 @@ namespace Devil
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            if (mMatInst != null)
-            {
-#if UNITY_EDITOR
-                if (Application.isPlaying)
-#endif
-                    Destroy(mMatInst);
-
-#if UNITY_EDITOR
-                else
-                    DestroyImmediate(mMatInst);
-#endif
-                mMatInst = null;
-            }
         }
 
         void GetMaterials()
         {
             if (m_Material == null)
             {
-                if (mMatInst == null)
-                    mMatInst = new Material(Resources.Load<Shader>("Shaders/UI-EmojiFont"));// Shader.Find("DevilTeam/EmojiFont"));
-                m_Material = mMatInst;
+                m_Material = Resources.Load<Material>("Materials/UI-EmojiFont");
             }
         }
 
@@ -366,9 +350,13 @@ namespace Devil
                                 ModifyTempVertsUV(spr, duv);
                                 if (Mathf.Abs(rot) > 0.1)
                                     RotateTempVerts(rot);
-                                if (emoj.offset.sqrMagnitude > 0.1)
+                                if (emoj.offset.sqrMagnitude > 0.001)
                                 {
                                     var offset = (Vector3)emoj.offset;
+                                    if (Mathf.Abs(offset.x) < 1)
+                                        offset.x = Mathf.Abs(m_TempVerts[3].position.x - m_TempVerts[0].position.x) * offset.x;
+                                    if (Mathf.Abs(offset.y) < 1)
+                                        offset.y = Mathf.Abs(m_TempVerts[3].position.y - m_TempVerts[0].position.y) * offset.y;
                                     MoveTempVerts(offset);
                                 }
                                 if (emoj.raw)

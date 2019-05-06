@@ -15,7 +15,7 @@
         {
             get
             {
-                return new SitcomResult(mCondition.Result.State == ESitcomState.Failed);
+                return new SitcomValue(mCondition.Result.State == ESitcomState.Failed);
             }
         }
 

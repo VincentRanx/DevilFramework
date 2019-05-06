@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Devil.Utility
 {
@@ -61,6 +62,20 @@ namespace Devil.Utility
             return n;
         }
 
+        public static string GetRelativePath(Transform parent, Transform child)
+        {
+            var buf = StringUtil.GetBuilder();
+            var tmp = child;
+            while(tmp != null && tmp != parent)
+            {
+                if (buf.Length > 0)
+                    buf.Insert(0, '/');
+                buf.Insert(0, tmp.name);
+                tmp = tmp.parent;
+            }
+            return StringUtil.ReleaseBuilder(buf);
+        }
+
         public static T GetOrAddComponent<T>(GameObject go) where T : Component
         {
             T com = go.GetComponent<T>();
@@ -116,13 +131,13 @@ namespace Devil.Utility
                 {
                     Transform trans = root.GetChild(i);
                     trans = MatchRecursive(trans, filter);
-                    if (trans)
+                    if (trans != null)
                         return trans;
                 }
                 return null;
             }
         }
-
+        
         public static T FindComponentInScene<T>() where T : Component
         {
             return Object.FindObjectOfType<T>();

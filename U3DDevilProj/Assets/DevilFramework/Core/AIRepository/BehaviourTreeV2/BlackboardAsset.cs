@@ -1,10 +1,12 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Devil.AI
 {
     [CreateAssetMenu(fileName = "Blackboard", menuName = "AI/Blackboard")]
     public class BlackboardAsset : ScriptableObject
     {
+       
         [System.Serializable]
         public struct VariableDefine
         {
@@ -13,7 +15,7 @@ namespace Devil.AI
             public bool isList;
             public string comment;
         }
-
+        
         [SerializeField]
         VariableDefine[] m_Properties = new VariableDefine[0];
 
@@ -30,4 +32,5 @@ namespace Devil.AI
             return false;
         }
     }
+
 }

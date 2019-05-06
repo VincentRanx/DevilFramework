@@ -576,7 +576,6 @@ namespace Devil.Utility
                 }
                 v = value >> n;
             }
-            ;
             return n;
         }
 

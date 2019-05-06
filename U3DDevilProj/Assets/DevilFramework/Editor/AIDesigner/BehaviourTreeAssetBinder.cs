@@ -112,6 +112,12 @@ namespace DevilEditor
                 SetBehaviourTreeRunner(tmprunner);
                 return true;
             }
+            if(tmpasset == null && BehaviourTreeEditor.ActiveBTEditor != null)
+            {
+                var his = BehaviourTreeEditor.ActiveBTEditor.LastAssetInHistory;
+                if (!string.IsNullOrEmpty(his))
+                    tmpasset = AssetDatabase.LoadAssetAtPath<BehaviourTreeAsset>(his);
+            }
             if (tmpasset != null)
             {
                 SetBehaviourTreeAsset(tmpasset);

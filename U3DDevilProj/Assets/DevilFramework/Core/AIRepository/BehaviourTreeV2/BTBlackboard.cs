@@ -4,6 +4,11 @@ using System.Collections.Generic;
 
 namespace Devil.AI
 {
+    public interface IBlackboardData
+    {
+        void UpdateBlackboard(BTBlackboard blackboard);
+    }
+
     public interface IBlackboardProperty
     {
         bool IsList { get; }
@@ -19,8 +24,11 @@ namespace Devil.AI
         void Unset();
     }
 
-    public interface IBlackboardList<T> : IList<T> { }
-    
+    public interface IBlackboardList<T> : IList<T>
+    {
+
+    }
+
     public class BTBlackboard
     {
         interface ICopy : IBlackboardProperty

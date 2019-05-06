@@ -228,7 +228,7 @@ namespace Devil.AI
         }
 
         BTBlackboard mBlackboard;
-        public BTBlackboard Blackboard { get { if (mBlackboard == null) mBlackboard = new BTBlackboard(m_Blackboard); return mBlackboard; } }
+        public virtual BTBlackboard Blackboard { get { if (mBlackboard == null) mBlackboard = new BTBlackboard(m_Blackboard); return mBlackboard; } }
 
         public float BehaviourTime { get; private set; }
 
@@ -284,14 +284,14 @@ namespace Devil.AI
         
         protected virtual void OnEnable()
         {
-            AIManager.Instance.Add(this);
+            AIManager.Add(this);
             if (m_LoopMode == EResetMode.ResetWhenBegin && mAssetBinder != null && mAssetBinder.RuntimeTree != null)
                 mAssetBinder.Looper.Reset();
         }
 
         protected virtual void OnDisable()
         {
-            AIManager.Instance.Remove(this);
+            AIManager.Remove(this);
             if(m_LoopMode == EResetMode.AlwaysReset && mAssetBinder != null && mAssetBinder.RuntimeTree != null)
             {
                 mAssetBinder.StopService();

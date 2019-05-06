@@ -47,7 +47,7 @@ namespace Devil.GamePlay.Assistant
             {
                 if (!m_JustActiveParticles)
                 {
-                    if (gameObject.activeSelf)
+                    if (gameObject != null && gameObject.activeSelf)
                         gameObject.SetActive(false);
                 }
                 else if (mSelfPartcle != null)

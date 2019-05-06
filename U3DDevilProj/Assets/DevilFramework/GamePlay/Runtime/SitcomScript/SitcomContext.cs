@@ -11,172 +11,133 @@ namespace Devil.GamePlay
         ISitcomResult Result { get; }
     }
     
-    public class SitcomContext : System.IDisposable
+    public class SitcomContext : System.IDisposable , ISitcomTask
     {
        
-        SitcomFile mFile;
-        SitcomCmd mCmd;
+        SitcomCmdSequence mFile;
+        //SitcomCmd mCmd;
         public string Name { get { return mFile.File; } }
         SitcomHeap mHeap;
         public SitcomHeap Heap { get { return mHeap; } }
         ISitcomResult mResult;
         ISitcomTask mTask;
-        public ISitcomResult Result { get { return mResult; } }
+        public ISitcomResult SitcomResult { get { return mResult; } }
+        public object Result { get { return mResult; } }
+        public ESitcomState State { get { return IsComplete ? (mResult == null ? ESitcomState.Failed : mResult.State) : ESitcomState.Doing; } }
 
         Queue<ISitcomExec> mExecs;
         Stack<ISitcomExec> mStack;
+        List<SitcomCmdSequence> mFileStack;
 
-        bool mDontResetFile;
-        public int EndMarkId { get; private set; }
-        public int NextMarkId { get; set; }
+        public void SetNextMark(int id)
+        {
+            if (mFileStack.Count > 0)
+                mFileStack[mFileStack.Count - 1].SetNextMark(id);
+            else
+                mFile.SetNextMark(id);
+        }
+
         public void SetNextMark(string mark)
         {
-            NextMarkId = mark == null ? 0 : StringUtil.IgnoreCaseToHash(mark);
+            SetNextMark(StringUtil.IgnoreCaseToHash(mark));
         }
+
         public bool SelectMark(string mark)
         {
-            var id = string.IsNullOrEmpty(mark) ? 0 : StringUtil.IgnoreCaseToHash(mark);
-            if(IsPlaying)
-            {
-                NextMarkId = id;
-                return SelectNextMark();
-            }
-            NextMarkId = 0;
-            mDontResetFile = true;
-            mFile.BeginRead();
-            while (!mFile.Eof && mFile.NextMark('#'))
-            {
-                if (mFile.NextKeywords() && mFile.keyword.id == id)
-                    return true;
-            }
-            return false;
+            return mFile.SelectMark(mark);
         }
 
         public string FileName { get { return mFile == null ? "" : mFile.File; } }
-        public bool IsLoaded { get; private set; }
-        bool mPlaying;
-        public bool IsPlaying
-        {
-            get
-            { return mPlaying; }
-            set
-            {
-                if (!IsLoaded || value == mPlaying)
-                    return;
-                mPlaying = value;
-                if (value)
-                    OnStart();
-                else
-                    OnStop();
-            }
-        }
-
+        int mAssetId;
+       
         public bool IsComplete { get; private set; }
 
         public SitcomContext()
         {
-            mFile = new SitcomFile();
+            mFile = new SitcomCmdSequence();
             mHeap = new SitcomHeap();
-            mCmd = new SitcomCmd();
             mExecs = new Queue<ISitcomExec>(32);
             mStack = new Stack<ISitcomExec>(32);
+            mFileStack = new List<SitcomCmdSequence>();
             IsComplete = true;
-            EndMarkId = StringUtil.IgnoreCaseToHash("end");
+        }
+        
+        public void Stop()
+        {
+            if(!IsComplete)
+            {
+                OnStop();
+                IsComplete = true;
+            }
         }
 
         public void Load(TextAsset asset)
         {
-            Heap.ResetStack();
-            mFile.Load(asset);
-            IsPlaying = false;
-            IsComplete = false;
-            IsLoaded = true;
-            mDontResetFile = false;
-        }
+            if (mAssetId != asset.GetInstanceID())
+            {
+                mAssetId = asset.GetInstanceID();
 
-        public void Load(string text)
-        {
-            Heap.ResetStack();
-            mFile.Load(text);
-            IsPlaying = false;
-            IsLoaded = true;
-            mDontResetFile = false;
+                if (!IsComplete)
+                    OnStop();
+                mFile.Load(asset);
+                if (!mFile.Eof)
+                {
+                    OnStart();
+                    Push(mFile);
+                }
+            }
         }
-
+        
         protected virtual void OnStop()
         {
             mExecs.Clear();
             mStack.Clear();
+            mFileStack.Clear();
             mResult = null;
             mTask = null;
-            mDontResetFile = false;
             Heap.ResetStack();
+            mFile.SetNextMark(0);
+            IsComplete = true;
         }
 
         protected virtual void OnStart()
         {
+            IsComplete = false;
             Heap.BeginStack();
             Heap.Alloc("context", this);
-            if(!mDontResetFile)
-                mFile.BeginRead();
-            mDontResetFile = false;
-            IsComplete = false;
         }
         
         public void Push(ISitcomExec exec)
         {
-            if (exec == null || !mPlaying || IsComplete)
+            if (exec == null || IsComplete)
                 return;
             mExecs.Enqueue(exec);
         }
-
-        bool SelectNextMark()
-        {
-            if (!IsPlaying || NextMarkId == EndMarkId)
-                return false;
-            if (NextMarkId == 0)
-                return true;
-            var line = mFile.PresentLine;
-            while (!mFile.Eof && mFile.NextMark('#'))
-            {
-                if (mFile.NextKeywords() && mFile.keyword.id == NextMarkId)
-                {
-                    NextMarkId = 0;
-                    return true;
-                }
-            }
-            mFile.BeginRead();
-            while (mFile.PresentLine < line && mFile.NextMark('#'))
-            {
-                if (mFile.NextKeywords() && mFile.keyword.id == NextMarkId)
-                {
-                    NextMarkId = 0;
-                    return true;
-                }
-            }
-            return false;
-        }
-
+        
         public virtual void Update(float deltaTime)
         {
-            if (!mPlaying || IsComplete)
+            if (IsComplete)
                 return;
             if (mTask != null)
                 mTask.Update(deltaTime);
             if (mResult != null && mResult.State == ESitcomState.Doing)
                 return;
-            while (true)
+            while (mExecs.Count > 0 || mStack.Count > 0)
             {
                 while (mExecs.Count > 0)
                 {
                     var t = mExecs.Dequeue();
                     t.OnExecute(this);
+                    if (t is SitcomCmdSequence)
+                        mFileStack.Add(t as SitcomCmdSequence);
                     mStack.Push(t);
                 }
                 if (mStack.Count > 0)
                 {
                     var t = mStack.Pop();
                     t.OnStop(this);
+                    if (t is SitcomCmdSequence)
+                        mFileStack.Remove(t as SitcomCmdSequence);
                     mResult = t.Result;
                     if (mResult != null && mResult.State == ESitcomState.Doing)
                     {
@@ -185,29 +146,15 @@ namespace Devil.GamePlay
                     }
                     mTask = null;
                 }
-                else
-                {
-                    break;
-                }
             }
-            if (SelectNextMark() && mCmd.Read(mFile))
-            {
-                Push(mCmd);
-            }
-            else
-            {
-                IsPlaying = false;
-                IsComplete = true;
-            }
+            OnStop();
         }
 
         public virtual void Dispose()
         {
-            IsPlaying = false;
             IsComplete = false;
             mFile = null;
             mHeap = null;
-            mCmd = null;
             mResult = null;
         }
 	}

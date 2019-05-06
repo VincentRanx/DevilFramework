@@ -34,10 +34,10 @@ namespace DevilEditor
         string GetDescript(BlackboardAsset.VariableDefine pdef)
         {
             return StringUtil.Concat(
-                "<i><color=#606060>",
+                "<i><color=#808080>",
                     string.IsNullOrEmpty(pdef.comment) ? pdef.name : pdef.comment,
                     "</color></i>\n",
-                    "<b>", pdef.name, "</b><color=#4040f0>  :",
+                    "<b>", pdef.name, "</b><color=#7070ff>  :",
                     pdef.typeDef,
                     pdef.isList ? "[]</color>" : "</color>"
                     );

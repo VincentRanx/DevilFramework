@@ -162,7 +162,7 @@ namespace DevilEditor
                     Style style;
                     style.style = skin;
                     var hint = new GUIStyle(skin);
-                    hint.normal.textColor *= 0.5f;
+                    hint.normal.textColor *= 0.7f;
                     hint.fontStyle = FontStyle.Italic;
                     style.hint = hint;
                     styles[skin.name.ToLower()] = style;
@@ -428,7 +428,7 @@ namespace DevilEditor
             else
                 return value;
         }
-
+        
         // size:箭头粗细 arrowScale: 箭头大小/线条粗细
         public static void DrawArrow(Vector3 p0, Vector3 p1, Color color, float size, float arrowScale = 4)
         {

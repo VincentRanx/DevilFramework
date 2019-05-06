@@ -9,6 +9,7 @@ namespace Devil.GamePlay
         public string Name { get; set; }
         public string[] Args { get; set; }
         public bool IsDefault { get; set; }
+        public string Doc { get; set; }
 
         public SitcomDomainAttribute(string name, params string[] args)
         {
@@ -41,7 +42,7 @@ namespace Devil.GamePlay
         void Update(float deltaTime);
     }
     
-    public struct SitcomResult : ISitcomResult
+    public struct SitcomValue : ISitcomResult
     {
         public object data;
         public object Result { get { return data; } }
@@ -52,7 +53,7 @@ namespace Devil.GamePlay
                 return SitcomUtil.AsBool(data) ? ESitcomState.Success : ESitcomState.Failed;
             }
         }
-        public SitcomResult(object v)
+        public SitcomValue(object v)
         {
             data = v;
         }
@@ -62,12 +63,12 @@ namespace Devil.GamePlay
             return data == null ? "" : data.ToString();
         }
 
-        public static implicit operator SitcomResult (bool b)
+        public static implicit operator SitcomValue (bool b)
         {
-            return new SitcomResult(b);
+            return new SitcomValue(b);
         }
     }
-
+    
     public struct SitcomDelay: ISitcomResult
     {
         public float time;
@@ -83,6 +84,18 @@ namespace Devil.GamePlay
         public static explicit operator SitcomDelay(float time)
         {
             return new SitcomDelay(time);
+        }
+    }
+
+    public class SitcomResult : ISitcomResult
+    {
+        public object Result { get; set; }
+
+        public ESitcomState State { get; set; }
+
+        public SitcomResult()
+        {
+            State = ESitcomState.Doing;
         }
     }
 
@@ -237,11 +250,11 @@ namespace Devil.GamePlay
         #region domains
         public virtual ISitcomResult Sit_HashCode(SitcomContext context, T target, string content, object[] args)
         {
-            return new SitcomResult(target.GetHashCode());
+            return new SitcomValue(target.GetHashCode());
         }
         public virtual ISitcomResult Sit_ToString(SitcomContext context, T target, string content, object[] args)
         {
-            return new SitcomResult(target.ToString());
+            return new SitcomValue(target.ToString());
         }
         #endregion
     }

@@ -70,6 +70,7 @@ namespace Devil
             var sel = Selection.activeObject as BakedLightmapData;
             if (sel != null)
                 sel.LoadToScene();
+            
         }
 
         public static BakedLightmapData CreateAssetForActiveScene(string folder)
@@ -83,6 +84,10 @@ namespace Devil
             if (StringUtil.EndWithIgnoreCase(fname, ".asset"))
                 fname = fname.Substring(0, fname.Length - 6);
             BakedLightmapData data = ScriptableObject.CreateInstance<BakedLightmapData>();
+            if (File.Exists(file))
+                AssetDatabase.DeleteAsset(file);
+            AssetDatabase.CreateAsset(data, file);
+
             var lightmaps = LightmapSettings.lightmaps;
             int len = lightmaps == null ? 0 : lightmaps.Length;
             data.m_Lightmaps = new LightmapInfo[len];
@@ -121,9 +126,6 @@ namespace Devil
                     info.shadowMask = null;
                 data.m_Lightmaps[i] = info;
             }
-            if (File.Exists(file))
-                AssetDatabase.DeleteAsset(file);
-            AssetDatabase.CreateAsset(data, file);
             AssetDatabase.Refresh();
             EditorUtility.ClearProgressBar();
             return data;

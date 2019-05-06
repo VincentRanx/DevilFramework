@@ -29,5 +29,6 @@ namespace Devil
         void AddData<T>(T data) where T : class;
         T Value<T>(int index) where T : class;
         T GetDataComponent<T>(int index) where T : Component;
+        GameObject GetDataInstance(int index);
     }
 }

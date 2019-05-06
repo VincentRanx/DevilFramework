@@ -1,15 +1,20 @@
 ﻿using Devil.Utility;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace Devil.GamePlay
 {
+    public enum EInputActionType
+    {
+        Hold,
+        Press,
+        Release,
+    }
+
     [System.Serializable]
     public struct InputData
     {
         public int flag;
-        public int index;
+        public int action;
         public object value;
         public float value1;
         public Vector3 value3;
@@ -17,7 +22,7 @@ namespace Devil.GamePlay
         public InputData (int flag)
         {
             this.flag = flag;
-            index = 0;
+            action = 0;
             value1 = 0;
             value3 = Vector3.zero;
             value = null;
@@ -26,7 +31,7 @@ namespace Devil.GamePlay
         public InputData(int flag, int index)
         {
             this.flag = flag;
-            this.index = index;
+            this.action = index;
             value1 = 0;
             value3 = Vector3.zero;
             value = null;
@@ -35,16 +40,25 @@ namespace Devil.GamePlay
         public InputData(int flag, float value)
         {
             this.flag = flag;
-            index = 0;
+            action = 0;
             this.value1 = value;
             value3 = Vector3.zero;
+            this.value = null;
+        }
+
+        public InputData(int flag, Vector3 value)
+        {
+            this.flag = flag;
+            action = 0;
+            this.value1 = 0;
+            value3 = value;
             this.value = null;
         }
 
         public InputData(int flag, object data)
         {
             this.flag = flag;
-            index = 0;
+            action = 0;
             value1 = 0;
             value3 = Vector3.zero;
             this.value = data;
@@ -61,14 +75,18 @@ namespace Devil.GamePlay
 
         #region private
         private ActorMovement[] mBaseMotions;
+        public ActorMovement[] BaseMovements { get { return mBaseMotions; } }
         private ActorMovement[] mAdditiveMotions;
+        public ActorMovement[] AdditiveMovements { get { return mAdditiveMotions; } }
         // 被动技能
         private ActorMovement[] mPassiveMotions;
+        public ActorMovement[] PassiveMovements { get { return mPassiveMotions; } }
 
         //private ActorMovement mLandedFallback;
         //private ActorMovement mFallingFallback;
         //private ActorMovement mSwingFallback;
 
+        [Header("动作/技能绑定")]
         [SerializeField]
         GameObject m_AdditiveMotions;
         [SerializeField]
@@ -184,11 +202,14 @@ namespace Devil.GamePlay
         protected virtual void Start()
         {
             InitMovements();
+            if (m_IsAlive)
+                OnReborn();
+            else
+                OnDead();
         }
         
         protected virtual void Update()
         {
-            //bool noneexecution = isAlive;
             var deltaTime = Time.deltaTime;
             for (int i = 0; i < mPassiveMotions.Length; i++)
             {
@@ -257,8 +278,23 @@ namespace Devil.GamePlay
             }
         }
 
+        public T FindMovement<T>() where T: ActorMovement
+        {
+            FilterDelegate<ActorMovement> fiter = (x) => x is T;
+            var mov = GlobalUtil.Find(mBaseMotions, fiter);
+            if (mov != null)
+                return (T)mov;
+            mov = GlobalUtil.Find(mAdditiveMotions, fiter);
+            if (mov != null)
+                return (T)mov;
+            mov = GlobalUtil.Find(mPassiveMotions, fiter);
+            if (mov != null)
+                return (T)mov;
+            return null;
+        }
+
         [ContextMenu("Find Movements")]
-        protected void InitMovements()
+        protected virtual void InitMovements()
         {
             mBaseMotions = GetComponents<ActorMovement>();
             mAdditiveMotions = m_AdditiveMotions == null ? new ActorMovement[0] : m_AdditiveMotions.GetComponents<ActorMovement>();
@@ -331,7 +367,22 @@ namespace Devil.GamePlay
 
         public bool isDestroied { get { return this == null; } }
 
-        public virtual bool isAlive { get { return true; } }
+        [SerializeField]
+        bool m_IsAlive = true;
+        public virtual bool isAlive {
+            get { return m_IsAlive; }
+            set
+            {
+                if(m_IsAlive != value)
+                {
+                    m_IsAlive = value;
+                    if (value)
+                        OnReborn();
+                    else
+                        OnDead();
+                }
+            }
+        }
 
         public ActorMovement CurrentBaseMotion { get; private set; }
 
@@ -376,6 +427,9 @@ namespace Devil.GamePlay
             return ProcessBaseMotion(data);
         }
 
+        protected virtual void OnReborn() { }
+
+        protected virtual void OnDead() { }
         #endregion
     }
 }

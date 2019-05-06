@@ -61,8 +61,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\DevilFramework\Core\AIRepository\AIGraph\AIGoal.cs" />
-    <Compile Include="Assets\DevilFramework\Core\AIRepository\AIGraph\AIGoalGraph.cs" />
     <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\AIUtility.cs" />
     <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BehaviourLooper.cs" />
     <Compile Include="Assets\DevilFramework\Core\AIRepository\BehaviourTreeV2\BehaviourTreeAsset.cs" />

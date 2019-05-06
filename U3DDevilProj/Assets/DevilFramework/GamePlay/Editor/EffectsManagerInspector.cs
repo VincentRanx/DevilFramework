@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace DevilEditor
 {
-    [CustomEditor(typeof(EffectsManager))]
+    [CustomEditor(typeof(EffectsManager), true)]
     public class EffectsManagerInspector : Editor
     {
         AvlTree<EffectsManager.Pool> mPool;

@@ -272,6 +272,15 @@ namespace DevilEditor
         GUIContent[] mHistoryContent;
 
         BTCopy mCopyDo;
+        bool mAutoLink = true;
+
+        public string LastAssetInHistory
+        {
+            get
+            {
+                return mHistory.Count > 0 ? mHistory[0] : null;
+            }
+        }
 
         void AllocHistoryContent()
         {
@@ -494,6 +503,20 @@ namespace DevilEditor
             }
         }
 
+        private void OnSelectionChange()
+        {
+            if(mAssetBinder != null && (mAssetBinder.targetRunner == null || mAutoLink))
+            {
+                var go = Selection.activeGameObject;
+                if(go != null)
+                {
+                    var btr = go.GetComponent<BehaviourTreeRunner>();
+                    if (btr != null && (btr.SourceAsset == mAssetBinder.source || mAutoLink))
+                        mAssetBinder.SetBehaviourTreeRunner(btr);
+                }
+            }
+        }
+
         protected override void OnEnable()
         {
             ActiveBTEditor = this;
@@ -537,6 +560,7 @@ namespace DevilEditor
         {
             base.OnReadCustomData(data);
             HelpBox.Visible = (bool)data["help"];
+            mAutoLink = (bool)data["autoLink"];
             var his = (string)data["history"];
             if (!string.IsNullOrEmpty(his))
             {
@@ -552,6 +576,7 @@ namespace DevilEditor
         {
             base.OnSaveCustomData(data);
             data["help"] = HelpBox.Visible;
+            data["autoLink"] = mAutoLink;
             data["history"] = StringUtil.Gather(mHistory, -1, "\n");
             if (sUsedBlackboard != null)
                 data["black"] = AssetDatabase.GetAssetPath(sUsedBlackboard);
@@ -616,7 +641,10 @@ namespace DevilEditor
 
             GUILayout.Label(" ");
 
-
+            var link = mAutoLink;
+            mAutoLink = GUILayout.Toggle(mAutoLink, "Auto Link", "TE toolbarbutton", GUILayout.Width(80));
+            if(mAutoLink && !link)
+                OnSelectionChange();
             if (GUILayout.Button("重置", "TE toolbarbutton", GUILayout.Width(60)))
             {
                 mAssetBinder.Reset();

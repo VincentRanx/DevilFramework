@@ -25,6 +25,7 @@ namespace Devil.GamePlay
     
     public abstract class ActorMovement : MonoBehaviour
     {
+        public string m_MotionName;
         public int m_Priority;
         [SerializeField]
         private bool m_Interruptable = true;
@@ -43,9 +44,9 @@ namespace Devil.GamePlay
         public abstract void SetActor(ActorController actor);
         public bool IsActive { get; protected set; }
         public bool IsInterruptable { get { return m_Interruptable; } }
-        public abstract void AddInput(InputData data);
         public abstract bool CanUseInput(InputData data);
-        public abstract void Interrupt();
+        public abstract void AddInput(InputData data);
         public abstract void ActorUpdate(float deltaTime);
+        public abstract void Interrupt();
     }
 }

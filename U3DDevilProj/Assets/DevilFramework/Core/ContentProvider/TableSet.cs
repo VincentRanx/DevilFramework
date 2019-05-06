@@ -6,8 +6,14 @@ namespace Devil.ContentProvider
 {
     public delegate void TableLoadedCallback<T>(TableSet<T> table, bool isMerge) where T : TableBase, new();
 
+    public interface ITable : System.Collections.IEnumerable
+    {
+        int Count { get; }
+        object GetValue(int id);
+    }
+
     // 数据集合
-    public class TableSet<T> where T : TableBase, new()
+    public class TableSet<T> : ITable where T : TableBase, new()
     {
 
         private T[] m_Datas;
@@ -49,7 +55,19 @@ namespace Devil.ContentProvider
             return m_Datas == null ? null : GlobalUtil.Binsearch(m_Datas, id);
         }
 
+        public object GetValue(int id)
+        {
+            return GetData(id);
+        }
+
         public T this[int id] { get { return GetData(id); } }
+
+        public System.Collections.IEnumerator GetEnumerator()
+        {
+            if (m_Datas == null)
+                m_Datas = new T[0];
+            return m_Datas.GetEnumerator();
+        }
 
         public int Count
         {

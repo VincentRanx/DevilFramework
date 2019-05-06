@@ -185,20 +185,21 @@ namespace DevilEditor
             Rect rect;
             if (editor.PresentParentRequest != null)
             {
+                rect = editor.PresentParentRequest.GlobalRect;
+                p1 = new Vector2(rect.center.x, rect.yMin);
                 if (editor.RaycastNode != null)
                 {
                     rect = editor.RaycastNode.GlobalRect;
-                    p0 = new Vector2(rect.center.x, rect.yMax);
+                    //p0 = new Vector2(rect.center.x, rect.yMax);
                     color = editor.PresentParentRequest.EnableParentAs(editor.RaycastNode) ? Color.green : Color.red;
+                    Link(rect, p1, size, color);
                 }
                 else
                 {
                     color = LINE_CONFIRM_COLOR;
                     p0 = editor.GlobalMousePosition;
+                    Link(p0, p1, size, color);
                 }
-                rect = editor.PresentParentRequest.GlobalRect;
-                p1 = new Vector2(rect.center.x, rect.yMin);
-                Link(p0, p1, size, color);
             }
             if (editor.PresentChildRequest != null)
             {

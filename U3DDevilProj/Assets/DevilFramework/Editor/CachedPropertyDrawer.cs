@@ -18,7 +18,7 @@ namespace DevilEditor
 
         }
 
-        protected void ValidateProperty(SerializedProperty property)
+        public void ValidateProperty(SerializedProperty property)
         {
             if (property != this.property)
             {

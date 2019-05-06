@@ -318,6 +318,19 @@ namespace Devil.Utility
 
         }
 
+        public static Camera GetSceneViewCamera()
+        {
+#if UNITY_EDITOR
+            UnityEditor.SceneView scene = UnityEditor.SceneView.currentDrawingSceneView;
+            if (scene)
+                return scene.camera;
+            else
+                return null;
+#else
+            return null;
+#endif
+        }
+
         public static float FactorFromSceneViewPixel(Transform trans, Vector3 localPos = new Vector3())
         {
 #if UNITY_EDITOR

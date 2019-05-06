@@ -62,9 +62,10 @@ namespace Devil.Effects
         private void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
             tmpTex[2] = source;
-            tmpTex[0] = destination;
+            tmpTex[0] = RenderTexture.GetTemporary(source.width, source.height);
             int src = 2;
             int dest = 0;
+            int finaldest = src;
             for(int i= 0; i < mPostProcessings.Count; i++)
             {
                 var eff = mPostProcessings[i];
@@ -75,15 +76,14 @@ namespace Devil.Effects
                         tmpTex[1] = RenderTexture.GetTemporary(source.width, source.height);
                     }
                     eff.RenderOnce(j, tmpTex[src], tmpTex[dest]);
+                    finaldest = dest;
                     dest = (dest + 1) & 0x1;
                     src = (dest + 1) & 0x1;
                 }
             }
-            if(dest == 0)
-            {
-                Graphics.Blit(tmpTex[src], tmpTex[dest]);
-            }
-            if(tmpTex[1] != null)
+            Graphics.Blit(tmpTex[finaldest], destination);
+            RenderTexture.ReleaseTemporary(tmpTex[0]);
+            if (tmpTex[1] != null)
             {
                 RenderTexture.ReleaseTemporary(tmpTex[1]);
                 tmpTex[1] = null;

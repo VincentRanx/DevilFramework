@@ -16,7 +16,7 @@ namespace Devil.GamePlay
             {
                 var l = mLeft.Result;
                 var r = mRight.Result;
-                return new SitcomResult(l != null && l.State == ESitcomState.Success || r != null && r.State == ESitcomState.Success);
+                return new SitcomValue(l != null && l.State == ESitcomState.Success || r != null && r.State == ESitcomState.Success);
             }
         }
 

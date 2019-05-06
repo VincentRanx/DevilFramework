@@ -38,7 +38,7 @@
         {
             get
             {
-                return new SitcomResult(keyword.text);
+                return new SitcomValue(keyword.text);
             }
         }
         public override void OnStop(SitcomContext runtime){ }

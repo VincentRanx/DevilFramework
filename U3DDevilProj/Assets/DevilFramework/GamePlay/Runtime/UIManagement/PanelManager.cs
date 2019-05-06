@@ -183,6 +183,8 @@ namespace Devil.GamePlay
         [SerializeField]
         int m_NormalSortingLayer;
         public int NormalSortingLayer { get { return m_NormalSortingLayer; } }
+        [SerializeField]
+        int m_NormalSortingOrder = 1000;
 
         [SortingLayerField]
         [SerializeField]
@@ -193,6 +195,8 @@ namespace Devil.GamePlay
         [SerializeField]
         int m_DialogSortingLayer;
         public int DialogSortingLayer { get { return m_DialogSortingLayer; } }
+        [SerializeField]
+        int m_DialogSortingOrder = 2000;
 
         [SortingLayerField]
         [SerializeField]
@@ -418,6 +422,37 @@ namespace Devil.GamePlay
             return OpenPanelFor<T>(mPanels, m_NormalSortingLayer, asset, request, true);
         }
 
+        void SetupCanvas(Canvas can)
+        {
+            if (m_UICamera == null)
+            {
+                can.renderMode = RenderMode.ScreenSpaceOverlay;
+                can.worldCamera = null;
+            }
+            else
+            {
+                can.renderMode = RenderMode.ScreenSpaceCamera;
+                can.worldCamera = m_UICamera;
+            }
+        }
+
+        int GetSortOrder(EPanelMode mode)
+        {
+            if (m_UICamera == null)
+            {
+                if (mode == EPanelMode.Normal)
+                    return m_NormalSortingOrder;
+                else if (mode == EPanelMode.Dialog)
+                    return m_DialogSortingOrder;
+                else
+                    return 1;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+
         // asset must be usable.
         Panel OpenPanelFor<T>(List<PanelStub> list, int sortLayer, PanelAsset asset, T request, bool useFocus)
         {
@@ -464,11 +499,10 @@ namespace Devil.GamePlay
             PanelStub prev = GetRecentPanel(list, 1);
             Canvas prevcan = prev == null ? null : prev.Instance.GetCanvas();
             Canvas can = panel.GetCanvas();
-            can.renderMode = RenderMode.ScreenSpaceCamera;
-            can.worldCamera = m_UICamera;
+            SetupCanvas(can);
             can.sortingLayerID = sortLayer;
-            if (asset.Mode != EPanelMode.Status)
-                can.sortingOrder = prevcan == null ? 1 : prevcan.sortingOrder + 2;
+            if (asset.Mode != EPanelMode.Status && asset.Mode != EPanelMode.TopStatus)
+                can.sortingOrder = prevcan == null ? GetSortOrder(asset.Mode) : prevcan.sortingOrder + 2;
             if (useFocus)
             {
                 if (mFocusStub != null)
@@ -671,15 +705,16 @@ namespace Devil.GamePlay
             {
                 InteractCancel();
             }
-            if (mFocusStub != null && mFocusStub.Instance.m_DefaultSelectable != null
-                && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null)
-            {
-                if (Mathf.Abs(GameInput.GetAxis(m_HorizontalAxis)) > 0.5f || Mathf.Abs(GameInput.GetAxis(m_VerticalAxis)) > 0.5f ||
-                    GameInput.GetButtonDown(m_HorizontalAxis) || GameInput.GetButtonDown(m_VerticalAxis))
-                {
-                    EventSystem.current.SetSelectedGameObject(mFocusStub.Instance.m_DefaultSelectable.gameObject);
-                }
-            }
+
+            //if (mFocusStub != null && mFocusStub.Instance.m_DefaultSelectable != null
+            //    && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null)
+            //{
+            //    if (Mathf.Abs(GameInput.GetAxis(m_HorizontalAxis)) > 0.5f || Mathf.Abs(GameInput.GetAxis(m_VerticalAxis)) > 0.5f ||
+            //        GameInput.GetButtonDown(m_HorizontalAxis) || GameInput.GetButtonDown(m_VerticalAxis))
+            //    {
+            //        EventSystem.current.SetSelectedGameObject(mFocusStub.Instance.m_DefaultSelectable.gameObject);
+            //    }
+            //}
         }
 
         public void InteractCancel()
@@ -999,12 +1034,13 @@ namespace Devil.GamePlay
 
         public static void SetPanelActive(Panel panel, bool active)
         {
-            panel.gameObject.SetActive(active);
+            if(panel != null)
+                panel.gameObject.SetActive(active);
         }
 
         public static bool IsPanelActive(Panel panel)
         {
-            return panel.gameObject.activeSelf;
+            return panel != null && panel.gameObject.activeSelf;
         }
         
         #endregion

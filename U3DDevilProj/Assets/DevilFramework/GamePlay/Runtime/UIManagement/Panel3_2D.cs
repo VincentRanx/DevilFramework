@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GameLogic
+namespace Devil.GamePlay
 {
     [RequireComponent(typeof(Canvas))]
     public class Panel3_2D : MonoBehaviour
@@ -26,7 +26,22 @@ namespace GameLogic
 
         public Vector3 position { get { return mPos; } set { mPos = value; mIsPosSet = true; } }
 
-        private void OnEnable()
+        protected virtual void Awake()
+        {
+            var sub = GetComponentsInChildren<ISubPanel>(true);
+            if (sub != null)
+            {
+                var can = GetCanvas();
+                for (int i = 0; i < sub.Length; i++)
+                {
+                    sub[i].SetRootCanvas(can);
+                }
+            }
+        }
+
+        protected virtual void Start() { }
+
+        protected virtual void OnEnable()
         {
             var can = GetCanvas();
             if (PanelManager.Instance != null)
@@ -42,23 +57,36 @@ namespace GameLogic
                     mPos = m_Content.position;
                     mIsPosSet = true;
                 }
-                UpdatePosition();
+                MoveToWorldPos(m_Content, mPos);
+
             }
         }
 
-        void UpdatePosition()
-        {
-            var can = GetCanvas();
-            var pos = RectTransformUtility.WorldToScreenPoint(Camera.main, mPos);
-            Vector2 local;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_Content.parent as RectTransform, pos, can.worldCamera, out local))
-                m_Content.localPosition = local;
-        }
+        protected virtual void OnDisable() { }
+
+        protected virtual void OnDestroy() { }
 
         protected virtual void LateUpdate()
         {
             if (m_Content != null)
-                UpdatePosition();
+                MoveToWorldPos(m_Content, mPos);
+        }
+
+        public bool MoveToWorldPos(Transform trans, Vector3 worldPos)
+        {
+            return MoveToWorldPos(GetCanvas(), trans, worldPos);
+        }
+
+        public static bool MoveToWorldPos(Canvas canvas, Transform trans, Vector3 worldPos)
+        {
+            var pos = RectTransformUtility.WorldToScreenPoint(Camera.main, worldPos);
+            Vector2 local;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(trans.parent as RectTransform, pos, canvas.worldCamera, out local))
+            {
+                trans.localPosition = local;
+                return true;
+            }
+            return false;
         }
 
 #if UNITY_EDITOR

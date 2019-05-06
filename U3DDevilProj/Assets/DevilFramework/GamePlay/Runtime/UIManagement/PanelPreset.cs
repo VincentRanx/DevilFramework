@@ -97,8 +97,9 @@ namespace Devil.GamePlay
         void FindChild()
         {
             m_Panels = GetComponentsInChildren<Panel>(true);
-            EditorUtility.SetDirty(gameObject);
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            EditorUtility.SetDirty(this);
+            if(gameObject.activeInHierarchy)
+                EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         }
 #endif
     }

@@ -66,6 +66,11 @@ namespace Devil.GamePlay
         void OnPanelLostAsset();
     }
 
+    public interface ISubPanel
+    {
+        void SetRootCanvas(Canvas canvas);
+    }
+
     public interface IPanelEventHandler
     {
 
@@ -109,7 +114,7 @@ namespace Devil.GamePlay
         [SerializeField]
         protected bool m_ResponseCancelButton = true;
 
-        [MaskField]
+        [MaskField(IsToggle = false)]
         [SerializeField]
         EPanelProperty m_Properties = EPanelProperty.SingleInstance | EPanelProperty.AutoCloseOnLoadScene;
         public EPanelProperty Properties { get { return m_Properties; } set { m_Properties = value; } }
@@ -288,7 +293,7 @@ namespace Devil.GamePlay
                 PanelManager.ClosePanel(this);
             return true;
         }
-
+        
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
@@ -304,11 +309,16 @@ namespace Devil.GamePlay
         {
             Utility.ObjectBinder.BindPropertyiesByName(this);
             UnityEditor.EditorUtility.SetDirty(this);
+            if (gameObject.activeInHierarchy)
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+
         }
         [ContextMenu("Rename Targets' Name")]
         protected void RenameTargets()
         {
             Utility.ObjectBinder.RenameBindableProperties(this);
+            if (gameObject.activeInHierarchy)
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
         }
 #endif
     }

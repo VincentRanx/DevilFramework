@@ -3,7 +3,7 @@
 namespace Devil.GamePlay
 {
     [System.Serializable]
-    public struct AnimParam
+    public struct AnimParam : System.IEquatable<AnimParam>
     {
         [SerializeField]
         string _name;
@@ -31,18 +31,38 @@ namespace Devil.GamePlay
         public float floatValue { get { return _value; } set { _value = value; } }
         public bool boolValue { get { return _value > 0.2f; } set { _value = value ? 1 : 0; } }
 
+        public void ApplyTrigger(Animator anim)
+        {
+            anim.SetTrigger(_id);
+        }
+
+        public void ApplyFloat(Animator anim)
+        {
+            anim.SetFloat(_id, _value);
+        }
+
+        public void ApplyBool(Animator anim)
+        {
+            anim.SetBool(_id, boolValue);
+        }
+
+        public void ApplyInt(Animator anim)
+        {
+            anim.SetInteger(_id, intValue);
+        }
+
         public void Apply(Animator anim)
         {
             if (anim == null || _id == 0)
                 return;
-            if (type == AnimatorControllerParameterType.Bool)
-                anim.SetBool(_id, boolValue);
-            else if (type == AnimatorControllerParameterType.Trigger)
+            if (type == AnimatorControllerParameterType.Trigger)
                 anim.SetTrigger(_id);
-            else if (type == AnimatorControllerParameterType.Int)
-                anim.SetInteger(_id, intValue);
             else if (type == AnimatorControllerParameterType.Float)
                 anim.SetFloat(_id, floatValue);
+            else if (type == AnimatorControllerParameterType.Bool)
+                anim.SetBool(_id, boolValue);
+            else if (type == AnimatorControllerParameterType.Int)
+                anim.SetInteger(_id, intValue);
         }
 
         public static AnimParam ReferenceTo(AnimatorControllerParameter aparam)
@@ -63,6 +83,11 @@ namespace Devil.GamePlay
             p._id = name == null ? 0 : Animator.StringToHash(name);
             p._value = 0;
             return p;
+        }
+
+        public bool Equals(AnimParam other)
+        {
+            return _id == other._id && type == other.type && _value == other._value;
         }
 
         public static implicit operator int (AnimParam aparam)

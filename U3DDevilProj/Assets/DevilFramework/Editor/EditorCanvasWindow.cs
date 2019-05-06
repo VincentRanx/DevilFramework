@@ -147,10 +147,8 @@ namespace DevilEditor
         protected virtual void OnReadCustomData(JsonData data) { }
         protected virtual void OnSaveCustomData(JsonData data) { }
 
-        protected virtual void OnCanvasStart()
-        {
-
-        }
+        protected virtual void OnCanvasStart() { }
+        protected virtual void OnPreGUI() { }
 
         protected virtual void OnGUI()
         {
@@ -164,6 +162,7 @@ namespace DevilEditor
             mInitOk = initOk;
             if (initOk)
             {
+                OnPreGUI();
                 ProcessMouseDeltaPos();
                 Input.imeCompositionMode = IMECompositionMode.On;
 

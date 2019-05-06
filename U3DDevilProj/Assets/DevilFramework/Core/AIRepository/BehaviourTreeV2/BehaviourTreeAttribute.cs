@@ -48,4 +48,40 @@ namespace Devil.AI
             this.VarType = vartype;
         }
     }
+    
+    [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public class BTVariableAttribute: PropertyAttribute
+    {
+        public EVarType VarType { get; set; }
+        public System.Type VarClass { get; set; }
+        public string VarName { get; set; }
+        public string VarValue { get; set; }
+
+        /// <summary>
+        /// define string varName as variable name
+        /// define anytpye varValue as variable value
+        /// </summary>
+        public BTVariableAttribute()
+        {
+            VarName = "varName";
+            VarValue = "varValue";
+        }
+
+        public BTVariableAttribute(System.Type type)
+        {
+            VarName = "varName";
+            VarValue = "varValue";
+            this.VarClass = type;
+            this.VarType = EVarType.Any;
+        }
+
+        public BTVariableAttribute(System.Type type, EVarType varType)
+        {
+            VarName = "varName";
+            VarValue = "varValue";
+            this.VarClass = type;
+            this.VarType = varType;
+        }
+    }
+    
 }

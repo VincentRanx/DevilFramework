@@ -2,7 +2,7 @@
 
 namespace Devil.AI
 {
-    [BTComposite(Title = "检查条件 (C)", color = "#2681ba", HotKey = KeyCode.C,
+    [BTComposite(Title = "TEST (T)", color = "#2681ba", HotKey = KeyCode.T,
         IconPath = "Assets/DevilFramework/Gizmos/AI Icons/Condition Icon.png")]
     public class BTCheckCondition : BTTaskAsset
     {
@@ -33,7 +33,7 @@ namespace Devil.AI
 
         public override EBTState OnUpdate(float deltaTime)
         {
-            return IsOnCondition ? EBTState.success : EBTState.failed;
+            return EBTState.success;
         }
     }
 }

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 namespace Devil.Command
 {
-    [AddComponentMenu("Devilframework/Command")]
     [RequireComponent(typeof(RTSRuntimeEditor))]
     public class RTSInterface : MonoBehaviour
     {

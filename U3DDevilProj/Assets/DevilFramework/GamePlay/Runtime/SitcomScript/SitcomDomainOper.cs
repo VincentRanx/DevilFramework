@@ -151,7 +151,7 @@ namespace Devil.GamePlay
             var meta = runtime.Heap.GetMeta(target.GetType());
             if (!mWaitContent)
             {
-                mResult = new SitcomResult(meta.GetProperty(mRight.id, target));
+                mResult = new SitcomValue(meta.GetProperty(mRight.id, target));
                 return;
             }
             var domain = meta.GetDomain(mRight.id);

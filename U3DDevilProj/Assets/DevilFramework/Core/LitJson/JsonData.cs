@@ -438,52 +438,52 @@ namespace LitJson
             return data.inst_boolean;
         }
 
-        public static explicit operator Single (JsonData data)
+        public static explicit operator Single(JsonData data)
         {
             if (data == null)
                 return 0;
-            if (data.type != JsonType.Double)
-                throw new InvalidCastException(
-                   "Instance of JsonData doesn't hold a float");
-            return (float)data.inst_double;
+            if (data.type == JsonType.Int)
+                return (float)data.inst_int;
+            if (data.type == JsonType.Double)
+                return (float)data.inst_double;
+            throw new InvalidCastException(
+               "Instance of JsonData doesn't hold a float");
         }
 
         public static explicit operator Double (JsonData data)
         {
             if (data == null)
                 return 0;
-            if (data.type != JsonType.Double)
-                throw new InvalidCastException (
-                    "Instance of JsonData doesn't hold a double");
-
-            return data.inst_double;
+            if (data.type == JsonType.Int)
+                return data.inst_int;
+            if (data.type == JsonType.Double)
+                return data.inst_double;
+            throw new InvalidCastException(
+                "Instance of JsonData doesn't hold a double");
         }
 
-       public static explicit operator Int32(JsonData data)
+        public static explicit operator Int32(JsonData data)
         {
             if (data == null)
                 return 0;
-            if (data.type != JsonType.Int && data.type != JsonType.Long)
-            {
-                throw new InvalidCastException(
-                    "Instance of JsonData doesn't hold an int");
-            }
-
-            // cast may truncate data... but that's up to the user to consider
-            return data.type == JsonType.Int ? data.inst_int : (int)data.inst_long;
+            if (data.type == JsonType.Int)
+                return data.inst_int;
+            if (data.type == JsonType.Long)
+                return (int)data.inst_long;
+            throw new InvalidCastException(
+                "Instance of JsonData doesn't hold an int");
         }
 
         public static explicit operator Int64(JsonData data)
         {
             if (data == null)
                 return 0;
-            if (data.type != JsonType.Long && data.type != JsonType.Int)
-            {
-                throw new InvalidCastException(
-                    "Instance of JsonData doesn't hold a long");
-            }
-
-            return data.type == JsonType.Long ? data.inst_long : data.inst_int;
+            if (data.type == JsonType.Long)
+                return data.inst_long;
+            if (data.type == JsonType.Int)
+                return data.inst_int;
+            throw new InvalidCastException(
+                "Instance of JsonData doesn't hold a long");
         }
 
         public static explicit operator String (JsonData data)

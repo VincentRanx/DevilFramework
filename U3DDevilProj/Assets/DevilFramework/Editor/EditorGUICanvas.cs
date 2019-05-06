@@ -93,7 +93,7 @@ namespace DevilEditor
         }
 
         // calculate child local rect
-        public Rect CalculateLocalRect(Rect globalRect)
+        public virtual Rect CalculateLocalRect(Rect globalRect)
         {
             Rect rect = new Rect();
             float scale = GlobalScale * LocalScale;
@@ -103,7 +103,7 @@ namespace DevilEditor
             return rect;
         }
 
-        public Vector2 CalculateLocalPosition(Vector2 globalPos)
+        public virtual Vector2 CalculateLocalPosition(Vector2 globalPos)
         {
             float scale = GlobalScale * LocalScale;
             scale = scale > 0 ? scale : 1;

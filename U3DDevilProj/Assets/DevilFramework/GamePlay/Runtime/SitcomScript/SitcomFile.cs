@@ -173,7 +173,7 @@ namespace Devil.GamePlay
             mEof = mOffset >= len;
         }
 
-        public bool BeginRead()
+        public virtual bool BeginRead()
         {
 #if UNITY_EDITOR
             if (mAsset != null)

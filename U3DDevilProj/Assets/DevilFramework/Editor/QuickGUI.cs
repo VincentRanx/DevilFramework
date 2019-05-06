@@ -13,6 +13,16 @@ namespace DevilEditor
 
         public delegate bool DrawCallback(int id, int counter);
 
+        public static void SetToggle(string name, bool value)
+        {
+            EditorPrefs.SetBool(name, value);
+        }
+
+        public static bool GetToggle(string name, bool defaultValue = true)
+        {
+            return EditorPrefs.GetBool(name, defaultValue);
+        }
+
         public static int TitleBar(string title, int size, FontStyle style, Color color, params string[] moreBtns)
         {
             int defSize = GUI.skin.label.fontSize;

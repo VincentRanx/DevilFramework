@@ -932,6 +932,18 @@ namespace Devil.UI
             return node == null ? null : node.dataEntity as T;
         }
 
+        public GameObject GetDataInstance(int index)
+        {
+            int num = 0;
+            var node = mFirst;
+            while (num < index && node != null)
+            {
+                num++;
+                node = node.next;
+            }
+            return node == null ? null : node.dataEntity.gameObject;
+        }
+
 #if UNITY_EDITOR
 
         protected override void OnValidate()

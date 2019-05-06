@@ -7,8 +7,10 @@ namespace Devil.AI
     public class BTWaitTask : BTTaskAsset
     {
         public bool m_WaitForever = false;
-        public float m_MinTime = 1;
-        public float m_MaxTime = 2;
+        //public float m_MinTime = 1;
+        //public float m_MaxTime = 2;
+        [RangeField]
+        public Vector2 m_TimeRange = new Vector2(1, 2);
 
         float mTime;
 
@@ -16,14 +18,10 @@ namespace Devil.AI
         {
             get
             {
-                if (m_MinTime < 0)
-                    m_MinTime = 0;
-                if (m_MaxTime < m_MinTime)
-                    m_MaxTime = m_MinTime;
-                if (m_MinTime <= m_MaxTime - 0.1f)
-                    return StringUtil.Concat("等待 ", m_MinTime, "~", m_MaxTime, " 秒钟");
+                if (m_TimeRange.x <= m_TimeRange.y - 0.1f)
+                    return StringUtil.Concat("等待 ", m_TimeRange.x, "~", m_TimeRange.y, " 秒钟");
                 else
-                    return StringUtil.Concat("等待 ", m_MinTime, " 秒钟");
+                    return StringUtil.Concat("等待 ", m_TimeRange.x, " 秒钟");
             }
         }
 
@@ -34,10 +32,10 @@ namespace Devil.AI
 
         public override EBTState OnStart()
         {
-            if (m_MaxTime >= m_MinTime + 0.1f)
-                mTime = Random.Range(m_MinTime, m_MaxTime);
+            if (m_TimeRange.y >= m_TimeRange.x + 0.1f)
+                mTime = Random.Range(m_TimeRange.x, m_TimeRange.y);
             else
-                mTime = m_MinTime;
+                mTime = m_TimeRange.x;
             return EBTState.running;
         }
 

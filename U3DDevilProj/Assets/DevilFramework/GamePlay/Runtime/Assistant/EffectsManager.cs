@@ -8,13 +8,14 @@ namespace Devil.GamePlay.Assistant
         int poolId { get; set; }
         GameObject gameObject { get; }
         Transform transform { get; }
+        T GetComponent<T>();
         float lifeTime { get; set; }
         bool isAlive { get; }
         void Reactive();
         void Deactive();
     }
 
-    public sealed class EffectsManager : MonoBehaviour
+    public class EffectsManager : MonoBehaviour
     {
         public static int StringToId(string str)
         {
@@ -105,7 +106,7 @@ namespace Devil.GamePlay.Assistant
 
         private AvlTree<Pool> mPools;
         
-        private void Awake()
+        protected virtual void Awake()
         {
             if (Instance == null)
             {
@@ -185,7 +186,7 @@ namespace Devil.GamePlay.Assistant
             }
         }
 
-        private void OnDestroy()
+        protected virtual void OnDestroy()
         {
             if (Instance == this)
             {

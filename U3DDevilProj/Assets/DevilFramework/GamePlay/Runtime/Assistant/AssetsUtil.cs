@@ -52,6 +52,7 @@ namespace Devil.GamePlay.Assistant
         #region asset operate
 
         public const string DEFAULT_ATLAS = "Assets/ArtRes/Sprites/Common.spriteatlas";
+        public const string ATLAS_EXTENSION = ".spriteatlas";
 
         public static Sprite GetSprite(string spriteName)
         {
@@ -90,6 +91,8 @@ namespace Devil.GamePlay.Assistant
             {
                 atlas = spriteName.Substring(0, index);
                 spr = spriteName.Substring(index + 1);
+                if (!StringUtil.EndWithIgnoreCase(atlas, ATLAS_EXTENSION))
+                    atlas = StringUtil.Concat(atlas, ATLAS_EXTENSION);
             }
             GetAssetAsync<SpriteAtlas>(atlas, (x) => {
                 var sprite = x.GetSprite(spr);

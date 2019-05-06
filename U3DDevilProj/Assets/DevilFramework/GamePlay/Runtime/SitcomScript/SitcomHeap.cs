@@ -214,7 +214,7 @@ namespace Devil.GamePlay
                     return ptr;
                 }
             }
-            return default(SitcomPtr);
+            return mBaseHeap == null ? default(SitcomPtr) : mBaseHeap.GetPtr(id);
         }
 
         public object GetValue(int id)
@@ -225,7 +225,7 @@ namespace Devil.GamePlay
                 if (mStacks[i].TryGetValue(id, out v))
                     return v;
             }
-            return null;
+            return mBaseHeap == null ? null : mBaseHeap.GetValue(id);
         }
 
         public object GetValue(string name)
@@ -282,7 +282,7 @@ namespace Devil.GamePlay
         [SitcomDomain("end")]
         public ISitcomResult Dom_End(SitcomContext runtime, SitcomHeap target, string content, object[] args)
         {
-            runtime.NextMarkId = runtime.EndMarkId;
+            runtime.SetNextMark(SitcomCmdSequence.EndMarkId);
             return null;
         }
 
@@ -302,7 +302,7 @@ namespace Devil.GamePlay
         {
             var names = new List<string>();
             if (!StringUtil.ParseArray(content, names, '\n') || names.Count == 0)
-                return new SitcomResult(false);
+                return new SitcomValue(false);
             if (args != null && args.Length > 0 && args[0] != null)
             {
                 var goes = GameObject.FindGameObjectsWithTag(args[0].ToString());
@@ -321,7 +321,7 @@ namespace Devil.GamePlay
                         go.SetActive(active);
                 }
             }
-            return new SitcomResult(true);
+            return new SitcomValue(true);
         }
 
         [SitcomDomain("spawn", "prefab", "position", "rotation", "radius")]
@@ -329,7 +329,7 @@ namespace Devil.GamePlay
         {
             var names = new List<string>();
             if (!StringUtil.ParseArray(content, names, '\n') || names.Count == 0)
-                return new SitcomResult(false);
+                return new SitcomValue(false);
             var ret = new SitcomAsyncOperator();
             AssetsUtil.GetAssetAsync<GameObject>(args[0].ToString(), (x) =>
             {
@@ -363,7 +363,7 @@ namespace Devil.GamePlay
         {
             var names = new List<string>();
             if (!StringUtil.ParseArray(content, names, '\n') || names.Count == 0)
-                return new SitcomResult(false);
+                return new SitcomValue(false);
             if (args != null && args.Length > 0 && args[0] != null)
             {
                 var goes = GameObject.FindGameObjectsWithTag(args[0].ToString());
@@ -382,7 +382,7 @@ namespace Devil.GamePlay
                         GameObject.Destroy(go);
                 }
             }
-            return new SitcomResult(true);
+            return new SitcomValue(true);
         }
 
         [SitcomDomain("alloc", "name")]
@@ -390,13 +390,13 @@ namespace Devil.GamePlay
         {
             if (args != null && args.Length > 0)
                 target.Alloc(args[0].ToString(), content);
-            return new SitcomResult(content);
+            return new SitcomValue(content);
         }
 
         [SitcomDomain("result", "result")]
         public ISitcomResult Dom_Result(SitcomContext runtime, SitcomHeap target, string content, object[] args)
         {
-            return new SitcomResult(args == null || args.Length < 1 ? content : args[0]);
+            return new SitcomValue(args == null || args.Length < 1 ? content : args[0]);
         }
 
         #endregion

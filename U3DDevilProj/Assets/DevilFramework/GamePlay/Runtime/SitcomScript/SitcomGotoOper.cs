@@ -16,7 +16,7 @@
 
         public override bool RequireContent { get { return mLeft != null && mLeft.RequireContent; } }
 
-        public override ISitcomResult Result { get { return mLeft == null ? new SitcomResult(null) : mLeft.Result; } }
+        public override ISitcomResult Result { get { return mLeft == null ? new SitcomValue(null) : mLeft.Result; } }
 
         public override void AddContent(SitcomFile.Keyword keyword)
         {

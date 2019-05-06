@@ -15,7 +15,7 @@ namespace Devil.GamePlay
 
         public override bool RequireContent { get { return false; } }
 
-        public override ISitcomResult Result { get { return mContent != null ? mContent.Result : new SitcomResult(null); } }
+        public override ISitcomResult Result { get { return mContent != null ? mContent.Result : new SitcomValue(null); } }
 
         public override void AddContent(SitcomFile.Keyword keyword) { }
 

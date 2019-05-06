@@ -718,8 +718,8 @@ namespace DevilEditor
 
         void OnDrawFSMGraphCallback()
         {
-            DrawStates();
             DrawTransition(Application.isPlaying);
+            DrawStates();
             //if (Application.isPlaying)
             //    DrawTransition(true);
             DrawStateStack();
